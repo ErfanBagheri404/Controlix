@@ -4,24 +4,23 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- IR emitter dot -->
+    <!-- Badge: rounded square -->
     <path
-        android:fillColor="#38BDF8"
-        android:pathData="M54,58 m-6,0 a6,6 0 1,1 12,0 a6,6 0 1,1 -12,0" />
-    <!-- Signal arcs -->
+        android:fillColor="#E2E8F0"
+        android:pathData="M22,22 h64 a18,18 0 0,1 18,18 v64 a18,18 0 0,1 -18,18 h-64 a18,18 0 0,1 -18,-18 v-64 a18,18 0 0,1 18,-18 z" />
+    <!-- Power glyph: ~290° ring open at the top (gap where the line enters).
+         sweep=1 = clockwise on screen, large-arc=1; center (54,56) r=15. -->
     <path
-        android:strokeColor="#E2E8F0"
-        android:strokeWidth="4"
+        android:strokeColor="#0F172A"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
         android:fillColor="#00000000"
-        android:pathData="M40,42 a20,20 0 0,1 28,0" />
+        android:pathData="M62.6,43.7 A15,15 0 1,1 45.4,43.7" />
+    <!-- Power glyph: vertical line through the gap -->
     <path
-        android:strokeColor="#E2E8F0"
-        android:strokeWidth="4"
+        android:strokeColor="#0F172A"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
         android:fillColor="#00000000"
-        android:pathData="M32,32 a31,31 0 0,1 44,0" />
-    <path
-        android:strokeColor="#E2E8F0"
-        android:strokeWidth="4"
-        android:fillColor="#00000000"
-        android:pathData="M24,22 a42,42 0 0,1 60,0" />
+        android:pathData="M54,36 L54,52" />
 </vector>
