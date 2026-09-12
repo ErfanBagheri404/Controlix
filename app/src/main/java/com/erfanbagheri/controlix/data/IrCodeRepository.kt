@@ -2,21 +2,11 @@ package com.erfanbagheri.controlix.data
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
-import com.erfanbagheri.controlix.ir.protocols.Nec
-import com.erfanbagheri.controlix.ir.protocols.Kaseikyo
-import com.erfanbagheri.controlix.ir.protocols.Nec42
-import com.erfanbagheri.controlix.ir.protocols.NecExt
-import com.erfanbagheri.controlix.ir.protocols.Pioneer
-import com.erfanbagheri.controlix.ir.protocols.Rc5x
-import com.erfanbagheri.controlix.ir.protocols.Rca
-import com.erfanbagheri.controlix.ir.protocols.Rc5
-import com.erfanbagheri.controlix.ir.protocols.Rc6
-import com.erfanbagheri.controlix.ir.protocols.Samsung32
-import com.erfanbagheri.controlix.ir.protocols.Sirc
+import com.erfanbagheri.controlix.ir.protocols.*
 
 /**
  * Read-only access to the bundled controlix.db (built by
- * src/main/python/convert_irdb.py and shipped in assets/).
+ * src/main/python/convert_irdb.py + merge_irblaster.py, shipped in assets/).
  */
 class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
 
@@ -42,12 +32,63 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
                 SQLiteDatabase.OPEN_READONLY or SQLiteDatabase.NO_LOCALIZED_COLLATORS
             )
         }
+
+        private fun le32(b: ByteArray, off: Int): Int =
+            (b[off].toInt() and 0xFF) or
+                ((b[off + 1].toInt() and 0xFF) shl 8) or
+                ((b[off + 2].toInt() and 0xFF) shl 16) or
+                ((b[off + 3].toInt() and 0xFF) shl 24)
+
+        /**
+         * Pure blob expansion, shared with the unit tests.
+         * Blob layouts (see convert_irdb.py / merge_irblaster.py):
+         *  - raw: N x little-endian int32 durations in us (even N, >= 16)
+         *  - parsed: 12 bytes [protoId, rsvd x3, addr(4), cmd(4)]
+         */
+        internal fun expandPattern(blob: ByteArray): IntArray? {
+            // Parsed layout: [protoId(1), rsvd(3 all-zero), addr(4), cmd(4)].
+            // The rsvd-byte check keeps 12-byte RAW blobs (small durations)
+            // from being misread as parsed frames.
+            if (blob.size == 12 && blob[0].toInt() in 1..14 &&
+                blob[1].toInt() == 0 && blob[2].toInt() == 0 && blob[3].toInt() == 0
+            ) {
+                val protoId = blob[0].toInt() and 0xFF
+                val addr = le32(blob, 4)
+                val cmd = le32(blob, 8)
+                return try {
+                    when (protoId) {
+                        1 -> Nec.encode(addr and 0xFF, cmd and 0xFF)
+                        2 -> NecExt.encode(addr and 0xFF, (addr shr 8) and 0xFF, cmd and 0xFF)
+                        3 -> Nec42.encode(addr and 0x1FFF, cmd and 0xFF)
+                        4 -> Nec42.encodeExt(addr and 0x3FFFFFF, cmd and 0xFFFF)
+                        5 -> Samsung32.encode(addr and 0xFF, cmd and 0xFF)
+                        6 -> Rc5.encode(addr and 0x1F, cmd and 0x3F)
+                        7 -> Rc5x.encode(addr and 0x1F, cmd and 0x7F)
+                        8 -> Rc6.encode(addr and 0xFF, cmd and 0xFF)
+                        9 -> Sirc.encode12(cmd and 0x7F, addr and 0x1F)
+                        10 -> Sirc.encode15(cmd and 0x7F, addr and 0xFF)
+                        11 -> Sirc.encode20(cmd and 0x7F, addr and 0x1FFF)
+                        12 -> Kaseikyo.encode(addr, cmd and 0x3FF)
+                        13 -> Rca.encode(addr and 0xF, cmd and 0xFF)
+                        14 -> Pioneer.encode(addr and 0xFF, cmd and 0xFF)
+                        else -> null
+                    }
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            if (blob.size % 4 != 0 || blob.size < 16) return null
+            val out = IntArray(blob.size / 4)
+            for (i in out.indices) out[i] = le32(blob, i * 4)
+            return out
+        }
     }
 
     data class Category(val id: Int, val slug: String, val name: String)
     data class Brand(val id: Int, val name: String, val remoteCount: Int)
     data class Remote(val id: Int, val fileName: String, val modelName: String?)
     data class Button(val name: String, val carrierHz: Int, val pattern: IntArray, val protocol: String?)
+    data class PowerButton(val brandName: String, val carrierHz: Int, val pattern: IntArray)
 
     fun categories(): List<Category> =
         db.rawQuery("SELECT id, slug, name FROM category ORDER BY name", null).use { c ->
@@ -115,97 +156,11 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
         ).use { c ->
             buildList {
                 while (c.moveToNext()) {
-                    val blob = c.getBlob(2)
-                    val pattern = expandPattern(blob) ?: continue
+                    val pattern = expandPattern(c.getBlob(2) ?: continue) ?: continue
                     add(Button(c.getString(0), c.getInt(1), pattern, c.getString(3)))
                 }
             }
         }
-
-    /**
-     * Blob layouts (see convert_irdb.py):
-     *  - raw: N x little-endian int32 durations in us (even N)
-     *  - parsed: 12 bytes [protoId, rsvd, rsvd, rsvd, addr(4), cmd(4)]
-     */
-    private fun expandPattern(blob: ByteArray): IntArray? {
-        // Heuristic: parsed headers are exactly 12 bytes with protoId 1..14
-        // and valid LE int32 durations are never that short except tiny raw
-        // patterns (>= 4 entries = 16 bytes). So 12 bytes => parsed.
-        if (blob.size == 12) {
-            val protoId = blob[0].toInt() and 0xFF
-            val addr = le32(blob, 4)
-            val cmd = le32(blob, 8)
-            return try {
-                when (protoId) {
-                    1 -> Nec.encode(addr and 0xFF, cmd and 0xFF)
-                    2 -> NecExt.encode(addr and 0xFF, (addr shr 8) and 0xFF, cmd and 0xFF)
-                    3 -> Nec42.encode(addr and 0x1FFF, cmd and 0xFF)
-                    4 -> Nec42.encodeExt(addr and 0x3FFFFFF, cmd and 0xFFFF)
-                    5 -> Samsung32.encode(addr and 0xFF, cmd and 0xFF)
-                    6 -> Rc5.encode(addr and 0x1F, cmd and 0x3F)
-                    7 -> Rc5x.encode(addr and 0x1F, cmd and 0x7F)
-                    8 -> Rc6.encode(addr and 0xFF, cmd and 0xFF)
-                    9 -> Sirc.encode12(cmd and 0x7F, addr and 0x1F)
-                    10 -> Sirc.encode15(cmd and 0x7F, addr and 0xFF)
-                    11 -> Sirc.encode20(cmd and 0x7F, addr and 0x1FFF)
-                    12 -> Kaseikyo.encode(addr, cmd and 0x3FF)
-                    13 -> Rca.encode(addr and 0xF, cmd and 0xFF)
-                    14 -> Pioneer.encode(addr and 0xFF, cmd and 0xFF)
-                    else -> null // protocol not yet supported: button skipped at runtime
-                }
-            } catch (e: Exception) {
-                null
-            }
-        }
-        if (blob.size % 4 != 0 || blob.size < 16) return null
-        val out = IntArray(blob.size / 4)
-        for (i in out.indices) out[i] = le32(blob, i * 4)
-        return out
-    }
-
-    private fun le32(b: ByteArray, off: Int): Int =
-        (b[off].toInt() and 0xFF) or
-            ((b[off + 1].toInt() and 0xFF) shl 8) or
-            ((b[off + 2].toInt() and 0xFF) shl 16) or
-            ((b[off + 3].toInt() and 0xFF) shl 24)
-
-    fun close() = db.close()
-
-    /** Total usable buttons in the DB, for the home screen counter. */
-    fun buttonCount(): Int =
-        db.rawQuery("SELECT COUNT(*) FROM button", null).use { c ->
-            c.moveToFirst(); c.getInt(0)
-        }
-
-    data class PowerButton(val brandName: String, val carrierHz: Int, val pattern: IntArray)
-
-    /**
-     * Every power button in TV-ish categories, for the power-off sweep.
-     * Name matching is loose because Flipper files use power / Power /
-     * power_on / on-off inconsistently.
-     */
-    fun allTvPowerButtons(): List<PowerButton> {
-        val sql = """
-            SELECT br.name, b.carrier_hz, b.pattern
-            FROM button b
-            JOIN remote r ON r.id = b.remote_id
-            JOIN brand br ON br.id = r.brand_id
-            JOIN category cat ON cat.id = br.category_id
-            WHERE cat.slug IN ('tvs','projectors')
-              AND (lower(b.name) LIKE '%power%' OR lower(b.name) IN ('on','off','on/off','standby'))
-              AND b.pattern IS NOT NULL
-            ORDER BY br.name, r.id
-        """.trimIndent()
-        return db.rawQuery(sql, null).use { c ->
-            val out = ArrayList<PowerButton>()
-            while (c.moveToNext()) {
-                val blob = c.getBlob(2) ?: continue
-                val pattern = expandPattern(blob) ?: continue
-                out += PowerButton(c.getString(0), c.getInt(1), pattern)
-            }
-            out
-        }
-    }
 
     /** One button by exact name within a remote (for macro playback). */
     fun buttonByName(remoteId: Int, name: String): Button? {
@@ -214,9 +169,43 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
             arrayOf(remoteId.toString(), name)
         ).use { c ->
             if (!c.moveToFirst()) return null
-            val blob = c.getBlob(2) ?: return null
-            val pattern = expandPattern(blob) ?: return null
+            val pattern = expandPattern(c.getBlob(2) ?: return null) ?: return null
             return Button(c.getString(0), c.getInt(1), pattern, c.getString(3))
         }
     }
+
+    /**
+     * Every power button in TV-ish categories, for the power-off sweep.
+     * Covers Flipper TV/projector categories plus the merged iodn_irblaster
+     * universal-remote set.
+     */
+    fun allTvPowerButtons(): List<PowerButton> {
+        val sql = """
+            SELECT br.name, b.carrier_hz, b.pattern
+            FROM button b
+            JOIN remote r ON r.id = b.remote_id
+            JOIN brand br ON br.id = r.brand_id
+            JOIN category cat ON cat.id = br.category_id
+            WHERE cat.slug IN ('tvs','projectors','iodn_irblaster')
+              AND (lower(b.name) LIKE '%power%' OR lower(b.name) IN ('on','off','on/off','standby'))
+              AND b.pattern IS NOT NULL
+            ORDER BY br.name, r.id
+        """.trimIndent()
+        return db.rawQuery(sql, null).use { c ->
+            val out = ArrayList<PowerButton>()
+            while (c.moveToNext()) {
+                val pattern = expandPattern(c.getBlob(2) ?: continue) ?: continue
+                out += PowerButton(c.getString(0), c.getInt(1), pattern)
+            }
+            out
+        }
+    }
+
+    fun close() = db.close()
+
+    /** Total usable buttons in the DB, for the home screen counter. */
+    fun buttonCount(): Int =
+        db.rawQuery("SELECT COUNT(*) FROM button", null).use { c ->
+            c.moveToFirst(); c.getInt(0)
+        }
 }

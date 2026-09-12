@@ -9,7 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 /**
  * Power-off sweep (TVKILL-style, but offline and data-driven).
  * Iterates every TV power button in the bundled database and transmits it.
- * Any TV in range that recognizes one of the ~400 real power codes shuts off.
+ * Any TV in range that recognizes one of the ~3,900 real power codes shuts off.
+ * 120 ms gap keeps the full sweep under 8 minutes.
  */
 class PowerOffSweep(
     private val repo: IrCodeRepository,
