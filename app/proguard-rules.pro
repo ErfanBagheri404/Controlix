@@ -1,0 +1,1 @@
+# Controlix proguard rules
