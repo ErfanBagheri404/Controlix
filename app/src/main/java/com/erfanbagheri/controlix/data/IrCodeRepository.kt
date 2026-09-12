@@ -90,6 +90,8 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
     data class Remote(val id: Int, val fileName: String, val modelName: String?)
     data class Button(val name: String, val carrierHz: Int, val pattern: IntArray, val protocol: String?)
     data class PowerButton(val brandName: String, val carrierHz: Int, val pattern: IntArray)
+    /** A distinct candidate code during brand setup, deduped by wire pattern. */
+    data class PowerCandidate(val buttonName: String, val carrierHz: Int, val pattern: IntArray, val remoteId: Int)
 
     fun categories(): List<Category> =
         db.rawQuery("SELECT id, slug, name FROM category ORDER BY name", null).use { c ->
@@ -203,6 +205,35 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
     }
 
     fun close() = db.close()
+
+    /**
+     * Distinct power codes for a brand, for the setup ritual. The same
+     * pattern appears across many remotes in community data; sending the
+     * user through duplicates wastes their time, so we dedupe on the
+     * normalized wire pattern and keep the first button that carries it.
+     */
+    fun powerCodes(brandId: Int): List<PowerCandidate> {
+        val sql = """
+            SELECT b.name, b.carrier_hz, b.pattern, r.id
+            FROM button b
+            JOIN remote r ON r.id = b.remote_id
+            WHERE r.brand_id = ?
+              AND (lower(b.name) LIKE '%power%' OR lower(b.name) IN ('on','off','on/off','standby'))
+              AND b.pattern IS NOT NULL
+            ORDER BY r.id, b.id
+        """.trimIndent()
+        return db.rawQuery(sql, arrayOf(brandId.toString())).use { c ->
+            val seen = HashSet<String>()
+            val out = ArrayList<PowerCandidate>()
+            while (c.moveToNext()) {
+                val pattern = expandPattern(c.getBlob(2) ?: continue) ?: continue
+                if (pattern.size < 4) continue
+                if (!seen.add(pattern.joinToString(","))) continue
+                out += PowerCandidate(c.getString(0), c.getInt(1), pattern, c.getInt(3))
+            }
+            out
+        }
+    }
 
     /** Total usable buttons in the DB, for the home screen counter. */
     fun buttonCount(): Int =
