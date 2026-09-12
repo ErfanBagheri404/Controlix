@@ -29,6 +29,20 @@ class IrTransmitter(context: Context) {
         }
     }
 
+    /**
+     * Transmit a button pattern from the database. Normalizes Flipper raw
+     * quirks first: drops a leading silence gap (> 100 ms, which is how
+     * Flipper recordings mark "time since last event") and pads an odd
+     * pattern to on/off pairs.
+     */
+    fun transmitButton(carrierHz: Int, raw: IntArray): Boolean {
+        var p = raw
+        if (p.size > 2 && p[0] > 100_000) p = p.copyOfRange(1, p.size)
+        if (p.size % 2 == 1) p = p + intArrayOf(0)
+        if (p.size < 4) return false
+        return transmit(carrierHz, p)
+    }
+
     /** Transmits a Pronto Hex code once. */
     fun transmitPronto(hex: String): Boolean {
         val parsed = ProntoParser.parse(hex) ?: return false

@@ -50,8 +50,8 @@ class ExtraProtocolTest {
     @Test
     fun `rc5 total time is 14 bit times minus trimmed leading space`() {
         val p = Rc5.encode(address = 0, command = 0, toggle = false)
-        // 14 bits x 1778us = 24892; leading 889us space trimmed
-        assertEquals(24892 - 889, p.sum())
+        // 14 bits x 1776us = 24864; leading 888us space trimmed
+        assertEquals(24864 - 888, p.sum())
     }
 
     @Test
@@ -65,7 +65,7 @@ class ExtraProtocolTest {
     fun `rc6 mode0 leader and bit timing are correct`() {
         val p = Rc6.encode(address = 0, command = 0)
         assertEquals(2666, p[0])
-        assertEquals(889, p[1])
+        assertEquals(889, p[1]) // 2t space
         // start bit=1 -> mark 444; its trailing space merges with toggle's leading space
         assertEquals(444, p[2])
         assertEquals(888, p[3])

@@ -135,12 +135,15 @@ object Samsung32 {
 /**
  * Sony SIRC. 40 kHz. Pulse-width encoding: 1 = 1.2 ms burst, 0 = 0.6 ms burst,
  * each followed by a 0.6 ms space. Frame starts with 2.4 ms burst + 0.6 ms space.
- * LSB first. 12-bit = 7 cmd + 5 addr; 15-bit adds 3 extended; 20-bit adds 8.
- */
+ * LSB first. Command (7 bits) is sent first, then the address:
+ * 12-bit = 7 cmd + 5 addr; 15-bit = 7 cmd + 8 addr; 20-bit = 7 cmd + 13 addr.
+ * (Bit packing verified against flipper firmware sirc decoder: address = data >> 7.)
+*/
 object Sirc {
 
     const val CARRIER_HZ = 40000
 
+    /** 12-bit: 7 command bits + 5 address bits. */
     fun encode12(command: Int, address: Int): IntArray {
         val out = ArrayList<Int>(26)
         out += 2400; out += 600
@@ -150,22 +153,22 @@ object Sirc {
         return out.toIntArray()
     }
 
-    fun encode15(command: Int, address: Int, extended: Int): IntArray {
-        val out = ArrayList<Int>(32)
+    /** 15-bit: 7 command bits + 8 address bits. */
+    fun encode15(command: Int, address: Int): IntArray {
+        val out = ArrayList<Int>(34)
         out += 2400; out += 600
         sendBits(out, command, 7)
-        sendBits(out, address, 5)
-        sendBits(out, extended, 3)
+        sendBits(out, address, 8)
         out += 600
         return out.toIntArray()
     }
 
-    fun encode20(command: Int, address: Int, extended: Int): IntArray {
-        val out = ArrayList<Int>(42)
+    /** 20-bit: 7 command bits + 13 address bits. */
+    fun encode20(command: Int, address: Int): IntArray {
+        val out = ArrayList<Int>(46)
         out += 2400; out += 600
         sendBits(out, command, 7)
-        sendBits(out, address, 5)
-        sendBits(out, extended, 8)
+        sendBits(out, address, 13)
         out += 600
         return out.toIntArray()
     }
@@ -188,13 +191,13 @@ object Sirc {
 object Rc5 {
 
     const val CARRIER_HZ = 36000
-    private const val HALF = 889
+    private const val HALF = 888  // Flipper INFRARED_RC5_BIT = 888 (half of 1.776 ms)
 
     fun encode(address: Int, command: Int, toggle: Boolean = false): IntArray {
         val b = PatternBuilder()
         manchester(b, true)   // start bit 1
         manchester(b, true)   // start bit 2 (extended RC5 uses only one)
-        manchester(b, toggle)
+        manchester(b, toggle)  // bit 2 = toggle
         var a = address and 0x1F
         repeat(5) { manchester(b, (a and 0x10) != 0); a = a shl 1 }
         var c = command and 0x3F
@@ -237,5 +240,30 @@ object Rc6 {
     /** bit=1: mark then space. bit=0: space then mark. */
     private fun manchester(b: PatternBuilder, bit: Boolean, half: Int) {
         if (bit) { b.mark(half); b.space(half) } else { b.space(half); b.mark(half) }
+    }
+}
+
+/**
+ * RC5X (extended RC5). Same 36 kHz Manchester framing as RC5 but with a
+ * single start bit: S1(1) + toggle + 5 address + 7 command bits, MSB first.
+ */
+object Rc5x {
+
+    const val CARRIER_HZ = 36000
+    private const val HALF = 888
+
+    fun encode(address: Int, command: Int, toggle: Boolean = false): IntArray {
+        val b = PatternBuilder()
+        manchester(b, true)   // single start bit
+        manchester(b, toggle)
+        var a = address and 0x1F
+        repeat(5) { manchester(b, (a and 0x10) != 0); a = a shl 1 }
+        var c = command and 0x7F
+        repeat(7) { manchester(b, (c and 0x40) != 0); c = c shl 1 }
+        return b.build()
+    }
+
+    private fun manchester(b: PatternBuilder, bit: Boolean) {
+        if (bit) { b.space(HALF); b.mark(HALF) } else { b.mark(HALF); b.space(HALF) }
     }
 }
