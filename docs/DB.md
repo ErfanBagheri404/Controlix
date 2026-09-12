@@ -132,7 +132,12 @@ CREATE INDEX idx_remote_brand ON remote(remote_id, brand_id);
 `pattern` as a packed blob keeps the DB small; a typical NEC pattern is 68
 integers, which is 136 bytes as a blob versus ~600 as JSON.
 
-## Size estimate
+## Size estimates
+
+> Actual built DB (2026-09-13, `src/main/python/convert_irdb.py` against
+> Flipper-IRDB @ dev): 46 categories, 1,019 brands, 1,950 remotes,
+> 35,908 buttons (7,793 raw + 28,115 parsed), 83 model strings,
+> 7.1 MB packed (2.1 MB inside the APK's compressed assets).
 
 Flipper-IRDB is ~42 MB as source text. After stripping comments, deduplicating
 identical patterns, and packing to blobs, expect roughly 8-15 MB. That is
