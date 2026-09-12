@@ -11,3 +11,6 @@ captures/
 *.aab
 *.keystore
 !debug.keystore
+
+# Kotlin compiler error logs
+.kotlin/
