@@ -5,6 +5,7 @@ import com.erfanbagheri.controlix.ir.protocols.Rc5
 import com.erfanbagheri.controlix.ir.protocols.Rc6
 import com.erfanbagheri.controlix.ir.protocols.Sirc
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -72,5 +73,25 @@ class ExtraProtocolTest {
         // leader 3555 + start 888 + toggle 888 + mode 888,888,1776 + 16 data bits x888
         val expected = 3555 + 888 + 888 + 2 * 888 + 1776 + 16 * 888
         assertEquals(expected, p.sum())
+    }
+
+    @Test
+    fun `rc6 wire order is start then mode000 then double-width toggle`() {
+        // Per Flipper infrared_encoder_rc6.c: toggle bit at index 4 (after the
+        // three mode bits), NOT index 1. Same-level half-bits merge, so the
+        // exact prefix below is the wire proof of that ordering.
+        val t1 = Rc6.encode(0, 0, toggle = true)
+        val t0 = Rc6.encode(0, 0, toggle = false)
+        assertEquals(
+            listOf(2666, 889, 444, 888, 444, 444, 444, 444, 444, 888, 888, 444),
+            t0.take(12),
+        )
+        assertEquals(
+            listOf(2666, 889, 444, 888, 444, 444, 444, 444, 1332, 1332, 444, 444),
+            t1.take(12),
+        )
+        // toggle=0 and toggle=1 differ ONLY in the double-width slot
+        assertNotEquals(t0.toList(), t1.toList())
+        assertEquals(t0.sum(), t1.sum())
     }
 }

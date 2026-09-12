@@ -1,6 +1,7 @@
 package com.erfanbagheri.controlix.ir
 
 import com.erfanbagheri.controlix.ir.protocols.Kaseikyo
+import com.erfanbagheri.controlix.ir.protocols.Jvc
 import com.erfanbagheri.controlix.ir.protocols.Nec42
 import com.erfanbagheri.controlix.ir.protocols.Pioneer
 import com.erfanbagheri.controlix.ir.protocols.Rca
@@ -85,5 +86,19 @@ class MoreProtocolTest {
         assertEquals(560, p[2]); assertEquals(560, p[3])
         // bit12 of address: (0x123456 >> 12) & 1 = 1 (0x123 -> 0x3 has bit0=1)
         assertEquals(1690, p[2 + 2 * 12 + 1])
+    }
+
+    @Test
+    fun `jvc frame is 8400 4200 preamble lsb-first payload and trailing mark`() {
+        // Exact vector: iodn jvc.dart emits addr 0xC0, cmd 0x04 as below.
+        val p = Jvc.encode(address = 0xC0, command = 0x04)
+        assertEquals(35, p.size)
+        assertEquals(8400, p[0]); assertEquals(4200, p[1])
+        assertEquals(33075, p.sum())
+        // addr 0xC0 LSB-first: 6 zeros then 2 ones (bit6=1575-space at idx 15)
+        assertEquals(525, p[2]); assertEquals(525, p[3])
+        assertEquals(1575, p[15])
+        // trailing 525 mark closes the frame
+        assertEquals(525, p[34])
     }
 }

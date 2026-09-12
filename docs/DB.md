@@ -139,6 +139,20 @@ integers, which is 136 bytes as a blob versus ~600 as JSON.
 > 35,908 buttons (7,793 raw + 28,115 parsed), 83 model strings,
 > 7.1 MB packed (2.1 MB inside the APK's compressed assets).
 
+> **iodn merge** (`src/main/python/merge_irblaster.py`, same date): adds
+> the GPL-3.0 database bundled in [iodn/android-ir-blaster]'s APK assets
+> (`assets/db_src/irblaster.sql`, 413k keys). Only structurally validated
+> frames import: NEC/NEC2 (byte-exact complement), SONY12/15/20 (packed
+> `cmd(7) | addr<<7`, width-checked), RC5 (12-bit `field|addr5|cmd6`,
+> field=1 only), RC6 (16-bit payload, byte-reversed to match this repo's
+> LSB-first encoder — verified segment-by-segment against iodn's own
+> dart encoder output), JVC (16-bit addr|cmd). Ambiguous families
+> (RECS80/REC80/RCC*/proprietary learned codes) are skipped: a wrong
+> code is worse than a missing code. Merged totals land at 192k+ buttons,
+> 2,100+ brands, 56k+ model strings, ~22.6 MB raw / ~9 MB in-APK.
+
+[iodn/android-ir-blaster]: https://github.com/iodn/android-ir-blaster
+
 Flipper-IRDB is ~42 MB as source text. After stripping comments, deduplicating
 identical patterns, and packing to blobs, expect roughly 8-15 MB. That is
 acceptable to bundle, and the refresh path exists for anyone who wants the

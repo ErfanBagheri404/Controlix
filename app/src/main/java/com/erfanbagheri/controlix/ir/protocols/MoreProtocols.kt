@@ -187,3 +187,32 @@ object Nec42 {
         }
     }
 }
+
+/**
+ * JVC. 38 kHz, 16-bit pulse-distance frame.
+ * Preamble 8400/4200, bit mark 525, 0-space 525 / 1-space 1575, LSB first,
+ * trailing 525 mark (iodn JvcProtocolEncoder + Flipper infrared_protocol_jvc_i.h
+ * agree on every constant).
+ */
+object Jvc {
+
+    const val CARRIER_HZ = 38000
+
+    fun encode(address: Int, command: Int): IntArray {
+        val out = ArrayList<Int>(38)
+        out += 8400; out += 4200
+        sendByte(out, address and 0xFF)
+        sendByte(out, command and 0xFF)
+        out += 525
+        return out.toIntArray()
+    }
+
+    private fun sendByte(out: ArrayList<Int>, value: Int) {
+        var v = value and 0xFF
+        repeat(8) {
+            out += 525
+            out += if (v and 1 == 1) 1575 else 525
+            v = v ushr 1
+        }
+    }
+}

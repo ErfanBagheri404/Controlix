@@ -44,6 +44,7 @@ PROTO_IDS = {
     'Kaseikyo': 12,
     'RCA': 13,
     'Pioneer': 14,
+    'JVC': 15,
 }
 
 # Protocol -> default carrier (Hz) when a parsed entry does not state one.

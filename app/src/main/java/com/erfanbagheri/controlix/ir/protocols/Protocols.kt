@@ -224,16 +224,19 @@ object Rc6 {
 
     fun encode(address: Int, command: Int, toggle: Boolean = false): IntArray {
         val b = PatternBuilder()
-        b.mark(2666); b.space(889) // leader
-        manchester(b, true, T1)    // start bit (always 1)
-        manchester(b, toggle, T1)  // toggle
-        manchester(b, false, T1)   // mode bit 0 (Mode 0 = 000)
-        manchester(b, false, T1)   // mode bit 1
-        manchester(b, false, T1 * 2) // mode bit 2 doubles as trailer (2t symbol)
+        b.mark(2666); b.space(889) // leader 6T/2T
+        // Wire order (Flipper infrared_encoder_rc6.c): bit0 start, bits1-3
+        // mode=000, bit4 toggle at double width, then 8 addr + 8 cmd bits,
+        // both LSB-first (reverse() into the LSB-first data array).
+        manchester(b, true, T1)      // start bit (always 1)
+        manchester(b, false, T1)     // mode bit 0
+        manchester(b, false, T1)     // mode bit 1
+        manchester(b, false, T1)     // mode bit 2
+        if (toggle) { b.mark(2 * T1); b.space(2 * T1) } else { b.space(2 * T1); b.mark(2 * T1) }
         var a = address and 0xFF
-        repeat(8) { manchester(b, (a and 0x80) != 0, T1); a = a shl 1 }
+        repeat(8) { manchester(b, (a and 0x01) != 0, T1); a = a shr 1 }
         var c = command and 0xFF
-        repeat(8) { manchester(b, (c and 0x80) != 0, T1); c = c shl 1 }
+        repeat(8) { manchester(b, (c and 0x01) != 0, T1); c = c shr 1 }
         return b.build()
     }
 
