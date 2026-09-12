@@ -34,10 +34,10 @@ iOS, learning mode (hardware impossible), accounts, telemetry, ads, content feed
 - [x] Release workflow with tag trigger
 
 ### M1 — IR transmit verified on hardware
-- [ ] Install debug APK on Poco X3 Pro (vayu)
-- [ ] Confirm `hasIrEmitter()` returns true
-- [ ] Self-test burst, verify with a real device (phone camera shows IR)
-- [ ] Transmit a real NEC code at a TV
+- [x] Install debug APK on Poco X3 Pro (vayu)
+- [x] Confirm `hasIrEmitter()` returns true
+- [x] Self-test burst verified through laptop camera (LED flashing at 38 kHz)
+- [ ] Transmit a real NEC code at a TV (needs M2 codes)
 
 ### M2 — Database and picker
 - [ ] Protocol encoders: NEC, Samsung32, RC5, RC6, SIRC
