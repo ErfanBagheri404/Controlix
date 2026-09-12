@@ -7,6 +7,7 @@ plugins {
 android {
     namespace = "com.erfanbagheri.controlix"
     compileSdk = 35
+    buildToolsVersion = "35.0.0"
 
     defaultConfig {
         applicationId = "com.erfanbagheri.controlix"
