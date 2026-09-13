@@ -1,117 +1,104 @@
-# Controlix — Design Plan (anthropic-frontend-design pass)
+# Controlix — Design System v2 "Night Ink"
 
-Subject: an offline infrared remote. Audience: someone who just bought a
-phone with an IR blaster and wants their TV/AC/fan under it tonight. Primary
-job: pick a brand, confirm the codes work, have a pad you enjoy tapping.
+The redesign brief: a remote app for the couch in the dark. Not a Material
+demo, not a gradient SaaS page — an instrument. Flat, editorial, one accent,
+two typefaces, motion only where physics happens.
 
-## Concept — "the pulse"
+## Concept
 
-IR is invisible light. The whole identity is about making the *signal* the
-brand: a dark, living-room surface (you use this on the couch, at night, next
-to a glowing screen) with one hot ember-amber accent that behaves like a
-transmission — it fires from the power glyph in expanding rings every time a
-code is sent. The pulse is the single memorable element; everything else is
-quiet discipline.
+Controlix is a tool that disappears into the task. The visual authority is
+the physical IR remote itself: the pad screen is that remote flattened onto
+glass — power crown at top, vol/mute and channel rails as thumb columns,
+the D-pad diamond centered, DB extras below. The home is a single editorial
+deck: masthead, your devices, add, tools. Nothing floats; depth comes from
+space, type scale, and hairlines.
 
-This is also the anti-cliché check: no cream+terracotta, no near-black with
-acid green, no broadsheet hairlines, no SaaS card kit. The darkness here is
-a choice from the subject (couch/night/TV glow), not #111 standing in for
-black — surfaces are layered ink-navy panels, and the accent is a warm ember,
-not a neon.
+## Palette
 
-## Color (named tokens)
-
-| Token | Hex | Role |
+| Token | Value | Role |
 |---|---|---|
-| `ink` | `#0C1222` | screen base — deep navy-black, blue cast |
-| `ink-raised` | `#141C31` | cards, sheets, nav |
-| `ink-float` | `#1B2540` | pressed / elevated surfaces |
-| `hairline` | `#2A3654` | strokes that encode structure (tile borders, dividers) |
-| `ember` | `#FFB454` | THE accent: power glyph, active state, pulse, primary CTA text/icons |
-| `ember-deep` | `#E8912A` | pressed ember, small-text on light |
-| `confirm` | `#7FD1AE` | "yes it worked" — muted signal green, success only |
-| `paper` | `#EEF2FB` | primary text on ink |
-| `paper-dim` | `#94A3BE` | secondary text, labels |
+| Ink | `#0B1020` | background — the only surface |
+| InkRaised | `#131A2E` | fields, pressed states |
+| Paper | `#EEF2FB` | primary text |
+| PaperDim | `#9AABC B` | secondary text (exact: `#9AABCB`) |
+| Ember | `#FFB454` | the one accent: power, pulse, selection |
+| Circuit | `#5FE0C0` | signal green: confirmations, working states |
+| Hairline | `#232C47` | 1px strokes — structure without boxes |
 
-Amber on navy is the entire palette. No gradients as decoration; the only
-gradient anywhere is the fading alpha of the pulse rings.
+Rules: no gradients, no elevation shadows, no third accent color. Ember is
+reserved for "energy" (power, emit, primary action); Circuit only for
+success/working states. Text never sits below 4.5:1 on Ink.
 
 ## Type
 
-One family: **Space Grotesk** (variable, bundled). Chosen for its hardware
-character — squared bowls, the `1` with a flag, tall numerals that suit code
-counts and big test prompts. Body UI strings are short; legibility at 14sp is
-fine. Weights set via `fontVariationSettings`:
+- **Sora** — display through label. Tight tracking on large sizes
+  (`displaySmall` 30sp/-0.5). Distinctly geometric; reads as designed, not
+  as system default.
+- **JetBrains Mono** — every number that moves: code counters, "1 / 4"
+  step positions, button counts, brand remote counts. Tabular figures stop
+  counters from jittering mid-ritual.
 
-- Display 40/56 sp, wght 500 — the one big statement per screen ("Your TV", brand name in the ritual).
-- Headline 24/32 sp, wght 500 — section headers.
-- Label 13 sp, wght 500, normal case — counts, hints. (No ALL-CAPS eyebrows.)
-- Body 15/22 sp, wght 400.
-- Numeric 64/72 sp, wght 700 — the candidate counter during setup tests.
+## Motion (Motion.kt)
 
-Alignment: left everywhere. Center only inside the ritual's question stack
-where the eye is anchored on the device glyph.
+Grammar, not decoration:
 
-## Layout
+- **Press contract** — everything clickable scales to 0.97 over 120ms
+  ease-out and returns 160ms. Scale on the layer means icon + label sink
+  together like a real key.
+- **EmitPulse** — the signature moment. On every code send, three ember
+  arcs expand from the emitter icon (620ms ease-out, staggered 18%). It
+  makes the invisible (IR light) visible. Canvas alpha only, off the
+  layout path, zero cost when idle.
+- **Route transitions** — forward: slide in 1/5 width + fade over 240ms,
+  previous exits 160ms. Back reverses. Never full-width slides (too loud
+  for 4 levels of depth).
+- Curves: strong ease-out (0.215,0.61,0.355,1). Ease-in never used on UI.
+- All durations < 300ms except the pulse (which is a performance, not a
+  response).
 
-- **No TopAppBar anywhere.** Screens open with a large display title that
-  pins on scroll (LazyColumn + collapsing header via offset animation).
-- **Home** = saved devices as tall 2-column tiles (glyph + name + brand),
-  plus one ghost tile "+ Add device". A quiet Tools row below: power-off
-  sweep, macros.
-- **Add flow** = one question per screen, full-bleed: category grid (3 cols,
-  image tiles) → brand (search + A–Z list) → **the ritual** → done.
-- **The ritual** = vertical stack: huge power glyph with the pulse, one
-  sentence question, two oversized buttons ("Yes, it worked" / "Try another
-  code — 12 of 40"), a hairline stepper.
-- **Pad** = grouped remote control, not a flat button grid: power island on
-  top-right, D-pad island center, media/volume rails — physical-remote
-  mental model.
+## Components
 
-ASCII wireframe of the ritual (the signature screen):
+- **hairlineTile** — 1px outline, 14-20dp radius, no shadow. The pad cap
+  and extras-tile treatment.
+- **BigPressButton** — 88dp ember-outlined bar; the one "button" shape.
+- **AnswerChip** — pill with icon + label; the only question UI the ritual
+  asks ("did it work?").
+- **BackRow** — back affordance as text+chevron, left aligned, same press
+  contract.
+- **Canvas icon family** (Icons.kt) — every glyph drawn from strokes at a
+  48-unit grid, 3.2 stroke weight. Zero icon-library dependency; the
+  power/vol/mute/D-pad set is shared between action icons and pad caps.
 
-```
-┌──────────────────────────┐
-│ ‹ Back        Samsung TV │
-│                          │
-│         ╭─────╮          │
-│       (  ( ● )  )  pulse │   ← glyph fires rings on send
-│         ╰─────╯          │
-│                          │
-│   Did your TV turn off?  │   ← display 28sp
-│   Code 12 of 40          │   ← label, dim
-│                          │
-│ ┌──────────────────────┐ │
-│ │  Yes, it worked      │ │   ← confirm tint
-│ └──────────────────────┘ │
-│ ┌──────────────────────┐ │
-│ │  No — try another    │ │   ← ember outline
-│ └──────────────────────┘ │
-│ ────────●───────────     │   ← hairline stepper
-└──────────────────────────┘
-```
+## The Ritual
 
-## Principles
+The setup flow is the app's soul and stays mechanically quiet: one question
+per screen, the phone sends codes automatically, you press the *real*
+button on your physical remote when asked. Power cycles through up to 5
+candidates; once one locks, the flow tests the actual volume-up /
+volume-down / mute buttons of that code set (up to 4 tests), falling back
+to the next power candidate if a follow-up fails. No model numbers, no
+"Yes/No did you see a popup" theater.
 
-1. **Spend boldness in one place**: the pulse. Lists, tiles, pads are flat
-   ink + hairlines, no shadows.
-2. **Motion answers action.** Pulse on every send, spring scale on press,
-   staged fade-rise only on first entry of a screen. No idle animation.
-3. **Structure from strokes, not shadows.** hairline 1dp borders; radius
-   encodes hierarchy: tiles 20dp, buttons 14dp, pads/islands 28dp.
-4. **Plain words, active voice.** "Add a device", "Did your TV turn off?",
-   "Yes, it worked". Errors say what happened and the fix.
-5. **Setup = brand + confirmations only.** Never ask the user for a model
-   number. Codes cycle automatically; the user answers yes/no.
-6. Reduced motion (developer setting / animationScale 0) → pulse becomes a
-   static flash, springs become instant.
+## Long-press removal
 
-## Category imagery
+Home device rows remove on long-press (haptic + 500ms). No edit mode, no
+trash icons cluttering the list — discovery by failure is acceptable for a
+destructive-but-cheap action (re-adding takes the 30-second ritual).
 
-Hand-drawn **vector line icons** (24dp grid, 2dp round strokes, ember on
-ink-raised tiles with a faint hairline frame) — one per real category
-(~26: TV, AC, fan, projector, soundbar, AVR, set-top, speaker, CD, DVD,
-Blu-ray, camera, heater, fireplace, vacuum, monitor, console, streaming,
-humidifier, air purifier, clock, CCTV, toy, VCR…) plus a generic-chip
-fallback and a special *rays* glyph for the community DB. Line icons keep
-the palette pure and the APK small; photos would fight the ember/ink system.
+## Screens
+
+Home (deck) → Add (category rows → brand search) → Ritual (sealed state
+machine) → Pad. Tools: Power-off sweep (counter + brand readout, mono),
+IR self-test (single burst + camera hint). Route list is sealed in Nav.kt;
+no navigation library.
+
+## Craft floor compliance
+
+- No AI-default tells: no purple gradient, no glassmorphism, no shadow
+  stacks, no emoji, no library icons, no Inter.
+- One background color site-wide (Ink). Hierarchy via type scale + spacing.
+- 96dp+ comfortable tap targets verified geometrically on all pad
+  controls (uiautomator bounds audit: zero small targets, zero overlaps,
+  rails symmetric at x=221/1123 around center 672).
+- Motion respects reduced-motion availability (Compose animates nothing
+  when system animations are off).
