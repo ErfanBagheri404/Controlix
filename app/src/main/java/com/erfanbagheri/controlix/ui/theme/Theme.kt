@@ -46,7 +46,7 @@ fun ControlixTheme(content: @Composable () -> Unit) {
     }
     MaterialTheme(
         colorScheme = PulseScheme,
-        typography = ControlixTypography,
+        typography = SoraTypography,
         content = content,
     )
 }

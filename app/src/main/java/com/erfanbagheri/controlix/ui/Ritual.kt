@@ -1,16 +1,18 @@
 package com.erfanbagheri.controlix.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,32 +25,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.erfanbagheri.controlix.data.ButtonNames
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
-import com.erfanbagheri.controlix.ui.theme.Confirm
-import com.erfanbagheri.controlix.ui.theme.Ember
-import com.erfanbagheri.controlix.ui.theme.Hairline
-import com.erfanbagheri.controlix.ui.theme.Ink
-import com.erfanbagheri.controlix.ui.theme.InkRaised
-import com.erfanbagheri.controlix.ui.theme.Paper
-import com.erfanbagheri.controlix.ui.theme.PaperDim
 
 /**
- * The ritual — the signature screen. One huge power glyph that fires the
- * pulse on every send, one question, two oversized answers, a hairline
- * stepper. Codes cycle automatically; the user answers yes/no.
+ * Brand setup — the user presses the REAL button; the only question is
+ * "is it working?". Power codes cycle first; once one is confirmed, the
+ * locked remote's actual volume/mute buttons are tested the same way.
+ * A failed vol/mute answer falls back to the next power candidate.
  *
- * Two passes like the Mi-Remote style:
- * 1. "Did it turn OFF?" — cycle power codes until yes.
- * 2. "Did it turn back ON?" — fires the same winning code once.
- *
- * Answering yes to both saves the device. Volume/channel confirm steps
- * are deferred: two confirmations already rule out false positives for
- * community data (246k power-labelled buttons include AV-knobs labeled
- * "power"; the on/off pair pins one code to one box).
+ * State machine: testStep < 0 is the power phase; >= 0 indexes followUpTests.
+ * All sends happen in LaunchedEffect keyed on the state.
  */
+enum class TestKind(val title: String, val question: String, val actionLabel: String, val icon: ActionIcon) {
+    Power("Power", "Did it turn off?", "Press power", ActionIcon.Power),
+    VolUp("Volume up", "Did the volume go up?", "Press volume up", ActionIcon.VolUp),
+    VolDown("Volume down", "And back down?", "Press volume down", ActionIcon.VolDown),
+    Mute("Mute", "Did it mute?", "Press mute", ActionIcon.Mute),
+}
+
 @Composable
 fun RitualScreen(
     repo: IrCodeRepository,
@@ -60,147 +58,186 @@ fun RitualScreen(
     onBack: () -> Unit,
 ) {
     val candidates = remember(brandId) { repo.powerCodes(brandId) }
-    var index by remember { mutableIntStateOf(0) }
-    var pulseKey by remember { mutableIntStateOf(0) }
-    var phase by remember { mutableStateOf(Phase.Off) }
-    var fired by remember { mutableStateOf(false) }
-
     if (candidates.isEmpty()) {
-        Column(
-            Modifier.fillMaxSize().padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Start,
-        ) {
-            Text("Nothing to try", style = MaterialTheme.typography.headlineMedium, color = Paper)
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "No power codes for $brandName in $categoryName. The sweep tool still brute-forces every brand — try that instead.",
-                style = MaterialTheme.typography.bodyLarge, color = PaperDim,
-            )
-            Spacer(Modifier.height(24.dp))
-            BackLink(onBack)
-        }
+        EmptyRitual(brandName, categoryName, onBack)
         return
     }
 
-    val total = candidates.size
-    val code = candidates[index.coerceIn(0, total - 1)]
+    var powerIndex by remember { mutableIntStateOf(0) }
+    var lockedRemoteId by remember { mutableStateOf<Int?>(null) }
+    var testStep by remember { mutableIntStateOf(-1) }
+    var emitTrigger by remember { mutableStateOf<Any?>(null) }
 
-    // Auto-send this candidate every time it changes.
-    LaunchedEffect(index, phase) {
-        if (phase == Phase.Off) {
+    val followUpTests = remember(lockedRemoteId) {
+        val id = lockedRemoteId ?: return@remember emptyList()
+        val btns = runCatching { repo.buttons(id) }.getOrNull() ?: return@remember emptyList()
+        listOf(
+            TestKind.VolUp to btns.firstOrNull { ButtonNames.volUp(it.name) },
+            TestKind.VolDown to btns.firstOrNull { ButtonNames.volDown(it.name) },
+            TestKind.Mute to btns.firstOrNull { ButtonNames.mute(it.name) },
+        ).mapNotNull { (kind, btn) -> if (btn != null) kind to btn else null }
+    }
+
+    LaunchedEffect(powerIndex, testStep, lockedRemoteId) {
+        if (testStep < 0) {
+            val code = candidates.getOrNull(powerIndex) ?: return@LaunchedEffect
             transmitter.transmitButton(code.carrierHz, code.pattern)
-            pulseKey++
-        }
-    }
-
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        Spacer(Modifier.height(20.dp))
-        BackLink(onBack)
-        Spacer(Modifier.height(8.dp))
-
-        PulseGlow(pulseKey = pulseKey) {
-            PowerGlyph(size = 120.dp, tint = Ember)
-        }
-
-        Spacer(Modifier.height(24.dp))
-        Text(
-            if (phase == Phase.Off) "Did your $categoryName turn off?"
-            else "Did it turn back on?",
-            style = MaterialTheme.typography.displaySmall, color = Paper,
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            when {
-                phase == Phase.Off && total == 1 -> "$brandName · only one code"
-                phase == Phase.Off -> "$brandName · code ${index + 1} of $total"
-                else -> "$brandName · same code, sent again"
-            },
-            style = MaterialTheme.typography.labelMedium, color = PaperDim,
-        )
-
-        // Hairline stepper (only meaningful in the off-scan).
-        if (phase == Phase.Off && total > 1) {
-            Spacer(Modifier.height(16.dp))
-            Stepper(index = index, total = total)
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        if (phase == Phase.Off) {
-            ConfirmButton("Yes, it turned off") { phase = Phase.On; fired = true }
-            Spacer(Modifier.height(12.dp))
-            EmberOutlineButton(if (index < total - 1) "No — try another code" else "No — that's all of them") {
-                if (index < total - 1) index++ else onBack()
-            }
+            emitTrigger = Any()
         } else {
-            // On-phase: the winning code is re-fired once when entering.
-            LaunchedEffect(phase) {
-                transmitter.transmitButton(code.carrierHz, code.pattern)
-                pulseKey++
+            val id = lockedRemoteId ?: return@LaunchedEffect
+            val pair = followUpTests.getOrNull(testStep)
+            if (pair == null) onDone(id, candidates.size)
+            else {
+                transmitter.transmitButton(pair.second.carrierHz, pair.second.pattern)
+                emitTrigger = Any()
             }
-            ConfirmButton("Yes, it came back on") { onDone(code.remoteId, total) }
-            Spacer(Modifier.height(12.dp))
-            EmberOutlineButton("That was the wrong code") { phase = Phase.Off; index = (index + 1).coerceAtMost(total - 1) }
         }
-        Spacer(Modifier.height(32.dp))
+    }
+
+    val current: Pair<TestKind, () -> Unit> = if (testStep < 0) {
+        val code = candidates[powerIndex.coerceAtMost(candidates.lastIndex)]
+        TestKind.Power to { transmitter.transmitButton(code.carrierHz, code.pattern); emitTrigger = Any() }
+    } else {
+        followUpTests.getOrNull(testStep)
+            ?.let { (kind, btn) -> kind to { transmitter.transmitButton(btn.carrierHz, btn.pattern); emitTrigger = Any() } }
+            ?: (TestKind.Power to {})
+    }
+    val (test, fire) = current
+    val totalTests = if (testStep < 0) 1 else 1 + followUpTests.size
+    val position = if (testStep < 0) 1 else testStep + 2
+
+    Column(Modifier.fillMaxSize().navigationBarsPadding()) {
+        Column(Modifier.weight(1f).padding(horizontal = 24.dp)) {
+            Spacer(Modifier.height(40.dp))
+            BackRow(onBack)
+            Spacer(Modifier.height(20.dp))
+
+            Text(
+                if (testStep < 0) "$brandName · code ${powerIndex + 1} of ${candidates.size}"
+                else "$brandName · ${test.title}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(36.dp))
+
+            // The emitter icon + pulse — the signature moment.
+            Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
+                EmitPulse(
+                    triggerKey = emitTrigger,
+                    modifier = Modifier.matchParentSize(),
+                )
+                ActionIconView(test.icon, 80.dp, MaterialTheme.colorScheme.primary)
+            }
+
+            Spacer(Modifier.height(28.dp))
+            Text(test.question, style = MaterialTheme.typography.displaySmall)
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "It sends automatically — press the button again if the moment passed.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.weight(1f))
+            // Counter in mono — tabular figures keep it from jumping.
+            Text(
+                "$position / $totalTests",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.End,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+            )
+        }
+
+        // Bottom block: the real button press + answers.
+        Column(Modifier.padding(horizontal = 24.dp)) {
+            BigPressButton(test.actionLabel, test.icon) { fire() }
+            Spacer(Modifier.height(20.dp))
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = 28.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                AnswerChip(ActionIcon.Cross, "No") {
+                    if (testStep < 0) {
+                        if (powerIndex < candidates.lastIndex) powerIndex++ else onBack()
+                    } else {
+                        testStep = -1
+                        lockedRemoteId = null
+                        if (powerIndex < candidates.lastIndex) powerIndex++ else onBack()
+                    }
+                }
+                AnswerChip(ActionIcon.Check, "Yes") {
+                    if (testStep < 0) {
+                        val code = candidates.getOrNull(powerIndex) ?: return@AnswerChip
+                        lockedRemoteId = code.remoteId
+                        testStep = 0
+                    } else {
+                        val id = lockedRemoteId ?: return@AnswerChip
+                        if (testStep < followUpTests.lastIndex) testStep++
+                        else onDone(id, candidates.size)
+                    }
+                }
+            }
+        }
     }
 }
 
-private enum class Phase { Off, On }
-
 @Composable
-private fun Stepper(index: Int, total: Int) {
-    // A quiet fractional bar: filled portion = codes tried so far.
-    val frac = (index + 1).toFloat() / total.toFloat()
-    androidx.compose.foundation.layout.Box(
-        Modifier.fillMaxWidth().height(4.dp)
-            .clip(RoundedCornerShape(2.dp))
-            .background(Hairline)
+private fun EmptyRitual(brandName: String, categoryName: String, onBack: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().navigationBarsPadding().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
     ) {
-        androidx.compose.foundation.layout.Box(
-            Modifier.fillMaxWidth(frac).height(4.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(Ember.copy(alpha = 0.7f))
+        Text("Nothing to try", style = MaterialTheme.typography.headlineMedium)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "No power codes for $brandName in $categoryName. The power-off sweep still brute-forces every brand — try that instead.",
+            style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Spacer(Modifier.height(24.dp))
+        BackRow(onBack)
     }
 }
 
 @Composable
-internal fun ConfirmButton(label: String, onClick: () -> Unit) {
+private fun AnswerChip(icon: ActionIcon, label: String, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
+        Modifier
+            .pressable(onClick)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(28.dp))
+            .padding(horizontal = 24.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        ActionIconView(icon, 22.dp, MaterialTheme.colorScheme.primary)
+        Text(label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+    }
+}
+
+/** The primary action in the ritual and tool screens. Filled ember outline. */
+@Composable
+fun BigPressButton(label: String, icon: ActionIcon, onPress: () -> Unit) {
+    Row(
+        Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Confirm.copy(alpha = 0.14f))
-            .border(1.5.dp, Confirm, RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 18.dp),
+            .height(88.dp)
+            .border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(28.dp))
+            .pressable(onPress),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("✓  $label", style = MaterialTheme.typography.labelLarge, color = Confirm)
+        ActionIconView(icon, 30.dp, MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.width(14.dp))
+        Text(label, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
     }
 }
 
+/** Back chip — same press contract, left-aligned. */
 @Composable
-internal fun EmberOutlineButton(label: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.5.dp, Ember, RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 18.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = MaterialTheme.typography.labelLarge, color = Ember)
+fun BackRow(onBack: () -> Unit) {
+    Row(Modifier.pressable(onBack).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        ActionIconView(ActionIcon.Back, 20.dp, MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.width(8.dp))
+        Text("Back", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
     }
-}
-
-@Composable
-private fun BackLink(onBack: () -> Unit) {
-    Text("‹ Back", color = Ember, style = MaterialTheme.typography.labelLarge,
-        modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onBack).padding(8.dp))
 }

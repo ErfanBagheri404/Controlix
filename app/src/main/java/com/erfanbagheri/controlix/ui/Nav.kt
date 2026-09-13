@@ -1,32 +1,32 @@
 package com.erfanbagheri.controlix.ui
 
-import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.unit.dp
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Ink
-import com.erfanbagheri.controlix.ui.theme.Paper
-import androidx.compose.material3.Text
 
-/** Every screen the app can show. One sealed route list, no nav library. */
+/** Every screen. Sealed route list, no nav library — app is 4 levels deep max. */
 private sealed interface Route {
     data object Home : Route
     data object AddDevice : Route
@@ -38,48 +38,44 @@ private sealed interface Route {
 
 @Composable
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
-    val context = LocalContext.current
-    val model = rememberDeviceModel(context)
+    val model = rememberDeviceModel()
     var route: Route by remember { mutableStateOf(Route.Home) }
 
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Ink)
-    ) {
+    Box(Modifier.fillMaxSize().background(Ink)) {
         if (repo == null) {
             MissingDb()
             return@Box
         }
 
-        // Cross-fade + slide: forward pushes in from the right, back from left.
-        androidx.compose.animation.AnimatedContent(
+        AnimatedContent(
             targetState = route,
             transitionSpec = {
-                val forward = when {
-                    initialState is Route.Home && targetState !is Route.Home -> true
-                    initialState is Route.AddDevice && targetState is Route.Ritual -> true
-                    else -> false
-                }
+                val forward = targetState != Route.Home && initialState == Route.Home
                 val dir = if (forward) 1 else -1
-                (slideInHorizontally(tween(280)) { it / 4 * dir } + fadeIn(tween(220))) togetherWith
-                    (slideOutHorizontally(tween(280)) { -it / 6 * dir } + fadeOut(tween(160)))
+                val specIn = slideInHorizontally(tween(Motion.Route, easing = Motion.EaseOut)) { it / 5 * dir } +
+                    fadeIn(tween(Motion.Route))
+                val specOut = slideOutHorizontally(tween(Motion.RouteExit, easing = Motion.EaseInOut)) { -it / 7 * dir } +
+                    fadeOut(tween(120))
+                specIn togetherWith specOut
             },
             label = "route",
         ) { r ->
             when (r) {
                 is Route.Home -> HomeScreen(
-                    devices = model.devices,
-                    repo = repo,
+                    devices = model.devices.map {
+                        DeviceEntry(it.remoteId, it.name, it.buttonCount, it.categorySlug)
+                    },
+                    codeCount = remember { runCatching { repo.buttonCount() }.getOrElse { 244601 } },
+                    onOpenDevice = { route = Route.Pad(it) },
                     onAddDevice = { route = Route.AddDevice },
-                    onOpenDevice = { route = Route.Pad(it.remoteId) },
                     onSweep = { route = Route.Sweep },
                     onSelfTest = { route = Route.SelfTest },
+                    onRemoveDevice = { model.remove(it) },
                 )
 
                 is Route.AddDevice -> AddDeviceScreen(
                     repo = repo,
-                    onPick = { catSlug, brandId, brandName, catName ->
+                    onPick = { brandId, brandName, catSlug, catName ->
                         route = Route.Ritual(brandId, brandName, catSlug, catName)
                     },
                     onBack = { route = Route.Home },
@@ -96,9 +92,8 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                             SavedDevice(
                                 remoteId = remoteId,
                                 name = r.brandName,
-                                brand = r.catName,
+                                brand = r.brandName,
                                 categorySlug = r.catSlug,
-                                glyph = glyphFor(r.catSlug),
                                 buttonCount = repo.buttons(remoteId).size,
                             )
                         )
@@ -107,47 +102,25 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                     onBack = { route = Route.Home },
                 )
 
-                is Route.Pad -> PadScreen(
-                    repo = repo,
-                    transmitter = ir,
-                    remoteId = r.remoteId,
-                    onBack = { route = Route.Home },
-                )
+                is Route.Pad -> PadScreen(repo, ir, r.remoteId) { route = Route.Home }
 
-                is Route.Sweep -> SweepScreen(
-                    repo = repo,
-                    transmitter = ir,
-                    onBack = { route = Route.Home },
-                )
+                is Route.Sweep -> SweepScreen(repo, ir) { route = Route.Home }
 
-                is Route.SelfTest -> SelfTestScreen(
-                    transmitter = ir,
-                    onBack = { route = Route.Home },
-                )
+                is Route.SelfTest -> SelfTestScreen(ir) { route = Route.Home }
             }
         }
 
-        // Keep the persisted list fresh whenever we land back home.
-        LaunchedEffect(route) {
-            if (route is Route.Home) model.reload()
-        }
+        LaunchedEffect(route) { if (route is Route.Home) model.reload() }
     }
 }
 
 @Composable
 private fun MissingDb() {
-    Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
             "The code database didn't load. Reinstall the app — the bundled DB ships inside the APK.",
             style = MaterialTheme.typography.bodyLarge,
-            color = Paper,
             modifier = Modifier.padding(28.dp),
         )
     }
 }
-
-private infix fun androidx.compose.animation.EnterTransition.togetherWith(
-    exit: androidx.compose.animation.ExitTransition
-) = androidx.compose.animation.ContentTransform(this, exit)
-
-private typealias AnimatedContentTransitionScopeAlias<T> = AnimatedContentTransitionScope<T>

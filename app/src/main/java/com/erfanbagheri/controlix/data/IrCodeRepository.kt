@@ -240,4 +240,27 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
         db.rawQuery("SELECT COUNT(*) FROM button", null).use { c ->
             c.moveToFirst(); c.getInt(0)
         }
+
+    /**
+     * One candidate button for a fuzzy predicate (ButtonNames.volUp etc.),
+     * within one brand. Used by the setup ritual's volume/mute tests.
+     * Returns the first remote that carries a matching button; null if none.
+     */
+    fun findButton(brandId: Int, pred: (String) -> Boolean): List<Button> {
+        val sql = """
+            SELECT b.name, b.carrier_hz, b.pattern, b.protocol, r.id
+            FROM button b JOIN remote r ON r.id = b.remote_id
+            WHERE r.brand_id = ?
+            ORDER BY r.id, b.id
+        """.trimIndent()
+        return db.rawQuery(sql, arrayOf(brandId.toString())).use { c ->
+            val out = ArrayList<Button>()
+            while (c.moveToNext()) {
+                if (!pred(c.getString(0))) continue
+                val pattern = expandPattern(c.getBlob(2) ?: continue) ?: continue
+                out += Button(c.getString(0), c.getInt(1), pattern, c.getString(3))
+            }
+            out
+        }
+    }
 }

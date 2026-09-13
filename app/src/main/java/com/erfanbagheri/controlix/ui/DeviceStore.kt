@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import com.erfanbagheri.controlix.ui.CategoryGlyph
 
 /**
  * Saved devices, persisted in SharedPreferences (the app owns no other
@@ -21,7 +20,6 @@ data class SavedDevice(
     val name: String,
     val brand: String,
     val categorySlug: String,
-    val glyph: CategoryGlyph,
     val buttonCount: Int,
 )
 
@@ -36,13 +34,15 @@ class DeviceStore(context: Context) {
 
     private fun parse(s: String): SavedDevice {
         val f = s.split('|')
+        // Tolerate both the old 6-field rows (with glyph at index 4) and the
+        // new 5-field rows, so an upgrade never wipes saved devices.
+        val (cat, count) = if (f.size >= 6) f[3] to f[5].toInt() else f[3] to f[4].toInt()
         return SavedDevice(
             remoteId = f[0].toInt(),
             name = f[1],
             brand = f[2],
-            categorySlug = f[3],
-            glyph = CategoryGlyph.valueOf(f[4]),
-            buttonCount = f[5].toInt(),
+            categorySlug = cat,
+            buttonCount = count,
         )
     }
 
@@ -50,14 +50,14 @@ class DeviceStore(context: Context) {
         val list = load().filterNot { it.remoteId == dev.remoteId } + dev
         prefs.edit()
             .putString("list", list.joinToString(";") { d ->
-                "${d.remoteId}|${clean(d.name)}|${clean(d.brand)}|${d.categorySlug}|${d.glyph.name}|${d.buttonCount}"
+                "${d.remoteId}|${clean(d.name)}|${clean(d.brand)}|${d.categorySlug}|${d.buttonCount}"
             })
             .apply()
     }
 
     fun remove(remoteId: Int) {
         prefs.edit().putString("list", load().filterNot { it.remoteId == remoteId }.joinToString(";") { d ->
-            "${d.remoteId}|${clean(d.name)}|${clean(d.brand)}|${d.categorySlug}|${d.glyph.name}|${d.buttonCount}"
+            "${d.remoteId}|${clean(d.name)}|${clean(d.brand)}|${d.categorySlug}|${d.buttonCount}"
         }).apply()
     }
 
@@ -72,6 +72,7 @@ class DeviceModel(private val store: DeviceStore) {
 
     fun save(dev: SavedDevice) { store.save(dev); devices = store.load() }
     fun reload() { devices = store.load() }
+    fun remove(remoteId: Int) { store.remove(remoteId); devices = store.load() }
 }
 
 @Composable
