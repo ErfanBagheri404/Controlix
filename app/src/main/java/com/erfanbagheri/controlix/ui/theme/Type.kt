@@ -8,7 +8,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.erfanbagheri.controlix.R
 
-/** Space Grotesk \u2014 hardware character, tall numerals. See docs/DESIGN.md. */
+/**
+ * Space Grotesk variable font (wght 300-700) — one file, all weights.
+ * See docs/DESIGN.md.
+ */
+/** Static instances (400/500/700) built from the Space Grotesk variable font. */
 val SpaceGrotesk = FontFamily(
     Font(R.font.spacegrotesk_regular, FontWeight.Normal),
     Font(R.font.spacegrotesk_medium, FontWeight.Medium),
