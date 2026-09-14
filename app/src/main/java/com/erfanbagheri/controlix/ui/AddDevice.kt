@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -99,27 +101,33 @@ private fun CategoryGrid(
         val by = categories.associateBy { it.slug }
         FEATURED.mapNotNull { by[it] } + categories.filterNot { FEATURED.contains(it.slug) }
     }
-    LazyColumn(Modifier.fillMaxSize()) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
         items(ordered, key = { it.id }) { cat ->
-            Row(
+            Column(
                 Modifier
                     .fillMaxWidth()
+                    .hairlineTile(14.dp)
                     .pressable(onClick = { onPick(cat) })
-                    .padding(vertical = 22.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(horizontal = 10.dp, vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                CategoryIcon(glyphFor(cat.slug), 26.dp, MaterialTheme.colorScheme.onSurface)
-                Spacer(Modifier.width(16.dp))
+                CategoryIcon(glyphFor(cat.slug), 26.dp, MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(8.dp))
                 Text(
                     cat.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    lineHeight = MaterialTheme.typography.labelMedium.lineHeight * 2,
                 )
-                ActionIconView(ActionIcon.ChevRight, 18.dp, MaterialTheme.colorScheme.outline)
             }
         }
-        item { Spacer(Modifier.height(24.dp)) }
     }
 }
 
@@ -147,23 +155,34 @@ private fun BrandList(
         shape = RoundedCornerShape(14.dp),
     )
     Spacer(Modifier.height(8.dp))
-    LazyColumn(Modifier.fillMaxSize()) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 4.dp, bottom = 24.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
         items(shown, key = { it.id }) { b ->
-            Row(
+            Column(
                 Modifier
                     .fillMaxWidth()
+                    .hairlineTile(14.dp)
                     .pressable(onClick = { onPick(b) })
-                    .padding(vertical = 22.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(horizontal = 14.dp, vertical = 16.dp),
             ) {
-                Text(b.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                 Text(
-                    "${b.remoteCount}",
+                    b.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "${b.remoteCount} ${if (b.remoteCount == 1) "remote" else "remotes"}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
-        item { Spacer(Modifier.height(24.dp)) }
     }
 }
