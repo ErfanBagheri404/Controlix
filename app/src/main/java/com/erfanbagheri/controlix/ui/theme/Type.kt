@@ -23,7 +23,7 @@ val Mono = FontFamily(
     Font(R.font.jbmono_medium, FontWeight.Medium),
 )
 
-val SoraTypography = Typography(
+val AppTypography = Typography(
     displaySmall = TextStyle(fontFamily = Sora, fontWeight = FontWeight.Bold, fontSize = 32.sp, lineHeight = 38.sp, letterSpacing = (-0.3).sp),
     headlineMedium = TextStyle(fontFamily = Sora, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 30.sp),
     headlineSmall = TextStyle(fontFamily = Sora, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 26.sp),

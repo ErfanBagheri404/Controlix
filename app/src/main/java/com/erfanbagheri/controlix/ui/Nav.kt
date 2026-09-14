@@ -34,11 +34,13 @@ private sealed interface Route {
     data class Pad(val remoteId: Int) : Route
     data object Sweep : Route
     data object SelfTest : Route
+    data object Macros : Route
 }
 
 @Composable
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
     val model = rememberDeviceModel()
+    val macroModel = rememberMacroModel()
     var route: Route by remember { mutableStateOf(Route.Home) }
 
     Box(Modifier.fillMaxSize().background(Ink)) {
@@ -65,11 +67,12 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                     devices = model.devices.map {
                         DeviceEntry(it.remoteId, it.name, it.buttonCount, it.categorySlug)
                     },
-                    codeCount = remember { runCatching { repo.buttonCount() }.getOrElse { 244601 } },
+                    codeCount = remember { runCatching { repo.buttonCount() }.getOrElse { 348020 } },
                     onOpenDevice = { route = Route.Pad(it) },
                     onAddDevice = { route = Route.AddDevice },
                     onSweep = { route = Route.Sweep },
                     onSelfTest = { route = Route.SelfTest },
+                    onMacros = { route = Route.Macros },
                     onRemoveDevice = { model.remove(it) },
                 )
 
@@ -107,6 +110,16 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                 is Route.Sweep -> SweepScreen(repo, ir) { route = Route.Home }
 
                 is Route.SelfTest -> SelfTestScreen(ir) { route = Route.Home }
+
+                is Route.Macros -> MacrosScreen(
+                    repo = repo,
+                    transmitter = ir,
+                    devices = model.devices.map {
+                        DeviceEntry(it.remoteId, it.name, it.buttonCount, it.categorySlug)
+                    },
+                    model = macroModel,
+                    onBack = { route = Route.Home },
+                )
             }
         }
 

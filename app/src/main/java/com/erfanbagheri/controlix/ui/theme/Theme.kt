@@ -7,46 +7,57 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val PulseScheme = darkColorScheme(
-    primary = Ember,
-    onPrimary = Ink,
-    secondary = Confirm,
+private val StudioDark = darkColorScheme(
+    primary = Accent,
+    onPrimary = Color(0xFF003312),
+    secondary = PaperDim,
     onSecondary = Ink,
+    tertiary = Accent,
+    onTertiary = Ink,
     background = Ink,
     onBackground = Paper,
-    surface = InkRaised,
+    surface = Ink,
     onSurface = Paper,
-    surfaceVariant = InkFloat,
+    surfaceVariant = InkRaised,
     onSurfaceVariant = PaperDim,
     outline = Hairline,
-    error = Color(0xFFE5737F),
-    onError = Ink,
+    error = Danger,
+    onError = Color.White,
 )
 
 /**
- * Controlix is dark-only by design: it lives on the couch beside a glowing
- * TV (docs/DESIGN.md). The system light/dark setting is intentionally not
- * followed.
+ * Controlix theme — studio dark, no light variant (a remote lives in the dark).
+ * Status bar goes edge-to-edge with the Ink base; white icons.
  */
 @Composable
-fun ControlixTheme(content: @Composable () -> Unit) {
+fun ControlixTheme(
+    @Suppress("UNUSED_PARAMETER") darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
+) {
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            (view.context as Activity).window.statusBarColor = Ink.toArgb()
-            (view.context as Activity).window.navigationBarColor = Ink.toArgb()
-            WindowCompat.getInsetsController(
-                (view.context as Activity).window, view
-            ).isAppearanceLightStatusBars = false
+            val window = (view.context as Activity).window
+            window.statusBarColor = Ink.toArgb()
+            window.navigationBarColor = Ink.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }
+
     MaterialTheme(
-        colorScheme = PulseScheme,
-        typography = SoraTypography,
+        colorScheme = StudioDark,
+        typography = AppTypography,
         content = content,
     )
 }
+
+private fun Color.toArgb(): Int = android.graphics.Color.argb(
+    (this.alpha * 255).toInt(),
+    (this.red * 255).toInt(),
+    (this.green * 255).toInt(),
+    (this.blue * 255).toInt(),
+)

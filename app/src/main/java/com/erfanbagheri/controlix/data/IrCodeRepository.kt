@@ -49,7 +49,7 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
             // Parsed layout: [protoId(1), rsvd(3 all-zero), addr(4), cmd(4)].
             // The rsvd-byte check keeps 12-byte RAW blobs (small durations)
             // from being misread as parsed frames.
-            if (blob.size == 12 && blob[0].toInt() in 1..15 &&
+            if (blob.size == 12 && blob[0].toInt() in 1..20 &&
                 blob[1].toInt() == 0 && blob[2].toInt() == 0 && blob[3].toInt() == 0
             ) {
                 val protoId = blob[0].toInt() and 0xFF
@@ -72,6 +72,9 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
                         13 -> Rca.encode(addr and 0xF, cmd and 0xFF)
                         14 -> Pioneer.encode(addr and 0xFF, cmd and 0xFF)
                         15 -> Jvc.encode(addr and 0xFF, cmd and 0xFF)
+                        16 -> Aiwa.encode(addr and 0xFF, (addr shr 8) and 0x1F, cmd and 0xFF)
+                        17 -> SharpDenon.encodeSharp(addr and 0x1F, cmd and 0xFF)
+                        18 -> SharpDenon.encodeDenon(addr and 0x1F, cmd and 0xFF)
                         else -> null
                     }
                 } catch (e: Exception) {

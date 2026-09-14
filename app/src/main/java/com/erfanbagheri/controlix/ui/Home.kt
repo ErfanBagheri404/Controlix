@@ -38,6 +38,7 @@ fun HomeScreen(
     onAddDevice: () -> Unit,
     onSweep: () -> Unit,
     onSelfTest: () -> Unit,
+    onMacros: () -> Unit,
     onRemoveDevice: (Int) -> Unit,
 ) {
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
@@ -65,6 +66,14 @@ fun HomeScreen(
         item(key = "add") { AddRow(onAddDevice) }
 
         item(key = "toolshead") { SectionHead("Tools") }
+        item(key = "macros") {
+            ToolRow(
+                "Macros",
+                "One tap runs a whole button chain",
+                ActionIcon.Add,
+                onMacros,
+            )
+        }
         item(key = "sweep") {
             ToolRow(
                 "Power-off sweep",

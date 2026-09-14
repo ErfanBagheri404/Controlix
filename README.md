@@ -83,7 +83,11 @@ Codes come from crowd-sourced, permissively licensed databases:
 - [Flipper-IRDB](https://github.com/logickworkshop/Flipper-IRDB) — ~50 device
   categories, 118 TV brands alone, `.ir` files in parsed or raw form.
 - [irdb](https://github.com/probonopd/irdb) — protocol/device/function notation,
-  designed for runtime CDN access.
+  3205 manufacturers. Imported with `src/main/python/merge_irdb.py`.
+
+Contains data from irdb by Simon Peter and contributors, used under permission.
+For licensing details and for information on how to contribute to the database,
+see https://github.com/probonopd/irdb
 
 See [docs/DB.md](docs/DB.md) for the pipeline.
 
