@@ -51,8 +51,19 @@ fun ControlixTheme(
     MaterialTheme(
         colorScheme = StudioDark,
         typography = AppTypography,
-        content = content,
-    )
+    ) {
+        // Surface is what publishes LocalContentColor = onBackground. Without
+        // it, every Text() that doesn't pass an explicit color falls back to
+        // Material's default (black) and vanishes on the Ink base. This single
+        // wrapper is the app-wide content color; per-screen colors still
+        // override it.
+        androidx.compose.material3.Surface(
+            color = StudioDark.background,
+            contentColor = StudioDark.onBackground,
+        ) {
+            content()
+        }
+    }
 }
 
 private fun Color.toArgb(): Int = android.graphics.Color.argb(

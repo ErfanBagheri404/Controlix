@@ -17,3 +17,4 @@ val Confirm = Color(0xFF1ED760)      // same as accent — success
 val Danger = Color(0xFFE53935)       // destructive — Netflix red
 val Paper = Color(0xFFFFFFFF)        // primary text — pure white
 val PaperDim = Color(0xFFB3B3B3)     // secondary text — Spotify gray
+val PaperFaint = Color(0xFF6E6E6E)   // disabled text/icons — dim but readable, never Hairline

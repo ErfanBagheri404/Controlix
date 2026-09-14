@@ -32,6 +32,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
+import com.erfanbagheri.controlix.ui.theme.PaperFaint
 import com.erfanbagheri.controlix.data.ButtonNames
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
@@ -166,7 +167,7 @@ private fun PowerCrown(
             .size(76.dp)
             .border(
                 1.5.dp,
-                if (has) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                if (has) MaterialTheme.colorScheme.primary else PaperFaint,
                 CircleShape,
             )
             .clip(CircleShape)
@@ -176,7 +177,7 @@ private fun PowerCrown(
         ActionIconView(
             ActionIcon.Power,
             32.dp,
-            if (has) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+            if (has) MaterialTheme.colorScheme.primary else PaperFaint,
         )
     }
 }
@@ -210,7 +211,7 @@ private fun RoundKey(icon: ActionIcon, enabled: Boolean, size: androidx.compose.
     ) {
         ActionIconView(
             icon, size * 0.55f,
-            if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
+            if (enabled) MaterialTheme.colorScheme.onSurface else PaperFaint,
         )
     }
 }
@@ -236,13 +237,13 @@ private fun PadKey(
     ) {
         ActionIconView(
             icon, 26.dp,
-            if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
+            if (enabled) MaterialTheme.colorScheme.onSurface else PaperFaint,
         )
         Spacer(Modifier.height(3.dp))
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
-            color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
+            color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else PaperFaint,
         )
     }
 }
