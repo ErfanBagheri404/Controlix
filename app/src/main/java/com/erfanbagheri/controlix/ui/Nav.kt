@@ -96,7 +96,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                         devices = model.devices.map {
                             DeviceEntry(it.remoteId, it.name, it.buttonCount, it.categorySlug)
                         },
-                        codeCount = remember { runCatching { repo.buttonCount() }.getOrElse { 348020 } },
+                        codeCount = remember { runCatching { repo.buttonCount() }.getOrElse { 450325 } },
                         onOpenMenu = { Feedback.tap(view); scope.launch { drawerState.open() } },
                         onAddDevice = { route = Route.AddDevice },
                         onOpenDevice = { route = Route.Pad(it) },
@@ -132,7 +132,17 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                         onBack = { route = Route.Home },
                     )
 
-                    is Route.Pad -> PadScreen(repo, ir, r.remoteId) { route = Route.Home }
+                    is Route.Pad -> {
+                        val saved = model.devices.firstOrNull { it.remoteId == r.remoteId }
+                        PadScreen(
+                            repo = repo,
+                            transmitter = ir,
+                            remoteId = r.remoteId,
+                            deviceName = saved?.name,
+                            onRename = { model.rename(r.remoteId, it) },
+                            onBack = { route = Route.Home },
+                        )
+                    }
 
                     is Route.Sweep -> SweepScreen(repo, ir) { route = Route.Home }
 

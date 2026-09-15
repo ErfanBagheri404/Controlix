@@ -21,10 +21,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
@@ -122,25 +121,15 @@ fun Modifier.pressable(
 }
 
 /**
- * Flat surface with a 1px hairline stroke — the shared tile treatment.
- * No shadows, no elevation: depth comes from the ink step + hairline.
+ * Flat filled tile — no strokes, no elevation. Depth comes from the surface
+ * step alone (Ink base -> surface cards -> surfaceVariant keys).
  */
-fun Modifier.hairlineTile(radius: Dp = 20.dp): Modifier = composed {
-    val surface = MaterialTheme.colorScheme.surface
-    val outline = MaterialTheme.colorScheme.outline
-    this
-        .background(surface, RoundedCornerShape(radius))
-        .drawWithContent {
-            drawContent()
-            val r = radius.toPx()
-            drawRoundRect(
-                color = outline,
-                topLeft = Offset(0.5f, 0.5f),
-                size = Size(size.width - 1f, size.height - 1f),
-                cornerRadius = CornerRadius(r, r),
-                style = Stroke(width = 1.dp.toPx()),
-            )
-        }
+fun Modifier.bgTile(
+    radius: Dp = 20.dp,
+    color: Color = Color.Unspecified,
+): Modifier = composed {
+    val c = if (color == Color.Unspecified) MaterialTheme.colorScheme.surface else color
+    this.background(c, RoundedCornerShape(radius))
 }
 
 /**

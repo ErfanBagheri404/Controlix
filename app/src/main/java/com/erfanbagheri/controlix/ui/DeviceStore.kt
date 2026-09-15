@@ -61,6 +61,14 @@ class DeviceStore(context: Context) {
         }).apply()
     }
 
+    /** Rename in place; brand/category/count untouched. */
+    fun rename(remoteId: Int, newName: String) {
+        val list = load().map { if (it.remoteId == remoteId) it.copy(name = clean(newName)) else it }
+        prefs.edit().putString("list", list.joinToString(";") { d ->
+            "${d.remoteId}|${clean(d.name)}|${clean(d.brand)}|${d.categorySlug}|${d.buttonCount}"
+        }).apply()
+    }
+
     /** '|' and ';' are field separators; user-named devices must not contain them. */
     private fun clean(s: String): String = s.replace('|', '/').replace(';', ',')
 }
@@ -73,6 +81,7 @@ class DeviceModel(private val store: DeviceStore) {
     fun save(dev: SavedDevice) { store.save(dev); devices = store.load() }
     fun reload() { devices = store.load() }
     fun remove(remoteId: Int) { store.remove(remoteId); devices = store.load() }
+    fun rename(remoteId: Int, newName: String) { store.rename(remoteId, newName); devices = store.load() }
 }
 
 @Composable

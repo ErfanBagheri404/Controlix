@@ -32,7 +32,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
+import com.erfanbagheri.controlix.ui.theme.InkRaised
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import com.erfanbagheri.controlix.data.ButtonNames
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
@@ -47,11 +50,14 @@ fun PadScreen(
     repo: IrCodeRepository,
     transmitter: IrTransmitter,
     remoteId: Int,
+    deviceName: String?,
+    onRename: (String) -> Unit,
     onBack: () -> Unit,
 ) {
     val buttons = remember(remoteId) { repo.buttons(remoteId) }
     var lastSent by remember { mutableStateOf<String?>(null) }
     var emitTrigger by remember { mutableStateOf<Any?>(null) }
+    var renaming by remember { mutableStateOf(false) }
     val padView = androidx.compose.ui.platform.LocalView.current
 
     fun fire(b: IrCodeRepository.Button?) {
@@ -79,16 +85,50 @@ fun PadScreen(
 
     Column(Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 24.dp)) {
         Spacer(Modifier.height(40.dp))
-        // Top chrome: back on the left, last-sent readout in mono on the right.
+        // Top chrome: back on the left, device name center, last-sent mono right.
         Row(verticalAlignment = Alignment.CenterVertically) {
             BackRow(onBack)
             Spacer(Modifier.weight(1f))
-            lastSent?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                    maxLines = 1,
+            if (renaming) {
+                var text by remember { mutableStateOf(deviceName ?: "") }
+                androidx.compose.material3.OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it.take(24) },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.width(200.dp),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                        onDone = { if (text.isNotBlank()) onRename(text.trim()); renaming = false },
+                    ),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                    ),
+                )
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        deviceName ?: "Remote",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                    )
+                    lastSent?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1,
+                        )
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                MaterialIcon(
+                    androidx.compose.material.icons.Icons.Filled.Edit,
+                    20.dp,
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .pressable { renaming = true }
+                        .padding(4.dp),
                 )
             }
         }
@@ -146,7 +186,7 @@ fun PadScreen(
                         maxLines = 1,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .hairlineTile(14.dp)
+                            .bgTile(14.dp, MaterialTheme.colorScheme.surfaceVariant)
                             .pressable(onClick = { fire(b) })
                             .padding(horizontal = 10.dp, vertical = 14.dp),
                     )
@@ -157,30 +197,24 @@ fun PadScreen(
     }
 }
 
-/** The power crown: 76dp ember-ringed circle, the pad's hero. */
+/** The power crown: filled accent circle when powered, dim ink when not. */
 @Composable
 private fun PowerCrown(
     power: IrCodeRepository.Button?,
     onFire: () -> Unit,
 ) {
     val has = power != null
+    val bg = if (has) MaterialTheme.colorScheme.primary else InkRaised
+    val fg = if (has) Color(0xFF003312) else PaperFaint
     Box(
         Modifier
             .size(76.dp)
-            .border(
-                1.5.dp,
-                if (has) MaterialTheme.colorScheme.primary else PaperFaint,
-                CircleShape,
-            )
             .clip(CircleShape)
+            .background(bg)
             .pressable(enabled = has) { onFire() },
         contentAlignment = Alignment.Center,
     ) {
-        ActionIconView(
-            ActionIcon.Power,
-            32.dp,
-            if (has) MaterialTheme.colorScheme.primary else PaperFaint,
-        )
+        ActionIconView(ActionIcon.Power, 32.dp, fg)
     }
 }
 
@@ -201,13 +235,14 @@ private fun DPad(
     }
 }
 
+/** Round D-pad key: filled tonal circle, OK key slightly larger. */
 @Composable
 private fun RoundKey(icon: ActionIcon, enabled: Boolean, size: androidx.compose.ui.unit.Dp = 50.dp, onClick: () -> Unit) {
     Box(
         Modifier
             .size(size)
-            .hairlineTile(size / 2)
             .clip(CircleShape)
+            .background(if (enabled) MaterialTheme.colorScheme.surfaceVariant else InkRaised)
             .pressable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -218,7 +253,10 @@ private fun RoundKey(icon: ActionIcon, enabled: Boolean, size: androidx.compose.
     }
 }
 
-/** Pad button cap: hairline tile with icon + short label. */
+/**
+ * Rail key (Vol/Ch): filled surface key, icon + short label stacked.
+ * Disabled keys dim but stay readable.
+ */
 @Composable
 private fun PadKey(
     label: String,
@@ -231,7 +269,7 @@ private fun PadKey(
         modifier
             .fillMaxWidth()
             .height(64.dp)
-            .hairlineTile(16.dp)
+            .bgTile(16.dp, MaterialTheme.colorScheme.surfaceVariant)
             .clip(RoundedCornerShape(16.dp))
             .pressable(enabled = enabled, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,

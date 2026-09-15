@@ -84,10 +84,17 @@ Codes come from crowd-sourced, permissively licensed databases:
   categories, 118 TV brands alone, `.ir` files in parsed or raw form.
 - [irdb](https://github.com/probonopd/irdb) — protocol/device/function notation,
   3205 manufacturers. Imported with `src/main/python/merge_irdb.py`.
+- [lirc-remotes](https://github.com/probonopd/lirc-remotes) — the classic LIRC
+  community database (2646 remotes), same author as irdb. Structured
+  `<decoding protocol/device/obc>` tags become parsed blobs via the irdb
+  protocol map; exotic `Gap-*`/`Async*` timings decode from their
+  Pronto-NX `<ccf>` waveforms to raw blobs. Categories come from a
+  button-name fingerprint (LIRC folders are brands, not device types).
+  Imported with `src/main/python/merge_lirc.py`.
 
-Contains data from irdb by Simon Peter and contributors, used under permission.
-For licensing details and for information on how to contribute to the database,
-see https://github.com/probonopd/irdb
+Contains data from irdb and lirc-remotes by Simon Peter and contributors,
+used under permission. For licensing details and for information on how
+to contribute to the database, see https://github.com/probonopd/irdb
 
 See [docs/DB.md](docs/DB.md) for the pipeline.
 

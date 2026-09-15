@@ -93,7 +93,7 @@ private fun CategoryGrid(
                 Modifier
                     .fillMaxWidth()
                     .aspectRatio(1.4f)
-                    .hairlineTile(16.dp)
+                    .bgTile(16.dp)
                     .pressable(onClick = { onPick(cat) })
                     .padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -154,7 +154,7 @@ private fun BrandGrid(
                 Modifier
                     .fillMaxWidth()
                     .height(84.dp)
-                    .hairlineTile(14.dp)
+                    .bgTile(14.dp)
                     .pressable(onClick = { onPick(b) })
                     .padding(horizontal = 14.dp, vertical = 12.dp),
                 contentAlignment = Alignment.CenterStart,

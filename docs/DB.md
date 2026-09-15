@@ -153,6 +153,21 @@ integers, which is 136 bytes as a blob versus ~600 as JSON.
 
 [iodn/android-ir-blaster]: https://github.com/iodn/android-ir-blaster
 
+> **lirc-remotes merge** (`src/main/python/merge_lirc.py`, 2026-09-15): the
+> classic LIRC community database ([probonopd/lirc-remotes], 2646 XML files,
+> 547 brand folders). Each `<code>` carries both a structured `<decoding
+> protocol/device/subdevice/obc>` tag and a learned Pronto-NX `<ccf>`
+> waveform. Where the protocol is in the irdb `PROTO_MAP` the decoding tags
+> become compact 12-byte parsed blobs; everything else (Gap-*, Async*, IODATA,
+> AirB* — mostly exotic A/V brands) falls back to its ccf waveform decoded to
+> raw microsecond pairs. 113,307 buttons land; merged totals: **450,325
+> buttons, 13,110 remotes, 3,811 brands, 157,453 model strings, ~50 MB
+> (VACUUMed)**. Category assignment is a button-name fingerprint (LIRC folders
+> are brands, not device types): key sets like {temp, cool, swing} → ACs,
+> {eject, angle, subtitle} → DVD players, and so on.
+
+[probonopd/lirc-remotes]: https://github.com/probonopd/lirc-remotes
+
 Flipper-IRDB is ~42 MB as source text. After stripping comments, deduplicating
 identical patterns, and packing to blobs, expect roughly 8-15 MB. That is
 acceptable to bundle, and the refresh path exists for anyone who wants the

@@ -1,5 +1,6 @@
 package com.erfanbagheri.controlix.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -98,7 +100,7 @@ private fun EmptyDeck(onAdd: () -> Unit) {
             Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .hairlineTile(16.dp)
+                .bgTile(16.dp)
                 .pressable(onAdd),
             contentAlignment = Alignment.Center,
         ) {
@@ -114,8 +116,8 @@ private fun EmptyDeck(onAdd: () -> Unit) {
 }
 
 /**
- * Device tile: glyph in the top-left, name bottom-left, count under it.
- * Long-press removes. Fixed aspect keeps every tile the same height.
+ * Device tile: category icon in an accent-tinted chip top-left, name and
+ * count bottom-left. Filled surface, no strokes. Long-press removes.
  */
 @Composable
 private fun DeviceTile(
@@ -127,7 +129,7 @@ private fun DeviceTile(
         Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .hairlineTile(16.dp)
+            .bgTile(16.dp)
             .combinedPressable(
                 onClick = { onOpen(dev.remoteId) },
                 onLongClick = { onRemove(dev.remoteId) },
@@ -135,11 +137,21 @@ private fun DeviceTile(
             .padding(14.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        MaterialIcon(
-            CategoryIcons.forCategory(dev.categorySlug),
-            32.dp,
-            MaterialTheme.colorScheme.primary,
-        )
+        Box(
+            Modifier
+                .size(44.dp)
+                .background(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    RoundedCornerShape(12.dp),
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            MaterialIcon(
+                CategoryIcons.forCategory(dev.categorySlug),
+                24.dp,
+                MaterialTheme.colorScheme.primary,
+            )
+        }
         Column {
             Text(
                 dev.name,
