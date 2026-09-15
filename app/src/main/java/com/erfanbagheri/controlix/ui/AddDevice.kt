@@ -51,6 +51,7 @@ fun AddDeviceScreen(
     var chosen: IrCodeRepository.Category? by remember { mutableStateOf(null) }
     Column(Modifier.fillMaxSize().applyTopInset().padding(horizontal = 24.dp)) {
         Spacer(Modifier.height(14.dp))
+        // Single header row — matches Home's tight layout.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             BackRow(onBack)
             ActionIconView(
@@ -60,17 +61,17 @@ fun AddDeviceScreen(
                 modifier = Modifier.pressable(onScan).padding(10.dp),
             )
         }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(8.dp))
         val cat = chosen
         if (cat == null) {
-            Text("What are you adding?", style = MaterialTheme.typography.displaySmall)
+            Text("What are you adding?", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(16.dp))
             CategoryGrid(
                 categories = remember { repo.categories() },
                 onPick = { chosen = it },
             )
         } else {
-            Text("${cat.name}. Who made it?", style = MaterialTheme.typography.displaySmall)
+            Text("${cat.name}. Who made it?", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(8.dp))
             BrandGrid(
                 brands = remember(cat.slug) { repo.brands(cat.slug) },

@@ -1,45 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Controlix "beam" mark: emitter + 3 IR arc bands at 45deg. v1 geometry, 108 grid. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Remote body: vertical rounded rect, left of center -->
+
+    <!-- emitter dot: rounded square -->
     <path
-        android:pathData="M30,42 h22 a5,5 0 0,1 5,5 v28 a5,5 0 0,1 -5,5 h-22 a5,5 0 0,1 -5,-5 v-28 a5,5 0 0,1 5,-5 z"
-        android:fillColor="#2A2A2A" />
-    <!-- Button dots on the remote -->
-    <path
-        android:pathData="M39.5,60 a1.6,1.6 0 1,1 3.2,0 a1.6,1.6 0 1,1 -3.2,0"
-        android:fillColor="#4A4A4A" />
-    <path
-        android:pathData="M39.5,66 a1.6,1.6 0 1,1 3.2,0 a1.6,1.6 0 1,1 -3.2,0"
-        android:fillColor="#4A4A4A" />
-    <!-- IR emitter dot at top of remote -->
-    <path
-        android:pathData="M38,48 a3,3 0 1,1 6,0 a3,3 0 1,1 -6,0"
+        android:pathData="M27.8,27.8 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0 Z"
         android:fillColor="#1ED760" />
-    <!-- Signal arcs radiating right from the emitter (41,48) -->
+    <!-- emitter eye -->
     <path
-        android:strokeColor="#6EF0A0"
-        android:strokeWidth="3"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000"
-        android:pathData="M47,37.6 A12,12 0 0,1 47,58.4" />
+        android:pathData="M30.2,25.4 m-1.4,0 a1.4,1.4 0 1,1 2.8,0 a1.4,1.4 0 1,1 -2.8,0 Z"
+        android:fillColor="#F0FFF4" />
+
+    <!-- band 1 (accent, r=22.5) -->
     <path
+        android:pathData="M38.4,49.5 C34.5,41.6 36.5,32.2 43.4,26.4 C47.6,22.9 52.9,21.2 58.1,21.6"
         android:strokeColor="#1ED760"
-        android:strokeWidth="3.5"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000"
-        android:pathData="M51,30.7 A20,20 0 0,1 51,65.3" />
+        android:strokeWidth="8"
+        android:strokeLineCap="round" />
+    <!-- band 2 (mid, r=37) -->
     <path
-        android:strokeColor="#1ED76099"
-        android:strokeWidth="4"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000"
-        android:pathData="M54,25.5 A26,26 0 0,1 54,70.5" />
-    <!-- Tip dot on the middle arc -->
+        android:pathData="M50.3,63.8 C41.4,51.4 44.4,35.2 56.2,25.6 C62.6,20.3 70.7,17.7 78.7,18.4"
+        android:strokeColor="#50E88C"
+        android:strokeWidth="7"
+        android:strokeLineCap="round" />
+    <!-- band 3 (mint, r=51.5) -->
     <path
-        android:pathData="M59,30.7 a2.4,2.4 0 1,1 4.8,0 a2.4,2.4 0 1,1 -4.8,0"
-        android:fillColor="#1ED760" />
+        android:pathData="M62.2,78.1 C48.2,58.8 52.2,34.9 69.0,21.5 C78.2,14.1 89.9,11.0 101.3,13.1"
+        android:strokeColor="#96F5BE"
+        android:strokeWidth="6"
+        android:strokeLineCap="round" />
 </vector>
