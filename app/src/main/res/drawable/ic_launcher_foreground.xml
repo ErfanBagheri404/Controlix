@@ -4,23 +4,42 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Badge: rounded square -->
+    <!-- Remote body: vertical rounded rect, left of center -->
     <path
-        android:fillColor="#E2E8F0"
-        android:pathData="M22,22 h64 a18,18 0 0,1 18,18 v64 a18,18 0 0,1 -18,18 h-64 a18,18 0 0,1 -18,-18 v-64 a18,18 0 0,1 18,-18 z" />
-    <!-- Power glyph: ~290° ring open at the top (gap where the line enters).
-         sweep=1 = clockwise on screen, large-arc=1; center (54,56) r=15. -->
+        android:pathData="M30,42 h22 a5,5 0 0,1 5,5 v28 a5,5 0 0,1 -5,5 h-22 a5,5 0 0,1 -5,-5 v-28 a5,5 0 0,1 5,-5 z"
+        android:fillColor="#2A2A2A" />
+    <!-- Button dots on the remote -->
     <path
-        android:strokeColor="#0F172A"
-        android:strokeWidth="5"
+        android:pathData="M39.5,60 a1.6,1.6 0 1,1 3.2,0 a1.6,1.6 0 1,1 -3.2,0"
+        android:fillColor="#4A4A4A" />
+    <path
+        android:pathData="M39.5,66 a1.6,1.6 0 1,1 3.2,0 a1.6,1.6 0 1,1 -3.2,0"
+        android:fillColor="#4A4A4A" />
+    <!-- IR emitter dot at top of remote -->
+    <path
+        android:pathData="M38,48 a3,3 0 1,1 6,0 a3,3 0 1,1 -6,0"
+        android:fillColor="#1ED760" />
+    <!-- Signal arcs radiating right from the emitter (41,48) -->
+    <path
+        android:strokeColor="#6EF0A0"
+        android:strokeWidth="3"
         android:strokeLineCap="round"
         android:fillColor="#00000000"
-        android:pathData="M62.6,43.7 A15,15 0 1,1 45.4,43.7" />
-    <!-- Power glyph: vertical line through the gap -->
+        android:pathData="M47,37.6 A12,12 0 0,1 47,58.4" />
     <path
-        android:strokeColor="#0F172A"
-        android:strokeWidth="5"
+        android:strokeColor="#1ED760"
+        android:strokeWidth="3.5"
         android:strokeLineCap="round"
         android:fillColor="#00000000"
-        android:pathData="M54,36 L54,52" />
+        android:pathData="M51,30.7 A20,20 0 0,1 51,65.3" />
+    <path
+        android:strokeColor="#1ED76099"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M54,25.5 A26,26 0 0,1 54,70.5" />
+    <!-- Tip dot on the middle arc -->
+    <path
+        android:pathData="M59,30.7 a2.4,2.4 0 1,1 4.8,0 a2.4,2.4 0 1,1 -4.8,0"
+        android:fillColor="#1ED760" />
 </vector>

@@ -45,12 +45,21 @@ private val FEATURED = listOf(
 fun AddDeviceScreen(
     repo: IrCodeRepository,
     onPick: (brandId: Int, brandName: String, catSlug: String, catName: String) -> Unit,
+    onScan: () -> Unit,
     onBack: () -> Unit,
 ) {
     var chosen: IrCodeRepository.Category? by remember { mutableStateOf(null) }
-    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
-        Spacer(Modifier.height(40.dp))
-        BackRow(onBack)
+    Column(Modifier.fillMaxSize().applyTopInset().padding(horizontal = 24.dp)) {
+        Spacer(Modifier.height(14.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            BackRow(onBack)
+            ActionIconView(
+                ActionIcon.QrScan,
+                22.dp,
+                MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.pressable(onScan).padding(10.dp),
+            )
+        }
         Spacer(Modifier.height(20.dp))
         val cat = chosen
         if (cat == null) {

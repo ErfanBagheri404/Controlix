@@ -18,3 +18,12 @@ val Danger = Color(0xFFE53935)       // destructive — Netflix red
 val Paper = Color(0xFFFFFFFF)        // primary text — pure white
 val PaperDim = Color(0xFFB3B3B3)     // secondary text — Spotify gray
 val PaperFaint = Color(0xFF6E6E6E)   // disabled text/icons — dim but readable, never Hairline
+
+// ── Light theme tokens ─────────────────────────────────────────────────────
+val PaperLight = Color(0xFF0D0D0D)
+val PaperDimLight = Color(0xFF555555)
+val PaperFaintLight = Color(0xFF888888)
+val InkLight = Color(0xFFF4F4F4)
+val InkRaisedLight = Color(0xFFEAEAEA)
+val InkFloatLight = Color(0xFFD8D8D8)
+val HairlineLight = Color(0xFFD0D0D0)

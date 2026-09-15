@@ -40,7 +40,7 @@ import kotlinx.coroutines.launch
 fun MacrosScreen(
     repo: IrCodeRepository,
     transmitter: IrTransmitter,
-    devices: List<DeviceEntry>,
+    devices: List<SavedDevice>,
     model: MacroModel,
     onBack: () -> Unit,
 ) {
@@ -170,7 +170,7 @@ private fun MacroRow(
  */
 @Composable
 private fun MacroBuilder(
-    devices: List<DeviceEntry>,
+    devices: List<SavedDevice>,
     repo: IrCodeRepository,
     onDone: (String, List<MacroStep>) -> Unit,
     onCancel: () -> Unit,

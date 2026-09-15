@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.ControlixTheme
+import com.erfanbagheri.controlix.ui.theme.ThemeState
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,7 +23,7 @@ class MainActivity : ComponentActivity() {
                     .onFailure { it.printStackTrace() }
                     .getOrNull()
             }
-            androidx.compose.runtime.LaunchedEffect(Unit) { Feedback.init(ctx) }
+            androidx.compose.runtime.LaunchedEffect(Unit) { Feedback.init(ctx); ThemeState.init(ctx) }
             ControlixTheme {
                 ControlixNav(ir = ir, repo = repo)
             }

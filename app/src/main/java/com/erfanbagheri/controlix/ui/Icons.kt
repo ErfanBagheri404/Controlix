@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
  */
 enum class CategoryGlyph { TV, AC, Fan, Projector, Soundbar, AVR, SetTop, Speaker, Disc, Camera, Heater, Fireplace, Vacuum, Monitor, Console, Streaming, Humidifier, Purifier, Clock, VCR, Rays, Toy, Chip }
 
-enum class ActionIcon { Power, VolUp, VolDown, ChUp, ChDown, Mute, Up, Down, Left, Right, Ok, Back, Add, Check, Cross, Sweep, CameraTest, Trash, ChevRight, Menu, Macros }
+enum class ActionIcon { Power, VolUp, VolDown, ChUp, ChDown, Mute, Up, Down, Left, Right, Ok, Back, Add, Check, Cross, Sweep, CameraTest, Trash, ChevRight, Menu, Macros, QrScan }
 
 @Composable
 fun CategoryIcon(
@@ -130,6 +130,8 @@ private class IconScope(
             ActionIcon.Cross -> { seg(10f, 10f, 38f, 38f); seg(38f, 10f, 10f, 38f) }
             ActionIcon.Sweep -> { arc(24f, 26f, 6f, 240f, 60f); arc(24f, 26f, 12f, 235f, 70f); arc(24f, 26f, 18f, 230f, 80f) }
             ActionIcon.CameraTest -> { stroke(R(6f, 15f, 42f, 33f)); ovalStroke(24f, 24f, 6f) }
+            // QR frame: three finder squares + dot.
+            ActionIcon.QrScan -> { stroke(R(8f, 8f, 20f, 20f)); stroke(R(28f, 8f, 40f, 20f)); stroke(R(8f, 28f, 20f, 40f)); dot(34f, 34f, 3.5f) }
             ActionIcon.Trash -> { stroke(Path().apply { moveTo(px(12f), px(14f)); lineTo(px(14f), px(40f)); lineTo(px(34f), px(40f)); lineTo(px(36f), px(14f)) }); seg(8f, 14f, 40f, 14f); seg(19f, 14f, 19f, 8f); seg(29f, 14f, 29f, 8f); seg(18f, 20f, 18f, 34f); seg(24f, 20f, 24f, 34f); seg(30f, 20f, 30f, 34f) }
         }
     }
