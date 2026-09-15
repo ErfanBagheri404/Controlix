@@ -1,17 +1,18 @@
 package com.erfanbagheri.controlix.ui
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -23,44 +24,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.ui.theme.PaperFaint
 
 /**
- * Setup flow. Step 1: category rows with hand-drawn glyphs. Step 2: brand
- * list (A-Z, deduped case variants). The ritual takes over after — no model
- * numbers anywhere.
+ * Setup flow. Step 1: category tiles (2 columns, Material vectors).
+ * Step 2: brand tiles under a search field. The ritual takes over after —
+ * no model numbers anywhere.
  */
 
 private val FEATURED = listOf(
     "tvs", "acs", "fans", "projectors", "soundbars",
     "audio_and_video_receivers", "streaming_devices", "monitors", "consoles",
 )
-
-fun glyphFor(slug: String): CategoryGlyph = when (slug) {
-    "tvs", "tv_tuner", "universal_tv_remotes" -> CategoryGlyph.TV
-    "acs" -> CategoryGlyph.AC
-    "fans" -> CategoryGlyph.Fan
-    "projectors" -> CategoryGlyph.Projector
-    "soundbars" -> CategoryGlyph.Soundbar
-    "audio_and_video_receivers", "head_units", "car_multimedia" -> CategoryGlyph.AVR
-    "cable_boxes", "dvb-t", "converters", "multimedia" -> CategoryGlyph.SetTop
-    "speakers" -> CategoryGlyph.Speaker
-    "cd_players", "dvd_players", "blu-ray", "laserdisc", "minidisc" -> CategoryGlyph.Disc
-    "cameras", "cctv" -> CategoryGlyph.Camera
-    "heaters" -> CategoryGlyph.Heater
-    "fireplaces" -> CategoryGlyph.Fireplace
-    "vacuum_cleaners", "dust_collectors", "window_cleaners" -> CategoryGlyph.Vacuum
-    "monitors", "computers", "touchscreen_displays" -> CategoryGlyph.Monitor
-    "consoles", "toys" -> CategoryGlyph.Console
-    "streaming_devices", "kvm", "digital_signs" -> CategoryGlyph.Streaming
-    "humidifiers" -> CategoryGlyph.Humidifier
-    "air_purifiers" -> CategoryGlyph.Purifier
-    "clocks", "picture_frames" -> CategoryGlyph.Clock
-    "vcr" -> CategoryGlyph.VCR
-    "iodn_irblaster" -> CategoryGlyph.Rays
-    else -> CategoryGlyph.Chip
-}
 
 @Composable
 fun AddDeviceScreen(
@@ -76,7 +55,7 @@ fun AddDeviceScreen(
         val cat = chosen
         if (cat == null) {
             Text("What are you adding?", style = MaterialTheme.typography.displaySmall)
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
             CategoryGrid(
                 categories = remember { repo.categories() },
                 onPick = { chosen = it },
@@ -84,10 +63,10 @@ fun AddDeviceScreen(
         } else {
             Text("${cat.name}. Who made it?", style = MaterialTheme.typography.displaySmall)
             Spacer(Modifier.height(8.dp))
-            BrandList(
+            BrandGrid(
                 brands = remember(cat.slug) { repo.brands(cat.slug) },
-                onBack = { chosen = null },
-            ) { onPick(it.id, it.name, cat.slug, cat.name) }
+                onPick = { onPick(it.id, it.name, cat.slug, cat.name) },
+            )
         }
     }
 }
@@ -102,29 +81,37 @@ private fun CategoryGrid(
         FEATURED.mapNotNull { by[it] } + categories.filterNot { FEATURED.contains(it.slug) }
     }
     LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
+        columns = GridCells.Fixed(2),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
         items(ordered, key = { it.id }) { cat ->
+            // Square tiles: identical height every row, no drift.
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .hairlineTile(14.dp)
+                    .aspectRatio(1.4f)
+                    .hairlineTile(16.dp)
                     .pressable(onClick = { onPick(cat) })
-                    .padding(horizontal = 10.dp, vertical = 16.dp),
+                    .padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
-                CategoryIcon(glyphFor(cat.slug), 26.dp, MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.height(8.dp))
+                MaterialIcon(
+                    CategoryIcons.forCategory(cat.slug),
+                    40.dp,
+                    MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.height(10.dp))
                 Text(
                     cat.name,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
                     maxLines = 2,
-                    lineHeight = MaterialTheme.typography.labelMedium.lineHeight * 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -132,13 +119,12 @@ private fun CategoryGrid(
 }
 
 @Composable
-private fun BrandList(
+private fun BrandGrid(
     brands: List<IrCodeRepository.Brand>,
-    onBack: () -> Unit,
     onPick: (IrCodeRepository.Brand) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
-    // Case-dedupe ("Samsung" vs "SAMSUNG" from the merge) — one row per brand.
+    // Case-dedupe ("Samsung" vs "SAMSUNG" from the merge) — one tile per brand.
     val all = remember(brands) {
         val seen = HashSet<String>()
         brands.filter { seen.add(it.name.lowercase()) }
@@ -163,25 +149,31 @@ private fun BrandList(
         modifier = Modifier.fillMaxSize(),
     ) {
         items(shown, key = { it.id }) { b ->
-            Column(
+            // Fixed height per tile — brand names wrap/ellipsize, never resize.
+            Box(
                 Modifier
                     .fillMaxWidth()
+                    .height(84.dp)
                     .hairlineTile(14.dp)
                     .pressable(onClick = { onPick(b) })
-                    .padding(horizontal = 14.dp, vertical = 16.dp),
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                contentAlignment = Alignment.CenterStart,
             ) {
-                Text(
-                    b.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "${b.remoteCount} ${if (b.remoteCount == 1) "remote" else "remotes"}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Column {
+                    Text(
+                        b.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "${b.remoteCount} ${if (b.remoteCount == 1) "remote" else "remotes"}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = PaperFaint,
+                    )
+                }
             }
         }
     }

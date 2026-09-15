@@ -1,22 +1,26 @@
 package com.erfanbagheri.controlix.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.erfanbagheri.controlix.ui.theme.PaperFaint
 
 data class DeviceEntry(
     val remoteId: Int,
@@ -26,139 +30,128 @@ data class DeviceEntry(
 )
 
 /**
- * The couch deck: one list, three sections — devices, add, tools.
- * No cards, no elevation, no gradients. Hierarchy comes from spacing,
- * type scale, and the single ember accent. Rows stay tall for thumb reach.
+ * The couch deck. Header row: hamburger (opens the menu drawer) on the left,
+ * plus (add device) at the far right — the only two actions that matter
+ * here. Devices live in a 2-column tile grid; tools are in the drawer.
+ * No sub-header copy — the deck is the interface.
  */
 @Composable
 fun HomeScreen(
     devices: List<DeviceEntry>,
     codeCount: Int,
-    onOpenDevice: (Int) -> Unit,
+    onOpenMenu: () -> Unit,
     onAddDevice: () -> Unit,
-    onSweep: () -> Unit,
-    onSelfTest: () -> Unit,
-    onMacros: () -> Unit,
+    onOpenDevice: (Int) -> Unit,
     onRemoveDevice: (Int) -> Unit,
 ) {
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
-        // Masthead — wordmark + live DB census in mono.
-        item(key = "masthead") {
-            Column(Modifier.padding(top = 56.dp, bottom = 8.dp)) {
-                Text("Controlix", style = MaterialTheme.typography.displaySmall)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "${String.format("%,d", codeCount)} codes, no internet, no account",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(24.dp))
-            }
-        }
-
-        if (devices.isNotEmpty()) {
-            item(key = "devhead") { SectionHead("Your devices") }
-            items(devices, key = { "d${it.remoteId}" }) { dev ->
-                DeviceRow(dev, onOpenDevice, onRemoveDevice)
-            }
-        }
-
-        item(key = "add") { AddRow(onAddDevice) }
-
-        item(key = "toolshead") { SectionHead("Tools") }
-        item(key = "macros") {
-            ToolRow(
-                "Macros",
-                "One tap runs a whole button chain",
+    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
+        Spacer(Modifier.height(56.dp))
+        // Masthead — hamburger left, wordmark center, plus right.
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ActionIconView(
+                ActionIcon.Menu,
+                26.dp,
+                MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.pressable(onOpenMenu).padding(6.dp),
+            )
+            Spacer(Modifier.weight(1f))
+            Text("Controlix", style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.weight(1f))
+            ActionIconView(
                 ActionIcon.Add,
-                onMacros,
+                26.dp,
+                MaterialTheme.colorScheme.primary,
+                modifier = Modifier.pressable(onAddDevice).padding(6.dp),
             )
         }
-        item(key = "sweep") {
-            ToolRow(
-                "Power-off sweep",
-                "Fire every TV power code we know",
-                ActionIcon.Sweep,
-                onSweep,
-            )
+        Spacer(Modifier.height(24.dp))
+
+        if (devices.isEmpty()) {
+            EmptyDeck(onAddDevice)
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                items(devices, key = { "d${it.remoteId}" }) { dev ->
+                    DeviceTile(dev, onOpenDevice, onRemoveDevice)
+                }
+                item { Spacer(Modifier.height(24.dp)) }
+            }
         }
-        item(key = "selftest") {
-            ToolRow(
-                "IR self-test",
-                "Check the blaster with any camera",
-                ActionIcon.CameraTest,
-                onSelfTest,
-            )
-        }
-        item(key = "tail") { Spacer(Modifier.height(40.dp)) }
     }
 }
 
+/** First-run deck: one invite tile with a plus, sized like a device tile. */
 @Composable
-private fun DeviceRow(
-    dev: DeviceEntry,
-    onOpen: (Int) -> Unit,
-    onRemove: (Int) -> Unit,
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .combinedPressable(
-                onClick = { onOpen(dev.remoteId) },
-                onLongClick = { onRemove(dev.remoteId) },
-            )
-            .padding(vertical = 22.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun EmptyDeck(onAdd: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().padding(top = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CategoryIcon(glyphFor(dev.categorySlug), 28.dp, MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.width(16.dp))
-        Column(Modifier.weight(1f)) {
-            Text(dev.name, style = MaterialTheme.typography.titleLarge)
-            Text(
-                "${dev.buttonCount} buttons",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp),
-            )
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .hairlineTile(16.dp)
+                .pressable(onAdd),
+            contentAlignment = Alignment.Center,
+        ) {
+            ActionIconView(ActionIcon.Add, 36.dp, MaterialTheme.colorScheme.primary)
         }
-        ActionIconView(ActionIcon.ChevRight, 20.dp, MaterialTheme.colorScheme.outline)
-    }
-}
-
-@Composable
-private fun AddRow(onAdd: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().pressable(onAdd).padding(vertical = 24.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start,
-    ) {
-        ActionIconView(ActionIcon.Add, 22.dp, MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.width(16.dp))
+        Spacer(Modifier.height(16.dp))
         Text(
-            "Add device",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
+            "Add your first device",
+            style = MaterialTheme.typography.bodyMedium,
+            color = PaperFaint,
         )
     }
 }
 
+/**
+ * Device tile: glyph in the top-left, name bottom-left, count under it.
+ * Long-press removes. Fixed aspect keeps every tile the same height.
+ */
 @Composable
-private fun ToolRow(title: String, sub: String, icon: ActionIcon, onOpen: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().pressable(onOpen).padding(vertical = 22.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun DeviceTile(
+    dev: DeviceEntry,
+    onOpen: (Int) -> Unit,
+    onRemove: (Int) -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .hairlineTile(16.dp)
+            .combinedPressable(
+                onClick = { onOpen(dev.remoteId) },
+                onLongClick = { onRemove(dev.remoteId) },
+            )
+            .padding(14.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        ActionIconView(icon, 22.dp, MaterialTheme.colorScheme.onSurface)
-        Spacer(Modifier.width(16.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+        MaterialIcon(
+            CategoryIcons.forCategory(dev.categorySlug),
+            32.dp,
+            MaterialTheme.colorScheme.primary,
+        )
+        Column {
             Text(
-                sub,
+                dev.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+            )
+            Text(
+                "${dev.buttonCount} buttons",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp),
             )
         }
-        ActionIconView(ActionIcon.ChevRight, 18.dp, MaterialTheme.colorScheme.outline)
     }
 }

@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
  */
 enum class CategoryGlyph { TV, AC, Fan, Projector, Soundbar, AVR, SetTop, Speaker, Disc, Camera, Heater, Fireplace, Vacuum, Monitor, Console, Streaming, Humidifier, Purifier, Clock, VCR, Rays, Toy, Chip }
 
-enum class ActionIcon { Power, VolUp, VolDown, ChUp, ChDown, Mute, Up, Down, Left, Right, Ok, Back, Add, Check, Cross, Sweep, CameraTest, Trash, ChevRight }
+enum class ActionIcon { Power, VolUp, VolDown, ChUp, ChDown, Mute, Up, Down, Left, Right, Ok, Back, Add, Check, Cross, Sweep, CameraTest, Trash, ChevRight, Menu, Macros }
 
 @Composable
 fun CategoryIcon(
@@ -122,6 +122,10 @@ private class IconScope(
             ActionIcon.Back -> { seg(34f, 8f, 14f, 24f); seg(14f, 24f, 34f, 40f) }
             ActionIcon.ChevRight -> { seg(18f, 10f, 32f, 24f); seg(32f, 24f, 18f, 38f) }
             ActionIcon.Add -> { seg(24f, 8f, 24f, 40f); seg(8f, 24f, 40f, 24f) }
+            // Hamburger: three rails.
+            ActionIcon.Menu -> { seg(8f, 14f, 40f, 14f); seg(8f, 24f, 40f, 24f); seg(8f, 34f, 40f, 34f) }
+            // Macro chain: linked nodes.
+            ActionIcon.Macros -> { ovalStroke(14f, 14f, 5f); ovalStroke(34f, 24f, 5f); ovalStroke(14f, 34f, 5f); seg(18f, 16.5f, 29.5f, 22f); seg(29.5f, 26.5f, 18f, 32f) }
             ActionIcon.Check -> { seg(8f, 26f, 19f, 38f); seg(19f, 38f, 40f, 11f) }
             ActionIcon.Cross -> { seg(10f, 10f, 38f, 38f); seg(38f, 10f, 10f, 38f) }
             ActionIcon.Sweep -> { arc(24f, 26f, 6f, 240f, 60f); arc(24f, 26f, 12f, 235f, 70f); arc(24f, 26f, 18f, 230f, 80f) }

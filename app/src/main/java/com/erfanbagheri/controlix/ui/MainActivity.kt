@@ -22,6 +22,7 @@ class MainActivity : ComponentActivity() {
                     .onFailure { it.printStackTrace() }
                     .getOrNull()
             }
+            androidx.compose.runtime.LaunchedEffect(Unit) { Feedback.init(ctx) }
             ControlixTheme {
                 ControlixNav(ir = ir, repo = repo)
             }

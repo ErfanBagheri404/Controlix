@@ -71,11 +71,14 @@ fun Modifier.combinedPressable(
             enabled = enabled,
             onLongClick = onLongClick?.let { handler ->
                 {
-                    view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                    Feedback.longPress(view)
                     handler()
                 }
             },
-            onClick = onClick,
+            onClick = {
+                Feedback.tap(view)
+                onClick()
+            },
         )
 }
 
@@ -88,7 +91,15 @@ fun staggerDelay(index: Int): Int = (index * Motion.Stagger).coerceAtMost(360)
  */
 fun Modifier.pressable(onClick: () -> Unit): Modifier = pressable(true, onClick)
 
-fun Modifier.pressable(enabled: Boolean, onClick: () -> Unit): Modifier = composed {
+fun Modifier.pressable(enabled: Boolean, onClick: () -> Unit): Modifier =
+    pressable(enabled, Feedback::tap, onClick)
+
+/** Press with a custom feedback call (ritual yes/no use confirm/deny). */
+fun Modifier.pressable(
+    enabled: Boolean = true,
+    feedback: (android.view.View?) -> Unit = Feedback::tap,
+    onClick: () -> Unit,
+): Modifier = composed {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -96,13 +107,17 @@ fun Modifier.pressable(enabled: Boolean, onClick: () -> Unit): Modifier = compos
         animationSpec = tween(Motion.Press, easing = Motion.EaseOut),
         label = "press",
     )
+    val view = androidx.compose.ui.platform.LocalView.current
     this
         .graphicsLayer { scaleX = scale; scaleY = scale }
         .clickable(
             interactionSource = interactionSource,
             indication = null,
             enabled = enabled,
-            onClick = onClick,
+            onClick = {
+                feedback(view)
+                onClick()
+            },
         )
 }
 

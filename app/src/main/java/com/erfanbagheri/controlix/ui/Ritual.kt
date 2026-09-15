@@ -157,7 +157,7 @@ fun RitualScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                AnswerChip(ActionIcon.Cross, "No") {
+                AnswerChip(ActionIcon.Cross, "No", feedback = Feedback::deny) {
                     if (testStep < 0) {
                         if (powerIndex < candidates.lastIndex) powerIndex++ else onBack()
                     } else {
@@ -166,7 +166,7 @@ fun RitualScreen(
                         if (powerIndex < candidates.lastIndex) powerIndex++ else onBack()
                     }
                 }
-                AnswerChip(ActionIcon.Check, "Yes") {
+                AnswerChip(ActionIcon.Check, "Yes", feedback = Feedback::confirm) {
                     if (testStep < 0) {
                         val code = candidates.getOrNull(powerIndex) ?: return@AnswerChip
                         lockedRemoteId = code.remoteId
@@ -200,10 +200,15 @@ private fun EmptyRitual(brandName: String, categoryName: String, onBack: () -> U
 }
 
 @Composable
-private fun AnswerChip(icon: ActionIcon, label: String, onClick: () -> Unit) {
+private fun AnswerChip(
+    icon: ActionIcon,
+    label: String,
+    feedback: (android.view.View?) -> Unit = Feedback::tap,
+    onClick: () -> Unit,
+) {
     Row(
         Modifier
-            .pressable(onClick)
+            .pressable(feedback = feedback, onClick = onClick)
             .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(28.dp))
             .padding(horizontal = 24.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,

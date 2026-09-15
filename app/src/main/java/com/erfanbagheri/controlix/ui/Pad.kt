@@ -52,11 +52,13 @@ fun PadScreen(
     val buttons = remember(remoteId) { repo.buttons(remoteId) }
     var lastSent by remember { mutableStateOf<String?>(null) }
     var emitTrigger by remember { mutableStateOf<Any?>(null) }
+    val padView = androidx.compose.ui.platform.LocalView.current
 
     fun fire(b: IrCodeRepository.Button?) {
         if (b != null && transmitter.transmitButton(b.carrierHz, b.pattern)) {
             lastSent = b.name
             emitTrigger = Any()
+            Feedback.send(padView)
         }
     }
 
