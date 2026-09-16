@@ -15,6 +15,7 @@ val Accent = Color(0xFF1ED760)       // THE accent — electric emerald (power, 
 val AccentDeep = Color(0xFF1AA34A)   // pressed accent
 val Confirm = Color(0xFF1ED760)      // same as accent — success
 val Danger = Color(0xFFE53935)       // destructive — Netflix red
+val Gold = Color(0xFFF5C518)         // pinned star — warm amber, classic remote-button yellow
 val Paper = Color(0xFFFFFFFF)        // primary text — pure white
 val PaperDim = Color(0xFFB3B3B3)     // secondary text — Spotify gray
 val PaperFaint = Color(0xFF6E6E6E)   // disabled text/icons — dim but readable, never Hairline

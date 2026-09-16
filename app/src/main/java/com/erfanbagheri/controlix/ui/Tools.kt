@@ -41,11 +41,11 @@ fun SweepScreen(
     var running by remember { mutableStateOf(false) }
     var done by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
-        Spacer(Modifier.height(40.dp))
+    Column(Modifier.fillMaxSize().applyTopInset().padding(horizontal = 24.dp)) {
+        Spacer(Modifier.height(14.dp))
         BackRow(onBack)
-        Spacer(Modifier.height(20.dp))
-        Text("Power-off sweep", style = MaterialTheme.typography.displaySmall)
+        Spacer(Modifier.height(8.dp))
+        Text("Power-off sweep", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text(
             "Fires every TV power code we know. If a TV in range shuts off, it was yours to control.",

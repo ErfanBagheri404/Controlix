@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
  */
 enum class CategoryGlyph { TV, AC, Fan, Projector, Soundbar, AVR, SetTop, Speaker, Disc, Camera, Heater, Fireplace, Vacuum, Monitor, Console, Streaming, Humidifier, Purifier, Clock, VCR, Rays, Toy, Chip }
 
-enum class ActionIcon { Power, VolUp, VolDown, ChUp, ChDown, Mute, Up, Down, Left, Right, Ok, Back, Add, Check, Cross, Sweep, CameraTest, Trash, ChevRight, Menu, Macros, QrScan }
+enum class ActionIcon { Power, VolUp, VolDown, ChUp, ChDown, Mute, Up, Down, Left, Right, Ok, Back, Add, Check, Cross, Sweep, CameraTest, Trash, ChevRight, Menu, Macros, QrScan, Star, Share, Edit, Source, Play, Dots, Minus, ChevronUp, ChevronDown }
 
 @Composable
 fun CategoryIcon(
@@ -133,6 +133,36 @@ private class IconScope(
             // QR frame: three finder squares + dot.
             ActionIcon.QrScan -> { stroke(R(8f, 8f, 20f, 20f)); stroke(R(28f, 8f, 40f, 20f)); stroke(R(8f, 28f, 20f, 40f)); dot(34f, 34f, 3.5f) }
             ActionIcon.Trash -> { stroke(Path().apply { moveTo(px(12f), px(14f)); lineTo(px(14f), px(40f)); lineTo(px(34f), px(40f)); lineTo(px(36f), px(14f)) }); seg(8f, 14f, 40f, 14f); seg(19f, 14f, 19f, 8f); seg(29f, 14f, 29f, 8f); seg(18f, 20f, 18f, 34f); seg(24f, 20f, 24f, 34f); seg(30f, 20f, 30f, 34f) }
+            // Pin star: 5-point outline.
+            ActionIcon.Star -> {
+                stroke(Path().apply {
+                    moveTo(px(24f), px(7f)); lineTo(px(28.1f), px(18.3f)); lineTo(px(40.2f), px(18.8f))
+                    lineTo(px(30.7f), px(26.2f)); lineTo(px(34f), px(37.8f)); lineTo(px(24f), px(31f))
+                    lineTo(px(14f), px(37.8f)); lineTo(px(17.3f), px(26.2f)); lineTo(px(7.8f), px(18.8f))
+                    lineTo(px(19.9f), px(18.3f)); close()
+                })
+            }
+            // Share: three nodes + links.
+            ActionIcon.Share -> { dot(12f, 24f, 3f); dot(36f, 12f, 3f); dot(36f, 36f, 3f); seg(14.5f, 22f, 33f, 13.5f); seg(14.5f, 26f, 33f, 34.5f) }
+            // Edit pencil.
+            ActionIcon.Edit -> {
+                stroke(Path().apply {
+                    moveTo(px(30f), px(8f)); lineTo(px(40f), px(18f)); lineTo(px(20f), px(38f)); lineTo(px(10f), px(28f)); close()
+                })
+            }
+            // Source: square + outgoing arrow.
+            ActionIcon.Source -> { stroke(R(8f, 14f, 28f, 34f)); seg(28f, 24f, 42f, 24f); seg(34f, 16f, 42f, 24f); seg(34f, 32f, 42f, 24f) }
+            // Media play triangle.
+            ActionIcon.Play -> {
+                stroke(Path().apply {
+                    moveTo(px(17f), px(9f)); lineTo(px(17f), px(39f)); lineTo(px(37f), px(24f)); close()
+                })
+            }
+            // Menu dots.
+            ActionIcon.Dots -> { dot(10f, 24f); dot(24f, 24f); dot(38f, 24f) }
+            ActionIcon.Minus -> seg(12f, 24f, 36f, 24f)
+            ActionIcon.ChevronUp -> { seg(10f, 28f, 24f, 14f); seg(38f, 28f, 24f, 14f) }
+            ActionIcon.ChevronDown -> { seg(10f, 20f, 24f, 34f); seg(38f, 20f, 24f, 34f) }
         }
     }
 

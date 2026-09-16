@@ -50,11 +50,11 @@ fun MacrosScreen(
     var playing by remember { mutableStateOf<Int?>(null) }
     var playResult by remember { mutableStateOf<String?>(null) }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
-        Spacer(Modifier.height(40.dp))
+    Column(Modifier.fillMaxSize().applyTopInset().padding(horizontal = 24.dp)) {
+        Spacer(Modifier.height(14.dp))
         BackRow(onBack)
-        Spacer(Modifier.height(20.dp))
-        Text("Macros", style = MaterialTheme.typography.displaySmall)
+        Spacer(Modifier.height(8.dp))
+        Text("Macros", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text(
             "Named sequences of buttons. One tap runs the whole chain.",

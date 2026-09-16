@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,8 +24,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.erfanbagheri.controlix.ui.theme.Ink
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.Danger
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
@@ -132,13 +135,14 @@ private fun ToggleRow(label: String, hint: String, checked: Boolean, onToggle: (
             Text(hint, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
         }
         Spacer(Modifier.width(12.dp))
-        val trackColor = MaterialTheme.colorScheme.surfaceVariant
-        Canvas(Modifier.height(22.dp)) {
+        // Pill toggle: track + always-contrasting thumb (never same hue).
+        val trackColor = if (checked) Accent else MaterialTheme.colorScheme.surfaceVariant
+        val thumbColor = if (checked) Ink else MaterialTheme.colorScheme.onSurface
+        Canvas(Modifier.size(44.dp, 24.dp)) {
             val r = size.height / 2f
-            drawCircle(Danger.copy(alpha = 0.35f), r, center = center.copy(x = r))
-            drawCircle(trackColor, r, center = center.copy(x = size.width - r))
-            drawCircle(if (checked) Accent else Danger.copy(alpha = 0.35f), r * 0.65f,
-                center = if (checked) center.copy(x = size.width - r) else center.copy(x = r))
+            drawRoundRect(trackColor, cornerRadius = androidx.compose.ui.geometry.CornerRadius(r, r))
+            val cx = if (checked) size.width - r else r
+            drawCircle(thumbColor, r * 0.66f, center = Offset(cx, r))
         }
     }
 }

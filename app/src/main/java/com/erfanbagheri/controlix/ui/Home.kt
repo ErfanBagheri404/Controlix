@@ -32,6 +32,7 @@ import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.Danger
+import com.erfanbagheri.controlix.ui.theme.Gold
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
 
 /** Sheet callbacks live in Nav and are passed through here. */
@@ -124,11 +125,11 @@ private fun SheetAction(label: String, hint: String?, destructive: Boolean = fal
         Box(Modifier.size(40.dp).bgTile(12.dp, if (destructive) Danger.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
             val icon = when {
                 label == "Delete" -> ActionIcon.Trash
-                label.contains("Pin", true) -> ActionIcon.Ok
-                label == "Edit" -> ActionIcon.Ok
-                else -> ActionIcon.ChevRight
+                label.contains("Pin", true) -> ActionIcon.Star
+                label == "Edit" -> ActionIcon.Edit
+                else -> ActionIcon.Share
             }
-            ActionIconView(icon, 18.dp, if (destructive) Danger else MaterialTheme.colorScheme.onSurface)
+            ActionIconView(icon, 18.dp, if (destructive) Danger else if (label.contains("Pin", true)) Gold else MaterialTheme.colorScheme.onSurface)
         }
         Spacer(Modifier.width(16.dp))
         Column {
@@ -159,42 +160,54 @@ private fun DeviceTile(
 ) {
     val enabledAlpha by animateFloatAsState(if (device.enabled) 1f else 0.45f, label = "enabled")
     val glyph = remember(device.categorySlug) { CategoryIcons.forCategory(device.categorySlug) }
-    Column(
-        Modifier.fillMaxWidth().height(150.dp).bgTile(20.dp)
-            .combinedPressable(onClick = onClick, onLongClick = onLongClick)
-            .padding(14.dp),
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-            Box(Modifier.size(42.dp).bgTile(12.dp, Accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                MaterialIcon(glyph, 24.dp, Accent)
-            }
-            if (device.pinned) {
-                Box(
-                    Modifier.size(42.dp).bgTile(21.dp, Accent.copy(alpha = 0.15f))
-                        .pressable {
-                            val btn = runCatching { repo?.buttonByName(device.remoteId, "power") }.getOrNull()
-                            if (btn != null) { transmitter.transmitButton(btn.carrierHz, btn.pattern); Feedback.send(null) }
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    ActionIconView(ActionIcon.Power, 22.dp, Accent)
+    Box {
+        Column(
+            Modifier.fillMaxWidth().height(150.dp).bgTile(20.dp)
+                .combinedPressable(onClick = onClick, onLongClick = onLongClick)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+                Box(Modifier.size(42.dp).bgTile(12.dp, Accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                    MaterialIcon(glyph, 24.dp, Accent)
+                }
+                if (device.pinned) {
+                    Box(
+                        Modifier.size(42.dp).bgTile(21.dp, Accent.copy(alpha = 0.15f))
+                            .pressable {
+                                val btn = runCatching { repo?.buttonByName(device.remoteId, "power") }.getOrNull()
+                                if (btn != null) { transmitter.transmitButton(btn.carrierHz, btn.pattern); Feedback.send(null) }
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        ActionIconView(ActionIcon.Power, 22.dp, Accent)
+                    }
                 }
             }
+            Column(Modifier.graphicsLayer { alpha = enabledAlpha }) {
+                Text(device.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    buildString {
+                        append(device.brand); append(" · "); append(device.buttonCount)
+                        if (Room.fromSlug(device.roomSlug) != Room.General) {
+                            append(" · "); append(Room.fromSlug(device.roomSlug).display)
+                        }
+                    },
+                    style = MaterialTheme.typography.labelSmall, color = PaperFaint,
+                )
+            }
         }
-        Column(Modifier.graphicsLayer { alpha = enabledAlpha }) {
-            Text(device.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(2.dp))
-            Text(
-                buildString {
-                    append(device.brand); append(" · "); append(device.buttonCount)
-                    if (Room.fromSlug(device.roomSlug) != Room.General) {
-                        append(" · "); append(Room.fromSlug(device.roomSlug).display)
-                    }
-                },
-                style = MaterialTheme.typography.labelSmall, color = PaperFaint,
-            )
+        if (device.pinned) {
+            // Gold star badge — pinned marker, bottom-right corner (no collision, no tap).
+            Box(
+                Modifier.align(Alignment.BottomEnd).padding(14.dp).size(24.dp)
+                    .bgTile(12.dp, Gold.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                ActionIconView(ActionIcon.Star, 15.dp, Gold, strokeWidth = 3.dp)
+            }
         }
     }
 }

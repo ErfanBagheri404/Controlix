@@ -285,8 +285,11 @@ private fun DrawerToggle(label: String, checked: Boolean, onChange: (Boolean) ->
             checked = checked,
             onCheckedChange = { Feedback.tap(toggleView); onChange(it) },
             colors = SwitchDefaults.colors(
-                checkedThumbColor = com.erfanbagheri.controlix.ui.theme.Accent,
+                // Dark thumb on dim accent track — thumb stays visible when on.
+                checkedThumbColor = com.erfanbagheri.controlix.ui.theme.Ink,
                 checkedTrackColor = com.erfanbagheri.controlix.ui.theme.Accent,
+                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
             ),
         )
     }
