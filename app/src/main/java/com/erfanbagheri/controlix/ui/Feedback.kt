@@ -9,7 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 /**
- * Haptics for every interaction — taps tick, destructive long-presses thud.
+ * Shared interaction preferences — haptics and optional visual motion.
  * User-togglable from the menu drawer (persisted in prefs); the state lives
  * here so every screen and the drawer read the same reactive value.
  */
@@ -20,14 +20,23 @@ object Feedback {
     var hapticsOn by mutableStateOf(true)
         private set
 
+    var animationsOn by mutableStateOf(true)
+        private set
+
     fun init(ctx: Context) {
         prefs = ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         hapticsOn = prefs?.getBoolean("haptics", true) ?: true
+        animationsOn = prefs?.getBoolean("animations", true) ?: true
     }
 
     fun setHaptics(v: Boolean) {
         hapticsOn = v
         prefs?.edit()?.putBoolean("haptics", v)?.apply()
+    }
+
+    fun setAnimations(v: Boolean) {
+        animationsOn = v
+        prefs?.edit()?.putBoolean("animations", v)?.apply()
     }
 
     /** UI press: light tick. */

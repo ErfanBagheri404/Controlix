@@ -63,6 +63,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val view = LocalView.current
+    val toast = rememberToastState()
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         if (repo == null) {
@@ -83,13 +84,17 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
             AnimatedContent(
                 targetState = route,
                 transitionSpec = {
+                    if (!Feedback.animationsOn) {
+                        (androidx.compose.animation.EnterTransition.None togetherWith androidx.compose.animation.ExitTransition.None).using(null)
+                    } else {
                     val forward = targetState != Route.Home && initialState == Route.Home
                     val dir = if (forward) 1 else -1
                     val specIn = slideInHorizontally(tween(Motion.Route, easing = Motion.EaseOut)) { it / 5 * dir } +
                         fadeIn(tween(Motion.Route))
                     val specOut = slideOutHorizontally(tween(Motion.RouteExit, easing = Motion.EaseInOut)) { -it / 7 * dir } +
                         fadeOut(tween(120))
-                    specIn togetherWith specOut
+                    (specIn togetherWith specOut).using(null)
+                    }
                 },
                 label = "route",
             ) { r ->
@@ -103,6 +108,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                         onToggleDrawer = { Feedback.tap(view); scope.launch { drawerState.open() } },
                         onEdit = { route = Route.Edit(it.remoteId) },
                         onShare = { route = Route.Share(it.remoteId) },
+                        toast = toast,
                     )
 
                     is Route.AddDevice -> AddDeviceScreen(
@@ -156,6 +162,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                                 )
                             )
                             route = Route.Pad(remoteId)
+                            toast.show("${r.brandName} added")
                         },
                         onBack = { route = Route.Home },
                     )
@@ -169,6 +176,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                             repo = repo,
                             transmitter = ir,
                             devices = model.devices,
+                            toast = toast,
                             onSwitchDevice = { route = Route.Pad(it.remoteId) },
                             onBack = { route = Route.Home },
                         )
@@ -180,7 +188,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                             EditDeviceScreen(
                                 device = dev,
                                 model = model,
-                                onDone = { route = Route.Home },
+                                onDone = { route = Route.Home; toast.show("Remote updated") },
                                 onBack = { route = Route.Home },
                             )
                         }
@@ -209,6 +217,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
             }
         }
 
+        ToastHost(toast, Modifier.align(Alignment.BottomCenter).applyBottomInset())
         LaunchedEffect(route) { if (route is Route.Home) model.reload() }
     }
 }
@@ -253,6 +262,7 @@ private fun MenuDrawer(
             Spacer(Modifier.height(32.dp))
             SectionHead("Appearance")
             DrawerToggle("Dark mode", ThemeState.isDark, ThemeState::toggleDark)
+            DrawerToggle("Animations", Feedback.animationsOn, Feedback::setAnimations)
 
             Spacer(Modifier.height(24.dp))
             SectionHead("Feedback")

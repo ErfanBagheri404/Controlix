@@ -2,6 +2,8 @@ package com.erfanbagheri.controlix.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -47,8 +49,10 @@ fun HomeScreen(
     onToggleDrawer: () -> Unit,
     onEdit: (SavedDevice) -> Unit,
     onShare: (SavedDevice) -> Unit,
+    toast: ToastState,
 ) {
     var sheetDevice by remember { mutableStateOf<SavedDevice?>(null) }
+    var selectedRoom by remember { mutableStateOf<String?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
     Column(Modifier.fillMaxSize().applyTopInset()) {
@@ -71,7 +75,21 @@ fun HomeScreen(
         if (devices.isEmpty()) {
             EmptyDeck(onAddDevice)
         } else {
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(20.dp))
+            val rooms = devices.map { Room.fromSlug(it.roomSlug) }.distinct()
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
+                val tabs = listOf(null to "All") + rooms.map { it.slug to it.display }
+                tabs.forEach { (slug, label) ->
+                    Text(label, style = MaterialTheme.typography.titleSmall,
+                        color = if (selectedRoom == slug) Accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.pressable { selectedRoom = slug }.padding(horizontal = 12.dp, vertical = 16.dp))
+                }
+            }
+            ContentSwap(selectedRoom, Modifier.weight(1f)) { room ->
+            val shown = devices.filter { room == null || Room.fromSlug(it.roomSlug).slug == room }
+            if (shown.isEmpty()) {
+                Text("No remotes in this room. Choose All to see your devices.", Modifier.padding(24.dp))
+            }
             androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
                 columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(2),
                 modifier = Modifier.fillMaxSize(),
@@ -82,15 +100,16 @@ fun HomeScreen(
                     bottom = (ScreenChrome.BOTTOM_SPACE_DP + 16).dp,
                 ),
             ) {
-                items(devices, key = { it.remoteId }) { dev ->
+                items(shown, key = { it.remoteId }) { dev ->
                     DeviceTile(
                         device = dev,
                         repo = repo,
                         transmitter = transmitter,
-                        onClick = { if (dev.enabled) onOpenDevice(dev) },
+                        onClick = { if (dev.enabled) onOpenDevice(dev) else toast.show("Remote disabled. Long-press to edit it.") },
                         onLongClick = { sheetDevice = dev },
                     )
                 }
+            }
             }
         }
     }
@@ -110,10 +129,14 @@ fun HomeScreen(
                 SheetAction("Edit", "name, room, shortcut") { sheetDevice = null; onEdit(dev) }
                 SheetAction(
                     if (dev.pinned) "Unpin" else "Pin",
-                    if (dev.pinned) "remove quick-start button" else "add quick-start button on tile",
-                ) { model.togglePin(dev.remoteId); sheetDevice = null }
+                    if (dev.pinned) "remove the star" else "mark with a star",
+                ) { model.togglePin(dev.remoteId); sheetDevice = null; toast.show(if (dev.pinned) "${dev.name} unpinned" else "${dev.name} pinned") }
                 SheetAction("Share", "show QR code") { sheetDevice = null; onShare(dev) }
-                SheetAction("Delete", null, destructive = true) { model.remove(dev.remoteId); sheetDevice = null }
+                SheetAction("Delete", null, destructive = true) {
+                    model.remove(dev.remoteId)
+                    sheetDevice = null
+                    toast.show("${dev.name} removed", "Undo") { model.save(dev) }
+                }
             }
         }
     }
@@ -170,18 +193,6 @@ private fun DeviceTile(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                 Box(Modifier.size(42.dp).bgTile(12.dp, Accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
                     MaterialIcon(glyph, 24.dp, Accent)
-                }
-                if (device.pinned) {
-                    Box(
-                        Modifier.size(42.dp).bgTile(21.dp, Accent.copy(alpha = 0.15f))
-                            .pressable {
-                                val btn = runCatching { repo?.buttonByName(device.remoteId, "power") }.getOrNull()
-                                if (btn != null) { transmitter.transmitButton(btn.carrierHz, btn.pattern); Feedback.send(null) }
-                            },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        ActionIconView(ActionIcon.Power, 22.dp, Accent)
-                    }
                 }
             }
             Column(Modifier.graphicsLayer { alpha = enabledAlpha }) {

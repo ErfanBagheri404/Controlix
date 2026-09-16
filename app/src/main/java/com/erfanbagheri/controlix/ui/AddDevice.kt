@@ -1,5 +1,6 @@
 package com.erfanbagheri.controlix.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -49,11 +51,12 @@ fun AddDeviceScreen(
     onBack: () -> Unit,
 ) {
     var chosen: IrCodeRepository.Category? by remember { mutableStateOf(null) }
-    Column(Modifier.fillMaxSize().applyTopInset().padding(horizontal = 24.dp)) {
+    BackHandler(enabled = chosen != null) { chosen = null }
+    Column(Modifier.fillMaxSize().applyTopInset().navigationBarsPadding().padding(horizontal = 24.dp)) {
         Spacer(Modifier.height(14.dp))
         // Single header row — matches Home's tight layout.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            BackRow(onBack)
+            BackRow { if (chosen != null) chosen = null else onBack() }
             ActionIconView(
                 ActionIcon.QrScan,
                 22.dp,
@@ -62,21 +65,24 @@ fun AddDeviceScreen(
             )
         }
         Spacer(Modifier.height(8.dp))
-        val cat = chosen
-        if (cat == null) {
-            Text("What are you adding?", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(16.dp))
-            CategoryGrid(
-                categories = remember { repo.categories() },
-                onPick = { chosen = it },
-            )
-        } else {
-            Text("${cat.name}. Who made it?", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(8.dp))
-            BrandGrid(
-                brands = remember(cat.slug) { repo.brands(cat.slug) },
-                onPick = { onPick(it.id, it.name, cat.slug, cat.name) },
-            )
+        ContentSwap(target = chosen, modifier = Modifier.fillMaxWidth().weight(1f)) { cat ->
+            Column(Modifier.fillMaxSize()) {
+                if (cat == null) {
+                    Text("What are you adding?", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(Modifier.height(16.dp))
+                    CategoryGrid(
+                        categories = remember(repo) { repo.categories() },
+                        onPick = { chosen = it },
+                    )
+                } else {
+                    Text("${cat.name}. Who made it?", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(Modifier.height(8.dp))
+                    BrandGrid(
+                        brands = remember(repo, cat.slug) { repo.brands(cat.slug) },
+                        onPick = { onPick(it.id, it.name, cat.slug, cat.name) },
+                    )
+                }
+            }
         }
     }
 }

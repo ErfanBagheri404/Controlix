@@ -1,8 +1,17 @@
 package com.erfanbagheri.controlix.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -26,6 +35,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -56,14 +66,18 @@ fun Modifier.combinedPressable(
 ): Modifier = composed {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
+    val animationsOn = Feedback.animationsOn
     val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.97f else 1f,
-        animationSpec = tween(Motion.Press, easing = Motion.EaseOut),
+        targetValue = if (animationsOn && enabled && pressed) 0.97f else 1f,
+        animationSpec = if (animationsOn) tween(Motion.Press, easing = Motion.EaseOut) else snap(),
         label = "press",
     )
     val view = androidx.compose.ui.platform.LocalView.current
     this
-        .graphicsLayer { scaleX = scale; scaleY = scale }
+        .graphicsLayer {
+            scaleX = if (animationsOn) scale else 1f
+            scaleY = if (animationsOn) scale else 1f
+        }
         .combinedClickable(
             interactionSource = interactionSource,
             indication = null,
@@ -79,6 +93,35 @@ fun Modifier.combinedPressable(
                 onClick()
             },
         )
+}
+
+/** A quiet content step change; no animated size or motion when disabled. */
+@Composable
+fun <T> ContentSwap(
+    target: T,
+    modifier: Modifier = Modifier,
+    content: @Composable (T) -> Unit,
+) {
+    val animationsOn = Feedback.animationsOn
+    val offset = with(LocalDensity.current) { 8.dp.roundToPx() }
+    AnimatedContent(
+        targetState = target,
+        modifier = modifier,
+        transitionSpec = {
+            if (animationsOn) {
+                val enter = fadeIn(tween(Motion.Micro, easing = Motion.EaseOut)) +
+                    slideInHorizontally(tween(Motion.Micro, easing = Motion.EaseOut)) { offset }
+                val exit = fadeOut(tween(Motion.Micro, easing = Motion.EaseOut)) +
+                    slideOutHorizontally(tween(Motion.Micro, easing = Motion.EaseOut)) { -offset }
+                (enter togetherWith exit).using(null)
+            } else {
+                (EnterTransition.None togetherWith ExitTransition.None).using(null)
+            }
+        },
+        label = "contentSwap",
+    ) { current ->
+        content(current)
+    }
 }
 
 /** Stagger delay for list entries. */
@@ -101,14 +144,18 @@ fun Modifier.pressable(
 ): Modifier = composed {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
+    val animationsOn = Feedback.animationsOn
     val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.97f else 1f,
-        animationSpec = tween(Motion.Press, easing = Motion.EaseOut),
+        targetValue = if (animationsOn && enabled && pressed) 0.97f else 1f,
+        animationSpec = if (animationsOn) tween(Motion.Press, easing = Motion.EaseOut) else snap(),
         label = "press",
     )
     val view = androidx.compose.ui.platform.LocalView.current
     this
-        .graphicsLayer { scaleX = scale; scaleY = scale }
+        .graphicsLayer {
+            scaleX = if (animationsOn) scale else 1f
+            scaleY = if (animationsOn) scale else 1f
+        }
         .clickable(
             interactionSource = interactionSource,
             indication = null,
@@ -140,16 +187,19 @@ fun Modifier.bgTile(
 @Composable
 fun EmitPulse(triggerKey: Any?, modifier: Modifier = Modifier) {
     val progress = remember { Animatable(1f) }
-    LaunchedEffect(triggerKey) {
-        if (triggerKey != null) {
+    val animationsOn = Feedback.animationsOn
+    LaunchedEffect(triggerKey, animationsOn) {
+        if (animationsOn && triggerKey != null) {
             progress.snapTo(0f)
             progress.animateTo(1f, tween(620, easing = Motion.EaseOut))
+        } else {
+            progress.snapTo(1f)
         }
     }
     val ember = MaterialTheme.colorScheme.primary
     Canvas(modifier) {
         val p = progress.value
-        if (p >= 1f) return@Canvas
+        if (!animationsOn || p >= 1f) return@Canvas
         val maxR = size.minDimension / 2f
         for (i in 0 until 3) {
             val t = (p * 1.15f) - (i * 0.18f)

@@ -63,10 +63,12 @@ fun PadScreen(
     repo: IrCodeRepository?,
     transmitter: IrTransmitter,
     devices: List<SavedDevice>,
+    toast: ToastState,
     onSwitchDevice: (SavedDevice) -> Unit,
     onBack: () -> Unit,
 ) {
-    var lastSent by remember { mutableStateOf<String?>(null) }
+    var lastSent by remember(remoteId) { mutableStateOf<String?>(null) }
+    var emitKey by remember(remoteId) { mutableStateOf<Any?>(null) }
     var switcherOpen by remember { mutableStateOf(false) }
 
     val buttons = remember(remoteId) {
@@ -88,14 +90,20 @@ fun PadScreen(
         val btn = p ?: buttons.firstOrNull { it.name.equals(name, true) }
             ?: buttons.firstOrNull { it.name.contains(name, true) }
         if (btn != null) {
-            transmitter.transmitButton(btn.carrierHz, btn.pattern)
-            lastSent = btn.name
-            Feedback.send(null)
+            if (transmitter.transmitButton(btn.carrierHz, btn.pattern)) {
+                lastSent = "Sent: ${btn.name}"
+                emitKey = Any()
+            } else {
+                lastSent = "Not sent"
+                toast.show(if (!transmitter.hasIrEmitter()) "This device has no IR blaster." else "Couldn't send. Try again.")
+            }
+        } else {
+            toast.show("This remote has no ${name.replace('_', ' ')} code.")
         }
     }
 
     Column(
-        Modifier.fillMaxSize().applyTopInset().padding(horizontal = 24.dp),
+        Modifier.fillMaxSize().applyTopInset().applyBottomInset().padding(horizontal = 24.dp),
     ) {
         // ── Top bar: back · status pill · power ──────────────────────────
         Spacer(Modifier.height(12.dp))
@@ -105,10 +113,11 @@ fun PadScreen(
                     tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(26.dp))
             }
             Spacer(Modifier.weight(1f))
-            Row(Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically,
+            Row(Modifier.pressable { switcherOpen = true }.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                androidx.compose.foundation.Canvas(Modifier.size(10.dp)) {
-                    drawCircle(Accent)
+                Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+                    EmitPulse(emitKey, Modifier.size(24.dp))
+                    androidx.compose.foundation.Canvas(Modifier.size(8.dp)) { drawCircle(Accent) }
                 }
                 Text(deviceName ?: "Remote", style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(vertical = 4.dp))
@@ -157,7 +166,7 @@ fun PadScreen(
         Spacer(Modifier.height(8.dp))
 
         if (lastSent != null) {
-            Text("Last sent: $lastSent", style = MaterialTheme.typography.labelSmall, color = PaperFaint,
+            Text(lastSent.orEmpty(), style = MaterialTheme.typography.labelSmall, color = PaperFaint,
                 modifier = Modifier.padding(bottom = 8.dp))
         }
     }
@@ -178,7 +187,10 @@ fun PadScreen(
                         "${dev.name}  ·  ${dev.brand}",
                         style = MaterialTheme.typography.bodyLarge,
                         color = if (isCurrent) Accent else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
+                        modifier = Modifier.fillMaxWidth().pressable {
+                            switcherOpen = false
+                            if (!isCurrent) onSwitchDevice(dev)
+                        }.padding(vertical = 14.dp),
                     )
                 }
                 Spacer(Modifier.height(32.dp))
