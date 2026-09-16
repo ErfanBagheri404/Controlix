@@ -1,0 +1,422 @@
+[
+  [
+    "Dish Network",
+    "cable_boxes",
+    8077,
+    "Dish Network_Satelite DVR_0,0.irdb",
+    "0,0",
+    "irdb",
+    "Dish Network\\Satelite DVR\\0,0.csv",
+    42
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8078,
+    "Dish Network_Satelite DVR_1,0.irdb",
+    "1,0",
+    "irdb",
+    "Dish Network\\Satelite DVR\\1,0.csv",
+    26
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8079,
+    "Dish Network_Satelite DVR_15,-1.irdb",
+    "15,-1",
+    "irdb",
+    "Dish Network\\Satelite DVR\\15,-1.csv",
+    3
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8080,
+    "Dish Network_Satellite_0,0.irdb",
+    "0,0",
+    "irdb",
+    "Dish Network\\Satellite\\0,0.csv",
+    107
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8081,
+    "Dish Network_Satellite_0,1.irdb",
+    "0,1",
+    "irdb",
+    "Dish Network\\Satellite\\0,1.csv",
+    39
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8082,
+    "Dish Network_Satellite_0,12.irdb",
+    "0,12",
+    "irdb",
+    "Dish Network\\Satellite\\0,12.csv",
+    27
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8083,
+    "Dish Network_Satellite_0,2.irdb",
+    "0,2",
+    "irdb",
+    "Dish Network\\Satellite\\0,2.csv",
+    29
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8084,
+    "Dish Network_Satellite_0,3.irdb",
+    "0,3",
+    "irdb",
+    "Dish Network\\Satellite\\0,3.csv",
+    29
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8085,
+    "Dish Network_Satellite_0,31.irdb",
+    "0,31",
+    "irdb",
+    "Dish Network\\Satellite\\0,31.csv",
+    2
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8086,
+    "Dish Network_Satellite_0,4.irdb",
+    "0,4",
+    "irdb",
+    "Dish Network\\Satellite\\0,4.csv",
+    46
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8087,
+    "Dish Network_Satellite_0,5.irdb",
+    "0,5",
+    "irdb",
+    "Dish Network\\Satellite\\0,5.csv",
+    44
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8088,
+    "Dish Network_Satellite_0,6.irdb",
+    "0,6",
+    "irdb",
+    "Dish Network\\Satellite\\0,6.csv",
+    40
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8089,
+    "Dish Network_Satellite_0,7.irdb",
+    "0,7",
+    "irdb",
+    "Dish Network\\Satellite\\0,7.csv",
+    46
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8090,
+    "Dish Network_Satellite_1,0.irdb",
+    "1,0",
+    "irdb",
+    "Dish Network\\Satellite\\1,0.csv",
+    45
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8091,
+    "Dish Network_Satellite_1,1.irdb",
+    "1,1",
+    "irdb",
+    "Dish Network\\Satellite\\1,1.csv",
+    4
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8092,
+    "Dish Network_Satellite_1,12.irdb",
+    "1,12",
+    "irdb",
+    "Dish Network\\Satellite\\1,12.csv",
+    9
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8093,
+    "Dish Network_Satellite_1,2.irdb",
+    "1,2",
+    "irdb",
+    "Dish Network\\Satellite\\1,2.csv",
+    3
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8094,
+    "Dish Network_Satellite_1,3.irdb",
+    "1,3",
+    "irdb",
+    "Dish Network\\Satellite\\1,3.csv",
+    3
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8095,
+    "Dish Network_Satellite_1,4.irdb",
+    "1,4",
+    "irdb",
+    "Dish Network\\Satellite\\1,4.csv",
+    16
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8096,
+    "Dish Network_Satellite_1,5.irdb",
+    "1,5",
+    "irdb",
+    "Dish Network\\Satellite\\1,5.csv",
+    17
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8097,
+    "Dish Network_Satellite_1,6.irdb",
+    "1,6",
+    "irdb",
+    "Dish Network\\Satellite\\1,6.csv",
+    18
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8098,
+    "Dish Network_Satellite_1,7.irdb",
+    "1,7",
+    "irdb",
+    "Dish Network\\Satellite\\1,7.csv",
+    15
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8099,
+    "Dish Network_Satellite_15,-1.irdb",
+    "15,-1",
+    "irdb",
+    "Dish Network\\Satellite\\15,-1.csv",
+    3
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8100,
+    "Dish Network_Satellite_16,0.irdb",
+    "16,0",
+    "irdb",
+    "Dish Network\\Satellite\\16,0.csv",
+    3
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8101,
+    "Dish Network_Satellite_24,0.irdb",
+    "24,0",
+    "irdb",
+    "Dish Network\\Satellite\\24,0.csv",
+    12
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8102,
+    "Dish Network_Satellite_28,-1.irdb",
+    "28,-1",
+    "irdb",
+    "Dish Network\\Satellite\\28,-1.csv",
+    2
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8103,
+    "Dish Network_Satellite_4,0.irdb",
+    "4,0",
+    "irdb",
+    "Dish Network\\Satellite\\4,0.csv",
+    1
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8104,
+    "Dish Network_Satellite_4,5.irdb",
+    "4,5",
+    "irdb",
+    "Dish Network\\Satellite\\4,5.csv",
+    1
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8105,
+    "Dish Network_Satellite_48,-1.irdb",
+    "48,-1",
+    "irdb",
+    "Dish Network\\Satellite\\48,-1.csv",
+    3
+  ],
+  [
+    "Dish Network",
+    "cable_boxes",
+    8106,
+    "Dish Network_Satellite_8,0.irdb",
+    "8,0",
+    "irdb",
+    "Dish Network\\Satellite\\8,0.csv",
+    2
+  ],
+  [
+    "Dishnet",
+    "dvd_players",
+    10832,
+    "lirc-dishnet-301_501_3100_5100_58xx_59xx.ir",
+    "301/501/3100/5100/58xx/59xx",
+    "lirc",
+    "dishnet/301_501_3100_5100_58xx_59xx.xml",
+    40
+  ],
+  [
+    "Dishnet",
+    "dvd_players",
+    10833,
+    "lirc-dishnet-Dish_Network.ir",
+    "dish",
+    "lirc",
+    "dishnet/Dish_Network.xml",
+    41
+  ],
+  [
+    "Dishnet",
+    "dvd_players",
+    10834,
+    "lirc-dishnet-SAT_301.ir",
+    "3100",
+    "lirc",
+    "dishnet/SAT_301.xml",
+    34
+  ],
+  [
+    "GORENJE",
+    "iodn_irblaster",
+    2797,
+    "irblaster-1463.ir",
+    "GORENJE",
+    "irblaster",
+    "iodn/android-ir-blaster@master keys.1463",
+    48
+  ],
+  [
+    "GORENJE",
+    "iodn_irblaster",
+    7049,
+    "irblaster-8980.ir",
+    "GORENJE",
+    "irblaster",
+    "iodn/android-ir-blaster@master keys.8980",
+    37
+  ],
+  [
+    "Motorola",
+    "miscellaneous",
+    9263,
+    "Motorola_Unknown_QIP2500_0,-1.irdb",
+    "0,-1",
+    "irdb",
+    "Motorola\\Unknown_QIP2500\\0,-1.csv",
+    55
+  ],
+  [
+    "Amazon",
+    "soundbars",
+    1229,
+    "Firetv_EVG487.ir",
+    "Firetv EVG487",
+    "flipper",
+    "SoundBars/Amazon/Firetv_EVG487.ir",
+    12
+  ],
+  [
+    "Amazon",
+    "streaming_devices",
+    1405,
+    "FireTV_Stick_4K_Max.ir",
+    "FireTV Stick 4K Max",
+    "flipper",
+    "Streaming_Devices/Amazon/FireTV_Stick_4K_Max.ir",
+    4
+  ],
+  [
+    "Amazon",
+    "tvs",
+    1490,
+    "FireTV_Omni_Series_4K.ir",
+    "FireTV Omni Series 4K",
+    "flipper",
+    "TVs/Amazon/FireTV_Omni_Series_4K.ir",
+    33
+  ],
+  [
+    "Motorola",
+    "tvs",
+    11449,
+    "lirc-motorola-QIP2500.ir",
+    "Motorola_QIP2500",
+    "lirc",
+    "motorola/QIP2500.xml",
+    55
+  ],
+  [
+    "Toshiba",
+    "tvs",
+    1854,
+    "Toshiba_FireTV.ir",
+    "Toshiba FireTV",
+    "flipper",
+    "TVs/Toshiba/Toshiba_FireTV.ir",
+    1
+  ],
+  [
+    "Toshiba",
+    "tvs",
+    1855,
+    "toshiba_firetv_v2.ir",
+    "toshiba firetv v2",
+    "flipper",
+    "TVs/Toshiba/toshiba_firetv_v2.ir",
+    17
+  ]
+]

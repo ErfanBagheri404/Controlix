@@ -1,0 +1,333 @@
+{
+  "scope": "All 11 names from previous gap list, not an exhaustive global IR-code search",
+  "production_additions": 0,
+  "hardware_tested": false,
+  "mi_remote_codes_used": false,
+  "results": [
+    {
+      "name": "Whirlpool",
+      "status": "New validated captures; not production-ready",
+      "details": "Two DG11J13A AC reference captures, 343 timings each at 38 kHz. Independent decode, checksums, converter roundtrip and SQLite smoke test passed. Neither is power toggle; one sets timers. Needs stateful AC controls or better captures before setup can use it. Not hardware-tested.",
+      "sources": [
+        "https://github.com/crankyoldgit/IRremoteESP8266/blob/master/test/ir_Whirlpool_test.cpp",
+        "https://github.com/crankyoldgit/IRremoteESP8266/blob/master/LICENSE.txt"
+      ],
+      "license": "Upstream LGPL-2.1; preserve license and attribution when distributing."
+    },
+    {
+      "name": "Gorenje",
+      "status": "Existing under community category",
+      "details": "Two profiles, 85 buttons total, under GORENJE / iodn_irblaster. Not enough model evidence to assign both to ACs.",
+      "profiles": [
+        {
+          "category": "iodn_irblaster",
+          "model": "GORENJE",
+          "source": "irblaster",
+          "path": "iodn/android-ir-blaster@master keys.1463",
+          "buttons": 48
+        },
+        {
+          "category": "iodn_irblaster",
+          "model": "GORENJE",
+          "source": "irblaster",
+          "path": "iodn/android-ir-blaster@master keys.8980",
+          "buttons": 37
+        }
+      ],
+      "sources": [
+        "https://github.com/iodn/android-ir-blaster"
+      ]
+    },
+    {
+      "name": "OnePlus",
+      "status": "Unresolved",
+      "details": "No matching code files in inspected Flipper-IRDB tree. Bluetooth listed in Y-series specs does not rule out IR power or other models. Exact TV model and a capture/source still needed. Do not substitute arbitrary Android TV codes.",
+      "sources": [
+        "https://www.oneplus.in/tv-y-series",
+        "https://github.com/Lucaslhm/Flipper-IRDB"
+      ]
+    },
+    {
+      "name": "Realme",
+      "status": "Unresolved",
+      "details": "No matching code files in inspected Flipper-IRDB tree; attempted official TV specification URL was unavailable. IR capability and codes remain unverified, not declared absent.",
+      "sources": [
+        "https://github.com/Lucaslhm/Flipper-IRDB",
+        "https://www.realme.com/in/realme-smart-tv/specs"
+      ]
+    },
+    {
+      "name": "Google",
+      "status": "Hardware-specific, not a generic IR brand",
+      "details": "Google TV Streamer voice remote uses Bluetooth for streamer control and IR for external TVs/receivers/soundbars. This does not provide streamer-receive IR codes. No new suitable code set found.",
+      "sources": [
+        "https://support.google.com/chromecast/answer/3046409?hl=en"
+      ]
+    },
+    {
+      "name": "Chromecast",
+      "status": "Not a generic missing IR set",
+      "details": "Chromecast voice remote IR is for the attached TV/receiver/soundbar, not evidence of an IR receiver in the Chromecast. Use attached equipment codes; direct streamer navigation needs a different transport.",
+      "sources": [
+        "https://support.google.com/chromecast/answer/3046409?hl=en"
+      ]
+    },
+    {
+      "name": "Fire TV",
+      "status": "Fire TV television codes already present; distinguish sticks",
+      "details": "Amazon Omni (33 buttons), Toshiba FireTV (1 and 17 buttons), Amazon soundbar EVG487 (12) already present. A four-button Stick-labelled file also exists, but capture naming does not prove the stick receives IR; do not advertise stick navigation support from it.",
+      "sources": [
+        "https://github.com/Lucaslhm/Flipper-IRDB/blob/main/TVs/Amazon/FireTV_Omni_Series_4K.ir",
+        "https://developer.amazon.com/docs/device-specs/device-specifications-fire-tv-streaming-media-player.html"
+      ]
+    },
+    {
+      "name": "Kodi",
+      "status": "Host/receiver-specific",
+      "details": "Kodi is software. IR codes belong to the host hardware or USB IR receiver and its mappings, not a universal Kodi brand. Existing MCE-family records are not guaranteed to match a particular receiver.",
+      "sources": [
+        "https://kodi.wiki/view/Remote_controls"
+      ]
+    },
+    {
+      "name": "Dish",
+      "status": "Existing",
+      "details": "Dish Network: 30 cable-box profiles. Also three Dishnet profiles currently miscategorized as DVD players. No new code import needed for those records.",
+      "profiles": [
+        {
+          "category": "cable_boxes",
+          "model": "0,0",
+          "source": "irdb",
+          "path": "Dish Network\\Satelite DVR\\0,0.csv",
+          "buttons": 42
+        },
+        {
+          "category": "cable_boxes",
+          "model": "1,0",
+          "source": "irdb",
+          "path": "Dish Network\\Satelite DVR\\1,0.csv",
+          "buttons": 26
+        },
+        {
+          "category": "cable_boxes",
+          "model": "15,-1",
+          "source": "irdb",
+          "path": "Dish Network\\Satelite DVR\\15,-1.csv",
+          "buttons": 3
+        },
+        {
+          "category": "cable_boxes",
+          "model": "0,0",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\0,0.csv",
+          "buttons": 107
+        },
+        {
+          "category": "cable_boxes",
+          "model": "0,1",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\0,1.csv",
+          "buttons": 39
+        },
+        {
+          "category": "cable_boxes",
+          "model": "0,12",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\0,12.csv",
+          "buttons": 27
+        },
+        {
+          "category": "cable_boxes",
+          "model": "0,2",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\0,2.csv",
+          "buttons": 29
+        },
+        {
+          "category": "cable_boxes",
+          "model": "0,3",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\0,3.csv",
+          "buttons": 29
+        },
+        {
+          "category": "cable_boxes",
+          "model": "0,31",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\0,31.csv",
+          "buttons": 2
+        },
+        {
+          "category": "cable_boxes",
+          "model": "0,4",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\0,4.csv",
+          "buttons": 46
+        },
+        {
+          "category": "cable_boxes",
+          "model": "0,5",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\0,5.csv",
+          "buttons": 44
+        },
+        {
+          "category": "cable_boxes",
+          "model": "0,6",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\0,6.csv",
+          "buttons": 40
+        },
+        {
+          "category": "cable_boxes",
+          "model": "0,7",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\0,7.csv",
+          "buttons": 46
+        },
+        {
+          "category": "cable_boxes",
+          "model": "1,0",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\1,0.csv",
+          "buttons": 45
+        },
+        {
+          "category": "cable_boxes",
+          "model": "1,1",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\1,1.csv",
+          "buttons": 4
+        },
+        {
+          "category": "cable_boxes",
+          "model": "1,12",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\1,12.csv",
+          "buttons": 9
+        },
+        {
+          "category": "cable_boxes",
+          "model": "1,2",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\1,2.csv",
+          "buttons": 3
+        },
+        {
+          "category": "cable_boxes",
+          "model": "1,3",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\1,3.csv",
+          "buttons": 3
+        },
+        {
+          "category": "cable_boxes",
+          "model": "1,4",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\1,4.csv",
+          "buttons": 16
+        },
+        {
+          "category": "cable_boxes",
+          "model": "1,5",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\1,5.csv",
+          "buttons": 17
+        },
+        {
+          "category": "cable_boxes",
+          "model": "1,6",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\1,6.csv",
+          "buttons": 18
+        },
+        {
+          "category": "cable_boxes",
+          "model": "1,7",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\1,7.csv",
+          "buttons": 15
+        },
+        {
+          "category": "cable_boxes",
+          "model": "15,-1",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\15,-1.csv",
+          "buttons": 3
+        },
+        {
+          "category": "cable_boxes",
+          "model": "16,0",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\16,0.csv",
+          "buttons": 3
+        },
+        {
+          "category": "cable_boxes",
+          "model": "24,0",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\24,0.csv",
+          "buttons": 12
+        },
+        {
+          "category": "cable_boxes",
+          "model": "28,-1",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\28,-1.csv",
+          "buttons": 2
+        },
+        {
+          "category": "cable_boxes",
+          "model": "4,0",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\4,0.csv",
+          "buttons": 1
+        },
+        {
+          "category": "cable_boxes",
+          "model": "4,5",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\4,5.csv",
+          "buttons": 1
+        },
+        {
+          "category": "cable_boxes",
+          "model": "48,-1",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\48,-1.csv",
+          "buttons": 3
+        },
+        {
+          "category": "cable_boxes",
+          "model": "8,0",
+          "source": "irdb",
+          "path": "Dish Network\\Satellite\\8,0.csv",
+          "buttons": 2
+        }
+      ],
+      "sources": [
+        "https://github.com/irdb/irdb/tree/master/codes/Dish%20Network",
+        "https://github.com/probonopd/lirc-remotes/tree/master/dishnet"
+      ]
+    },
+    {
+      "name": "Verizon",
+      "status": "Existing OEM profiles; discoverability gap",
+      "details": "Motorola QIP2500 and QIP6200-2 records exist. QIP2500 is filed under TV/miscellaneous rather than a Verizon cable-box entry. A specifically named Verizon FIOS QIP2500 capture also exists in Flipper converted Pronto data. Matching model only; no blanket compatibility promise. No alias migration applied in this research.",
+      "sources": [
+        "https://github.com/Lucaslhm/Flipper-IRDB/blob/main/_Converted_/Pronto/M/Motorola/QIP2500_-_Verizon_FIOS.ir",
+        "https://github.com/probonopd/lirc-remotes/blob/master/motorola/QIP2500.xml",
+        "https://github.com/probonopd/lirc-remotes/blob/master/motorola/QIP6200-2.xml"
+      ]
+    },
+    {
+      "name": "Spectrum",
+      "status": "Unresolved exact receiver model",
+      "details": "DIGITAL SPECTRUM is not Charter/Spectrum cable. Existing Time Warner Cable and OEM records may help with legacy equipment, but brand lineage alone is not compatibility proof. No newly verified Spectrum-labelled set found in inspected sources. Need box/remote model.",
+      "sources": [
+        "https://github.com/probonopd/lirc-remotes/tree/master/time_warner_cable",
+        "https://github.com/Lucaslhm/Flipper-IRDB"
+      ]
+    }
+  ]
+}

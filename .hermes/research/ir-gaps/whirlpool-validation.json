@@ -1,0 +1,34 @@
+{
+  "status": "validated research candidates, NOT bundled",
+  "hardware_tested": false,
+  "license": "LGPL-2.1 upstream; preserve copyright David Conran 2018 and license on distribution",
+  "source": "https://github.com/crankyoldgit/IRremoteESP8266/blob/master/test/ir_Whirlpool_test.cpp",
+  "source_sha256": "12d36ef1748e9b5b272320a39d7c327edba7216d68ab06a4e5a97d0c35cf3f74",
+  "captures": [
+    {
+      "case": "RealExampleDecode",
+      "name": "Auto_25C_reference_state",
+      "note": "Auto 25C; fan auto; light on; no power toggle; clock 17:31.",
+      "timings": 343,
+      "duration_us": 251178,
+      "state_hex": "830610710000911f0000000000ef00020000000002",
+      "file": "RealExampleDecode.ir"
+    },
+    {
+      "case": "RealTimerExample",
+      "name": "Dry_25C_timer_reference_state",
+      "note": "Dry 25C; on timer 07:40; off timer 08:05; clock 07:35. Do not expose as generic power.",
+      "timings": 343,
+      "duration_us": 266084,
+      "state_hex": "83060073000087a30885072800f500050000000005",
+      "file": "RealTimerExample.ir"
+    }
+  ],
+  "tests": [
+    "343 measured timings each",
+    "independent 168-bit decode matches upstream bytes",
+    "both checksums",
+    "converter roundtrip",
+    "SQLite insert/read/count/integrity/foreign-keys"
+  ]
+}
