@@ -25,6 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.ButtonNames
@@ -67,6 +70,14 @@ fun RitualScreen(
     var lockedRemoteId by remember { mutableStateOf<Int?>(null) }
     var testStep by remember { mutableIntStateOf(-1) }
     var emitTrigger by remember { mutableStateOf<Any?>(null) }
+    var transmission by remember(powerIndex, testStep, lockedRemoteId) {
+        mutableStateOf(SetupTransmission(false, "Preparing IR command…"))
+    }
+    fun send(carrierHz: Int, pattern: IntArray) {
+        val sent = transmitter.transmitButton(carrierHz, pattern)
+        transmission = SetupTransmission.afterSend(sent, transmitter.hasIrEmitter())
+        emitTrigger = if (sent) Any() else null
+    }
 
     val followUpTests = remember(lockedRemoteId) {
         val id = lockedRemoteId ?: return@remember emptyList()
@@ -81,25 +92,23 @@ fun RitualScreen(
     LaunchedEffect(powerIndex, testStep, lockedRemoteId) {
         if (testStep < 0) {
             val code = candidates.getOrNull(powerIndex) ?: return@LaunchedEffect
-            transmitter.transmitButton(code.carrierHz, code.pattern)
-            emitTrigger = Any()
+            send(code.carrierHz, code.pattern)
         } else {
             val id = lockedRemoteId ?: return@LaunchedEffect
             val pair = followUpTests.getOrNull(testStep)
             if (pair == null) onDone(id, candidates.size)
             else {
-                transmitter.transmitButton(pair.second.carrierHz, pair.second.pattern)
-                emitTrigger = Any()
+                send(pair.second.carrierHz, pair.second.pattern)
             }
         }
     }
 
     val current: Pair<TestKind, () -> Unit> = if (testStep < 0) {
         val code = candidates[powerIndex.coerceAtMost(candidates.lastIndex)]
-        TestKind.Power to { transmitter.transmitButton(code.carrierHz, code.pattern); emitTrigger = Any() }
+        TestKind.Power to { send(code.carrierHz, code.pattern) }
     } else {
         followUpTests.getOrNull(testStep)
-            ?.let { (kind, btn) -> kind to { transmitter.transmitButton(btn.carrierHz, btn.pattern); emitTrigger = Any() } }
+            ?.let { (kind, btn) -> kind to { send(btn.carrierHz, btn.pattern) } }
             ?: (TestKind.Power to {})
     }
     val (test, fire) = current
@@ -133,7 +142,7 @@ fun RitualScreen(
             Text(test.question, style = MaterialTheme.typography.displaySmall)
             Spacer(Modifier.height(12.dp))
             Text(
-                "It sends automatically — press the button again if the moment passed.",
+                transmission.message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -166,7 +175,8 @@ fun RitualScreen(
                         if (powerIndex < candidates.lastIndex) powerIndex++ else onBack()
                     }
                 }
-                AnswerChip(ActionIcon.Check, "Yes", feedback = Feedback::confirm) {
+                AnswerChip(ActionIcon.Check, "Yes", enabled = transmission.canConfirm, feedback = Feedback::confirm) {
+                    if (!transmission.canConfirm) return@AnswerChip
                     if (testStep < 0) {
                         val code = candidates.getOrNull(powerIndex) ?: return@AnswerChip
                         lockedRemoteId = code.remoteId
@@ -203,12 +213,15 @@ private fun EmptyRitual(brandName: String, categoryName: String, onBack: () -> U
 private fun AnswerChip(
     icon: ActionIcon,
     label: String,
+    enabled: Boolean = true,
     feedback: (android.view.View?) -> Unit = Feedback::tap,
     onClick: () -> Unit,
 ) {
     Row(
         Modifier
-            .pressable(feedback = feedback, onClick = onClick)
+            .then(if (enabled) Modifier.pressable(feedback = feedback, onClick = onClick) else Modifier)
+            .semantics { if (!enabled) disabled() }
+            .alpha(if (enabled) 1f else 0.38f)
             .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(28.dp))
             .padding(horizontal = 24.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,

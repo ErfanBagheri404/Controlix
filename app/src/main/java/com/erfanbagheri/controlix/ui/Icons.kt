@@ -38,19 +38,6 @@ fun CategoryIcon(
     }
 }
 
-@Composable
-fun ActionIconView(
-    icon: ActionIcon,
-    size: Dp = 24.dp,
-    tint: Color,
-    strokeWidth: Dp = 2.5.dp,
-    modifier: Modifier = Modifier,
-) {
-    Canvas(modifier = modifier.size(size)) {
-        IconScope(this, strokeWidth.toPx(), tint).action(icon)
-    }
-}
-
 /** Scale-normalized drawing context on the 48-grid. */
 private class IconScope(
     private val s: DrawScope,

@@ -182,7 +182,7 @@ private fun DeviceTile(
     onLongClick: () -> Unit,
 ) {
     val enabledAlpha by animateFloatAsState(if (device.enabled) 1f else 0.45f, label = "enabled")
-    val glyph = remember(device.categorySlug) { CategoryIcons.forCategory(device.categorySlug) }
+    val glyph = remember(device.categorySlug) { LucideCategoryIcons.forCategory(device.categorySlug) }
     Box {
         Column(
             Modifier.fillMaxWidth().height(150.dp).bgTile(20.dp)
@@ -192,7 +192,7 @@ private fun DeviceTile(
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                 Box(Modifier.size(42.dp).bgTile(12.dp, Accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                    MaterialIcon(glyph, 24.dp, Accent)
+                    LucideIcon(glyph, 24.dp, Accent)
                 }
             }
             Column(Modifier.graphicsLayer { alpha = enabledAlpha }) {

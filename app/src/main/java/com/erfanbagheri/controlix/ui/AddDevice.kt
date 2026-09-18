@@ -115,8 +115,8 @@ private fun CategoryGrid(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                MaterialIcon(
-                    CategoryIcons.forCategory(cat.slug),
+                LucideIcon(
+                    LucideCategoryIcons.forCategory(cat.slug),
                     40.dp,
                     MaterialTheme.colorScheme.primary,
                 )

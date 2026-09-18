@@ -1,0 +1,38 @@
+package com.erfanbagheri.controlix.ui.icons
+
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.PathBuilder
+import androidx.compose.ui.graphics.vector.PathData
+import androidx.compose.ui.unit.dp
+
+/**
+ * Lucide icon set (https://lucide.dev) — ISC license, redistributable.
+ * 24x24 viewBox, stroke-only geometry at 2px with round caps and joins.
+ * Generated from upstream SVG by src/main/python/gen_lucide_icons.py —
+ * do not hand-edit; re-run the generator instead.
+ *
+ * Stroke colour is ignored at draw time: Compose's Icon() tints the vector,
+ * so every glyph follows MaterialTheme.colorScheme like any other icon.
+ */
+private fun lucideIcon(name: String, block: PathBuilder.() -> Unit): ImageVector =
+    ImageVector.Builder(
+        name = name,
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f,
+    ).apply {
+        addPath(
+            pathData = PathData(block),
+            fill = null,
+            stroke = SolidColor(Color.Black),
+            strokeLineWidth = 2f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+        )
+    }.build()
+
