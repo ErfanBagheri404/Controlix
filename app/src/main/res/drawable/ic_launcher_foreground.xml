@@ -1,36 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Controlix "beam" mark: emitter + 3 IR arc bands at 45deg. v1 geometry, 108 grid. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
 
-    <!-- emitter dot: rounded square -->
-    <path
-        android:pathData="M27.8,27.8 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0 Z"
-        android:fillColor="#1ED760" />
-    <!-- emitter eye -->
-    <path
-        android:pathData="M30.2,25.4 m-1.4,0 a1.4,1.4 0 1,1 2.8,0 a1.4,1.4 0 1,1 -2.8,0 Z"
-        android:fillColor="#F0FFF4" />
+    <!-- Arc 3 outer -->
+    <path android:strokeColor="#C800DB52" android:strokeWidth="2.4"
+        android:pathData="M66,32 A28,28 0 0 1 66,76" android:fillColor="#00000000" />
 
-    <!-- band 1 (accent, r=22.5) -->
-    <path
-        android:pathData="M38.4,49.5 C34.5,41.6 36.5,32.2 43.4,26.4 C47.6,22.9 52.9,21.2 58.1,21.6"
-        android:strokeColor="#1ED760"
-        android:strokeWidth="8"
-        android:strokeLineCap="round" />
-    <!-- band 2 (mid, r=37) -->
-    <path
-        android:pathData="M50.3,63.8 C41.4,51.4 44.4,35.2 56.2,25.6 C62.6,20.3 70.7,17.7 78.7,18.4"
-        android:strokeColor="#50E88C"
-        android:strokeWidth="7"
-        android:strokeLineCap="round" />
-    <!-- band 3 (mint, r=51.5) -->
-    <path
-        android:pathData="M62.2,78.1 C48.2,58.8 52.2,34.9 69.0,21.5 C78.2,14.1 89.9,11.0 101.3,13.1"
-        android:strokeColor="#96F5BE"
-        android:strokeWidth="6"
-        android:strokeLineCap="round" />
+    <!-- Arc 2 mid -->
+    <path android:strokeColor="#E000DB52" android:strokeWidth="2.8"
+        android:pathData="M60,36 A22,22 0 0 1 60,72" android:fillColor="#00000000" />
+
+    <!-- Arc 1 inner -->
+    <path android:strokeColor="#FF00DB52" android:strokeWidth="3.4"
+        android:pathData="M54,40 A16,16 0 0 1 54,68" android:fillColor="#00000000" />
+
+    <!-- Emitter dot -->
+    <path android:fillColor="#FF00DB52" android:pathData="M50,54 a4,4 0 1 1 8,0 a4,4 0 1 1 -8,0" />
 </vector>

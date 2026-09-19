@@ -211,9 +211,9 @@ private fun DeviceTile(
             }
         }
         if (device.pinned) {
-            // Gold star badge — pinned marker, bottom-right corner (no collision, no tap).
+            // Gold star badge — pinned marker, top-right corner.
             Box(
-                Modifier.align(Alignment.BottomEnd).padding(14.dp).size(24.dp)
+                Modifier.align(Alignment.TopEnd).padding(14.dp).size(24.dp)
                     .bgTile(12.dp, Gold.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center,
             ) {
