@@ -1,0 +1,121 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump'
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # Skip the version-bump commit this job itself pushes.
+    if: "!contains(github.event.head_commit.message, '[skip release]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Needed so the tag push below can write back to the repo.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Compute next version
+        id: v
+        run: |
+          set -e
+          BUMP="${{ github.event.inputs.bump || 'patch' }}"
+
+          # Latest tag, or 0.0.0 when the repo has none yet.
+          LAST=$(git tag -l 'v*' --sort=-v:refname | head -1)
+          LAST=${LAST:-v0.0.0}
+          echo "previous tag: $LAST"
+
+          IFS=. read -r MAJ MIN PAT <<< "${LAST#v}"
+          case "$BUMP" in
+            major) MAJ=$((MAJ+1)); MIN=0; PAT=0 ;;
+            minor) MIN=$((MIN+1)); PAT=0 ;;
+            *)     PAT=$((PAT+1)) ;;
+          esac
+          NAME="$MAJ.$MIN.$PAT"
+          echo "versionName=$NAME" >> "$GITHUB_OUTPUT"
+          echo "versionCode=$((MAJ*10000 + MIN*100 + PAT))" >> "$GITHUB_OUTPUT"
+          echo "next: v$NAME"
+
+      - name: Build release APK
+        env:
+          KEYSTORE_FILE: ${{ github.workspace }}/controlix.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -e
+          chmod +x gradlew
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$KEYSTORE_FILE"
+          else
+            unset KEYSTORE_FILE   # gradle falls back to an unsigned release build
+          fi
+          ./gradlew testDebugUnitTest assembleRelease \
+            -PversionName=${{ steps.v.outputs.versionName }} \
+            -PversionCode=${{ steps.v.outputs.versionCode }} \
+            --stacktrace
+
+      - name: Collect APK
+        id: apk
+        run: |
+          set -e
+          NAME=${{ steps.v.outputs.versionName }}
+          SRC=$(ls app/build/outputs/apk/release/*.apk | grep -v unsigned | head -1 || true)
+          [ -n "$SRC" ] || SRC=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          OUT="Controlix-$NAME.apk"
+          cp "$SRC" "$OUT"
+          echo "file=$OUT" >> "$GITHUB_OUTPUT"
+          ls -lh "$OUT"
+
+      - name: Build release notes from commits
+        id: notes
+        run: |
+          set -e
+          LAST=$(git tag -l 'v*' --sort=-v:refname | head -1 || true)
+          if [ -n "$LAST" ]; then
+            RANGE="$LAST..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+          {
+            echo "## What changed"
+            echo
+            git log "$RANGE" --no-merges --pretty=format:'- %s (%h)' | head -60
+            echo
+            echo
+            echo "**Full diff**: \`${{ github.sha }}\`"
+          } > NOTES.md
+          cat NOTES.md
+
+      - name: Tag and release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          NAME=${{ steps.v.outputs.versionName }}
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$NAME" -m "Controlix v$NAME"
+          git push origin "v$NAME"
+          gh release create "v$NAME" "${{ steps.apk.outputs.file }}" \
+            --title "Controlix v$NAME" \
+            --notes-file NOTES.md
