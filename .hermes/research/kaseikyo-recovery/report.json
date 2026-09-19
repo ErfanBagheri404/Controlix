@@ -1,0 +1,330 @@
+{
+  "upstream": "Lucaslhm/Flipper-IRDB (CC0)",
+  "reference": "https://github.com/flipperdevices/flipperzero-firmware/tree/dev/lib/infrared/encoder_decoder/kaseikyo",
+  "candidate_count": 53,
+  "recovered_profiles": 53,
+  "added_buttons": 1422,
+  "hardware_tested": false,
+  "errors": [],
+  "sources": [
+    {
+      "remote_id": 185,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Audio_and_Video_Receivers/Denon/Denon_AVR-2113CI_Main.ir",
+      "sha256": "4b27fb9d33a556a61c6ad7e403eebce591ff8cd4f5fd538c7dec8698e210e8a5",
+      "buttons": 38
+    },
+    {
+      "remote_id": 186,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Audio_and_Video_Receivers/Denon/Denon_AVR-2113CI_Zone_2.ir",
+      "sha256": "b5cf40de3a1d574de9c6b68417fb1c7f2c665491e602b4ac24d2d40079ecfc3e",
+      "buttons": 32
+    },
+    {
+      "remote_id": 189,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Audio_and_Video_Receivers/Denon/Denon_RC1253.ir",
+      "sha256": "d7fdb7122eaa3a69c8b6b49067baa1b9cfaaf6587c795cc4358bf44fbb0a39a3",
+      "buttons": 41
+    },
+    {
+      "remote_id": 220,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Audio_and_Video_Receivers/Panasonic/Panasonic_N2QAYB000145.ir",
+      "sha256": "3d546eb8348acd4c57a2896ef6a529c28e450ee80c1841716cb7880c07953cf8",
+      "buttons": 18
+    },
+    {
+      "remote_id": 221,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Audio_and_Video_Receivers/Panasonic/Panasonic_N2QAYB000210.ir",
+      "sha256": "ca673fd57c8e85db04d7dcbf44c9f1eca2067d31e83853d85a733e1641b33355",
+      "buttons": 47
+    },
+    {
+      "remote_id": 222,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Audio_and_Video_Receivers/Panasonic/Panasonic_N2QAYB001009.ir",
+      "sha256": "29dd5b5fc1944e7bf370fad0b1a86185b1ffed48108d8e6e1968af31dc06bef2",
+      "buttons": 47
+    },
+    {
+      "remote_id": 223,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Audio_and_Video_Receivers/Panasonic/Panasonic_SA_PM602.ir",
+      "sha256": "5cb5c69ee19ec4570ac748db266de7903f9ef8a8c77e21d5178d3d8e8e33b08d",
+      "buttons": 20
+    },
+    {
+      "remote_id": 224,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Audio_and_Video_Receivers/Panasonic/Panasonic_SA_PT660.ir",
+      "sha256": "1f70dccffbe7df6adf0b55b7b86a899a83c80b60932250b43ebece4118bd84f0",
+      "buttons": 47
+    },
+    {
+      "remote_id": 225,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Audio_and_Video_Receivers/Panasonic/Panasonic_SC-AK15.ir",
+      "sha256": "4e465ff1653d7f1985d774b13e73c53ecf5a8be07d98e0ec132063647bada271",
+      "buttons": 31
+    },
+    {
+      "remote_id": 226,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Audio_and_Video_Receivers/Panasonic/Panasonic_SC-PMX92-94.ir",
+      "sha256": "d27bdcd605c7c2469f26098836de5e9c62bb128d7a2d9dd5dd02bf70db9c246a",
+      "buttons": 13
+    },
+    {
+      "remote_id": 267,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Audio_and_Video_Receivers/Technics/Technics_EUR646496.ir",
+      "sha256": "e5fa11a33f58fc1ba1d17bab02938f3c9a53562b830aed659ecb8a38631d9f66",
+      "buttons": 44
+    },
+    {
+      "remote_id": 286,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Blu-Ray/JVC/JVC_XVBP1.ir",
+      "sha256": "fb6121fc9262b68ebbe140901ddd03ec366a3ef04d15a4171b7f260735e7ca20",
+      "buttons": 16
+    },
+    {
+      "remote_id": 300,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Blu-Ray/Panasonic/Panasonic_DMP_BD75.ir",
+      "sha256": "76acc839ddf866bede6406e408422b55f994dcf831d229675b68324dde2e46ed",
+      "buttons": 44
+    },
+    {
+      "remote_id": 301,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Blu-Ray/Panasonic/Panasonic_DMPBDT167.ir",
+      "sha256": "b759d3613861ab01d598ffaf4c7bf9a8c8cf3298a2eb41a658547f524439e865",
+      "buttons": 18
+    },
+    {
+      "remote_id": 302,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Blu-Ray/Panasonic/Panasonic_DMRBWT720.ir",
+      "sha256": "d198c607c28ee147a9cfe3fd41f5d3b6485687aab848e87de5f56d2c23f192cc",
+      "buttons": 21
+    },
+    {
+      "remote_id": 303,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Blu-Ray/Panasonic/Panasonic_DPUB420.ir",
+      "sha256": "2aa7bdcf33fc4c23525ed8fba1ddac6e76f214144b8eb0e7c96351a4d78332d0",
+      "buttons": 20
+    },
+    {
+      "remote_id": 304,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Blu-Ray/Panasonic/Panasonic_DPUB820.ir",
+      "sha256": "e06e507e45f5d97533326b14bf3411e08b76015c4b1607d2117774ae3e917663",
+      "buttons": 19
+    },
+    {
+      "remote_id": 305,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Blu-Ray/Panasonic/Universal_Region_Unlock/Panasonic_Region_Unlock.ir",
+      "sha256": "07b8e1f421b271fc74a5c9202fe4dedaaf2a95b9942285acc8ffe98b7363e45f",
+      "buttons": 10
+    },
+    {
+      "remote_id": 352,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Cable_Boxes/Comcast/Xfinity_XiOneSC-b.ir",
+      "sha256": "937c31e52b428515009404ca5bbee343195ec8aab89d4225f9f78cc5ffa6cb23",
+      "buttons": 5
+    },
+    {
+      "remote_id": 411,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Cameras/Panasonic/Panasonic_config01.ir",
+      "sha256": "f7181676a8e1bd5ac7a4fd7ab54847285bd8cb1004363c32e3c5a94be7a30e77",
+      "buttons": 1
+    },
+    {
+      "remote_id": 412,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Cameras/Panasonic/Panasonic_N2QAEC000017_MiniDV_remote.ir",
+      "sha256": "66e22458591636bb57287fd4768f9324b17d78641cdbbb6532592de2a79a2bf1",
+      "buttons": 22
+    },
+    {
+      "remote_id": 454,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/CD_Players/Denon/Denon_RC_1199.ir",
+      "sha256": "38501abde03801ff5e4e4cb6620d234c0e8288be12868c496a7a8c1df5cb9525",
+      "buttons": 41
+    },
+    {
+      "remote_id": 463,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/CD_Players/Panasonic/Panasonic_RXDS750.ir",
+      "sha256": "2b18f7f09eb8744ec3b19a879216545aec60e9ad9f928f0b551c314a7bd31e3a",
+      "buttons": 24
+    },
+    {
+      "remote_id": 464,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/CD_Players/Panasonic/Panasonic_SAPM03.ir",
+      "sha256": "f42da5f2584893846a214e12e35373e82fc9a5ed4d0e35f72c99a098996c08ba",
+      "buttons": 13
+    },
+    {
+      "remote_id": 465,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/CD_Players/Panasonic/Panasonic_SC-HC58.ir",
+      "sha256": "bcb747ed3f45bf52a50bcf49c80001e7a65df3ad28dd41bf318a8b15312ecc07",
+      "buttons": 20
+    },
+    {
+      "remote_id": 466,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/CD_Players/Panasonic/Panasonic_SC-PM254.ir",
+      "sha256": "6ef368571bcce01fcab92bd17f4ee12e972ffdd124e4088df831499ce071a6fe",
+      "buttons": 20
+    },
+    {
+      "remote_id": 481,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/CD_Players/Technics/Technics_ST-HD60.ir",
+      "sha256": "1c493bfda37b328371274ea839f8827827caa6bddc52b5edb278af7c92e245d6",
+      "buttons": 36
+    },
+    {
+      "remote_id": 510,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Digital_Signs/Panasonic/Panasonic_DPVF1615ZA.ir",
+      "sha256": "3c642b6be3d19d05136c37b50e037f07ad4609e974276110c632df3840af6411",
+      "buttons": 27
+    },
+    {
+      "remote_id": 534,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/DVD_Players/Panasonic/Panasonic_DVD_TV.ir",
+      "sha256": "328ffa47be889d99941da26e2b0d5623de124f6e3ac876d94afa993fa5b9dab4",
+      "buttons": 50
+    },
+    {
+      "remote_id": 535,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/DVD_Players/Panasonic/Panasonic_EUR7621070.ir",
+      "sha256": "6edbe3b96f842f4f832158ce1fe5cabfc8ec5e86077d1311e98c07d66a6389d6",
+      "buttons": 44
+    },
+    {
+      "remote_id": 536,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/DVD_Players/Panasonic/Universal_Region_Unlock/Panasonic_Region_Unlock.ir",
+      "sha256": "07b8e1f421b271fc74a5c9202fe4dedaaf2a95b9942285acc8ffe98b7363e45f",
+      "buttons": 10
+    },
+    {
+      "remote_id": 1136,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Projectors/Denon/Denon_Projector.ir",
+      "sha256": "f259c96fccf84c973605fd90b6f45284771bb511dfd1dcf626bb99f8b2a76f5c",
+      "buttons": 3
+    },
+    {
+      "remote_id": 1252,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/SoundBars/Denon/Denon-RC-1236.ir",
+      "sha256": "05d665ffa802ecac07b76711206070e277f3d42815c66188a34281ca1c56e222",
+      "buttons": 18
+    },
+    {
+      "remote_id": 1253,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/SoundBars/Denon/Denon_DHT_S216.ir",
+      "sha256": "c12a72fc9c0f1bcaea41207552fd99a024d43be4ba697bf69d6ab8edb7673101",
+      "buttons": 18
+    },
+    {
+      "remote_id": 1255,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/SoundBars/Denon/Denon_RC-1230.ir",
+      "sha256": "9e04de8b32094f8fe15ddf2d71f63671e2afb47a6dd58c754d7a4fbbec858b3a",
+      "buttons": 15
+    },
+    {
+      "remote_id": 1281,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/SoundBars/Panasonic/Panasonic_SCH-TB8.ir",
+      "sha256": "ba254430c65826bc9d5233707cd214dfc8f9eb7c3674ab7a1d47f88d8b00fdde",
+      "buttons": 8
+    },
+    {
+      "remote_id": 1390,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Speakers/Panasonic/Panasonic_N2QAYB000145.ir",
+      "sha256": "27e42c32ff312fc5edbd15435708ffdae952d187d29f2bb58e7ce2e462c7c2fc",
+      "buttons": 18
+    },
+    {
+      "remote_id": 1391,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Speakers/Panasonic/Panasonic_SA-PM602.ir",
+      "sha256": "a527ba7188179b486547371176b65579af4b9760a2f25839adfc7567147a2346",
+      "buttons": 20
+    },
+    {
+      "remote_id": 1392,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/Speakers/Panasonic/Panasonic_SC-PMX92-94.ir",
+      "sha256": "bd72c422750aef451d42132e6377451b26c80be5621e8d9d7aa2b885e24157ef",
+      "buttons": 13
+    },
+    {
+      "remote_id": 1648,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/TVs/Panasonic/N2QAYB001109.ir",
+      "sha256": "04ad7895d750f7043bfbff8e47f0d1bfb4a1abd8b94163c388459ba861f47a85",
+      "buttons": 6
+    },
+    {
+      "remote_id": 1649,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/TVs/Panasonic/N2QAYB001109_full.ir",
+      "sha256": "41d52ce56039e1e384191adf9b2dce4c8bcdce79515a5cccfbcb8f0ab100849a",
+      "buttons": 49
+    },
+    {
+      "remote_id": 1653,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/TVs/Panasonic/Panasonic_N2QAYB000705.ir",
+      "sha256": "3fe5bb73ddb29c8ad548af70d9a751094549cb1aa9cd585bfedc0154307f6d03",
+      "buttons": 47
+    },
+    {
+      "remote_id": 1658,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/TVs/Panasonic/Panasonic_TC-P50S2.ir",
+      "sha256": "6d994e9777a3cecb994e735ee0f78587303940de78b00a02229f0b41f989f943",
+      "buttons": 46
+    },
+    {
+      "remote_id": 1659,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/TVs/Panasonic/Panasonic_TC-P50U1.ir",
+      "sha256": "0df3f2c04ecbd7acc603d2b616689786302ad4f73ed13cf47ea9c12e193215d2",
+      "buttons": 5
+    },
+    {
+      "remote_id": 1661,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/TVs/Panasonic/Panasonic_TX-40HX800B.ir",
+      "sha256": "9e6bc78eb7a8e7224d9b0a2a5f619d9f7ba2682ac4004b6c47503b9f7402f011",
+      "buttons": 50
+    },
+    {
+      "remote_id": 1663,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/TVs/Panasonic/Panasonic_TX29AS10C.ir",
+      "sha256": "50d9be70ebbce497a0b1d15742f23cdbef5b2ef086ccf4edfd0285ad04df650c",
+      "buttons": 24
+    },
+    {
+      "remote_id": 1664,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/TVs/Panasonic/Panasonic_TX_42AS650E.ir",
+      "sha256": "ed8c74311c51ea973ec8fd75c5b9614c8fa4d1415987c20bb72a116cf4714379",
+      "buttons": 49
+    },
+    {
+      "remote_id": 1665,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/TVs/Panasonic/Panasonic_TX_43GXW584.ir",
+      "sha256": "9b6d923ae656e1031863009960a9256e6345cccfe09a0bc3cdaee792e2cc8c52",
+      "buttons": 42
+    },
+    {
+      "remote_id": 1667,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/TVs/Panasonic/Panasonic_Unknown_Full.ir",
+      "sha256": "9fd63e2dec6f7a1f3bf089d3e109dadda51b501b1f6e15ff4224ce54a7e2af07",
+      "buttons": 49
+    },
+    {
+      "remote_id": 1668,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/TVs/Panasonic/Panasonic_Viera.ir",
+      "sha256": "276192478d5d15b824814e6f8ccb7e4c2601a6a1ca94d8129c7337cde8d31f2f",
+      "buttons": 38
+    },
+    {
+      "remote_id": 1922,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/VCR/Panasonic/Panasonic_AG7350.ir",
+      "sha256": "c8a806df48766946d5ae38092e8c6d4464bf060d298b6bf91c17d176f43a814c",
+      "buttons": 20
+    },
+    {
+      "remote_id": 1925,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/VCR/Panasonic/Panasonic_VCR_NV-HV-61EF.ir",
+      "sha256": "72c90e52a5594c64eb182a4e3c45957cef539e5f0f641baa5f39a50cdac45bdc",
+      "buttons": 13
+    },
+    {
+      "remote_id": 1927,
+      "url": "https://raw.githubusercontent.com/Lucaslhm/Flipper-IRDB/main/VCR/Panasonic/Panasonic_VSQS1331_VCR.ir",
+      "sha256": "43ea75fae81e7920d1a404a1e3ea8ac3a0d9c6bb6b5e962162a41fd0912fccdd",
+      "buttons": 32
+    }
+  ],
+  "empty_remotes_remaining": 131
+}

@@ -1,0 +1,273 @@
+{
+  "source": "probonopd/lirc-remotes; GPL-2.0 collection, original contributor attribution retained in source",
+  "brands_searched": 14,
+  "files_fetched": 33,
+  "filled_brands": [
+    "Goldstar",
+    "Imon",
+    "Leadtek"
+  ],
+  "new_profiles": 15,
+  "new_buttons": 480,
+  "errors": [
+    {
+      "file": "E:\\dev\\data\\lirc-remotes\\goldstar\\243-592c.xml",
+      "error": "not well-formed (invalid token): line 72, column 16"
+    },
+    {
+      "file": "E:\\dev\\data\\lirc-remotes\\goldstar\\TV_VCR.xml",
+      "error": "not well-formed (invalid token): line 96, column 16"
+    },
+    {
+      "file": "E:\\dev\\data\\lirc-remotes\\leadtek\\Y04G0033.xml",
+      "error": "not well-formed (invalid token): line 48, column 16"
+    }
+  ],
+  "unresolved_brands": [
+    "Atiusb",
+    "Bestbuy",
+    "Chronos",
+    "Comag",
+    "Devinput",
+    "Hercules",
+    "Kanam Accent",
+    "Knc One",
+    "Shannon",
+    "Tekram",
+    "X10"
+  ],
+  "sources": [
+    {
+      "brand": "Goldstar",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/goldstar/105-210A.xml",
+      "sha256": "6d5e12eccbeababaa7ee9a9f5227963c496bd6185a089273dcf03b618965de7b",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Chronos",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/chronos/chronos.xml",
+      "sha256": "28906cc32ed1c5fd3d4deea8a91698b32362e0b039b6489de0989c459845ef5a",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 32
+    },
+    {
+      "brand": "Comag",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/comag/6222-N1.xml",
+      "sha256": "ed71f8c679f3d80a1b234ee80e872c0843837398c94669ac4dc5d867c88eca5f",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 42
+    },
+    {
+      "brand": "Bestbuy",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/bestbuy/bestbuy.xml",
+      "sha256": "8fb8f344ab6bcba75be4316244156624756c22df76c7c96caa23eba933a971bb",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 30
+    },
+    {
+      "brand": "Devinput",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/devinput/devinput.xml",
+      "sha256": "dcb204281b5c29d507d8df11561f19ea373e8a8220af01b25a38e13fb573abbe",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 790
+    },
+    {
+      "brand": "Atiusb",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/atiusb/atiusb.xml",
+      "sha256": "4dcc4d7d90ca872cc0e0b0374d4946bcbd3ceb2555c212897c045f5a85bea7c0",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 2074
+    },
+    {
+      "brand": "Goldstar",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/goldstar/GSE-Q204P.xml",
+      "sha256": "76a7282ef5083307a0798f7e7736fdca4ac1fdfd7e63ccd4e514700cd5c48501",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Goldstar",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/goldstar/6710S-6000A.xml",
+      "sha256": "c77b93dda632c69c65f48ec99c8873424904d1b7b8f6e4862eb4757916a2ceeb",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Goldstar",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/goldstar/RN800AW.xml",
+      "sha256": "011aa6c8f7b5a29521ff986f984754ab7e26fa1e82aa7fbc9a3965e64d700779",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Goldstar",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/goldstar/QUISY_500.xml",
+      "sha256": "ec655131f4d13c51cd95ed80102f0f296ccb91b93eb34d1d3797a3d1ba56618e",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Goldstar",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/goldstar/TV.xml",
+      "sha256": "3f488b91670baa749050199d58659ba740b8e804d0c72250eb3c36c985d23fd2",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 47
+    },
+    {
+      "brand": "Goldstar",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/goldstar/VCR.xml",
+      "sha256": "f049baaa4e2ff3b0a1fb29006a060652c2cf3be07ef7065cb3724c0ea73fd07f",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Goldstar",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/goldstar/VCR2.xml",
+      "sha256": "c3970d61eb204808f3070426dc49bebf93f64c6d90f0203b2e96a6aa3e39ec12",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Imon",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/imon/imon-2.4g-lt.xml",
+      "sha256": "a6f1869c20f0927aaf1b7232f82fdc745fd6e0cb60d3bdca072b6770d58eff35",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 61
+    },
+    {
+      "brand": "Hercules",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/hercules/smarttv_stereo.xml",
+      "sha256": "91228ca59c9b875cbe1b1a3f37a3385716cfaf5038305aef325392309ba67dfc",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 30
+    },
+    {
+      "brand": "Imon",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/imon/imon-2.4g.xml",
+      "sha256": "635022d409279f66931db317e50ef34b18b59faa8dc20f43a5beea30431642c3",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 61
+    },
+    {
+      "brand": "Imon",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/imon/imon-mceusb.xml",
+      "sha256": "b15a18ea24229261c4bf0ed1a2f7a2fffc8207c58d8ddfc241a080d5bb23ef14",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 66
+    },
+    {
+      "brand": "Imon",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/imon/imon-antec-veris.xml",
+      "sha256": "7e604b53b95d991da813cb0bbcdaa1fc45e51800bfdf7f01031f5420a8e1da87",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 97
+    },
+    {
+      "brand": "Imon",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/imon/imon-pad.xml",
+      "sha256": "5ea8881b31de441dbb5f5add81323f85151d4e18d337627a30a4227140bef2cc",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 172
+    },
+    {
+      "brand": "Imon",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/imon/imon-rsc.xml",
+      "sha256": "6944e2651fbbd489f5dcb981f936665fa510471172160a127ec9560d18da9d11",
+      "profiles_with_waveforms": 2,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Imon",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/imon/imon-ultrabay.xml",
+      "sha256": "9588727a9eac2a6c00c482ad914ecfc3d8d763320a31c7275389ea6e5f534ecf",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 71
+    },
+    {
+      "brand": "Imon",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/imon/imon.xml",
+      "sha256": "1600c7fc32ea248981882e9712cfcca38c341debd288211e53944ae7341f5cb0",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Kanam Accent",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/kanam_accent/IR-100.xml",
+      "sha256": "cb32ce460628f20f0683e3c960ae20db3ac713910f93a5fdee17ef450fdfc222",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 41
+    },
+    {
+      "brand": "Knc One",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/knc_one/knc_one.xml",
+      "sha256": "89e3a2d2cad05af44efdd33da26a9d2ac23bfc0fdb91cb1bf7c176498679420b",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 32
+    },
+    {
+      "brand": "Leadtek",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/leadtek/PVR2000.xml",
+      "sha256": "897098c70158c9b26e081fac9947d157532577e5df9bb099b289d0c1cc77ecfa",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 98
+    },
+    {
+      "brand": "Leadtek",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/leadtek/RM-0007.xml",
+      "sha256": "c402806589776d0a3b0c6b9fd15ac525916ed7bef69f96484aad9942b0d27b48",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Leadtek",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/leadtek/RM-0010.xml",
+      "sha256": "851f23037ca53fae91b04077f7b734358c6ec57653c8e91a172c2cc37b26d5c4",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Leadtek",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/leadtek/Y0400046.xml",
+      "sha256": "04776eadbd8c94758589f26ed05ef4c5f16b224e72d4ae42af347a54f1190e3e",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Leadtek",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/leadtek/Y04G0004.xml",
+      "sha256": "89f4a6354cd34fc4cf136153b16982a68f9fa767de8887b3ce3dd7e6c14c0cab",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Leadtek",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/leadtek/Y0400052.xml",
+      "sha256": "11e608645c551be33009522990db90f12cd7a20516f0d2ac9cff7dc347bc918d",
+      "profiles_with_waveforms": 1,
+      "failedcode_count": 0
+    },
+    {
+      "brand": "Shannon",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/shannon/SWK-8630.xml",
+      "sha256": "bbe78ca7e7c74d4d4c09911b99ebe63dc4150e89e98d8292f2ac06b0f4051b3d",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 86
+    },
+    {
+      "brand": "Tekram",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/tekram/m230.xml",
+      "sha256": "da3e5bfb1113a7b7c37ea158c37dddc3a5a2af62f32a674323155ab08ff1cac7",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 31
+    },
+    {
+      "brand": "X10",
+      "url": "https://raw.githubusercontent.com/probonopd/lirc-remotes/xml/x10/atiusb.xml",
+      "sha256": "94fb87b44da5760df76f26ce3c378015eeaf38d45b706ca2855e1984c5e12e27",
+      "profiles_with_waveforms": 0,
+      "failedcode_count": 1283
+    }
+  ],
+  "hardware_tested": false
+}

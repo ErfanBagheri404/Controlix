@@ -1,0 +1,66 @@
+{
+  "Atiusb": [
+    "E:\\dev\\data\\lirc-remotes\\atiusb\\atiusb.xml"
+  ],
+  "Bestbuy": [
+    "E:\\dev\\data\\lirc-remotes\\bestbuy\\bestbuy.xml"
+  ],
+  "Chronos": [
+    "E:\\dev\\data\\lirc-remotes\\chronos\\chronos.xml"
+  ],
+  "Comag": [
+    "E:\\dev\\data\\lirc-remotes\\comag\\6222-N1.xml"
+  ],
+  "Devinput": [
+    "E:\\dev\\data\\lirc-remotes\\devinput\\devinput.xml"
+  ],
+  "Goldstar": [
+    "E:\\dev\\data\\lirc-remotes\\goldstar\\105-210A.xml",
+    "E:\\dev\\data\\lirc-remotes\\goldstar\\243-592c.xml",
+    "E:\\dev\\data\\lirc-remotes\\goldstar\\6710S-6000A.xml",
+    "E:\\dev\\data\\lirc-remotes\\goldstar\\GSE-Q204P.xml",
+    "E:\\dev\\data\\lirc-remotes\\goldstar\\QUISY_500.xml",
+    "E:\\dev\\data\\lirc-remotes\\goldstar\\RN800AW.xml",
+    "E:\\dev\\data\\lirc-remotes\\goldstar\\TV.xml",
+    "E:\\dev\\data\\lirc-remotes\\goldstar\\TV_VCR.xml",
+    "E:\\dev\\data\\lirc-remotes\\goldstar\\VCR.xml",
+    "E:\\dev\\data\\lirc-remotes\\goldstar\\VCR2.xml"
+  ],
+  "Hercules": [
+    "E:\\dev\\data\\lirc-remotes\\hercules\\smarttv_stereo.xml"
+  ],
+  "Imon": [
+    "E:\\dev\\data\\lirc-remotes\\imon\\imon-2.4g-lt.xml",
+    "E:\\dev\\data\\lirc-remotes\\imon\\imon-2.4g.xml",
+    "E:\\dev\\data\\lirc-remotes\\imon\\imon-antec-veris.xml",
+    "E:\\dev\\data\\lirc-remotes\\imon\\imon-mceusb.xml",
+    "E:\\dev\\data\\lirc-remotes\\imon\\imon-pad.xml",
+    "E:\\dev\\data\\lirc-remotes\\imon\\imon-rsc.xml",
+    "E:\\dev\\data\\lirc-remotes\\imon\\imon-ultrabay.xml",
+    "E:\\dev\\data\\lirc-remotes\\imon\\imon.xml"
+  ],
+  "Kanam Accent": [
+    "E:\\dev\\data\\lirc-remotes\\kanam_accent\\IR-100.xml"
+  ],
+  "Knc One": [
+    "E:\\dev\\data\\lirc-remotes\\knc_one\\knc_one.xml"
+  ],
+  "Leadtek": [
+    "E:\\dev\\data\\lirc-remotes\\leadtek\\PVR2000.xml",
+    "E:\\dev\\data\\lirc-remotes\\leadtek\\RM-0007.xml",
+    "E:\\dev\\data\\lirc-remotes\\leadtek\\RM-0010.xml",
+    "E:\\dev\\data\\lirc-remotes\\leadtek\\Y0400046.xml",
+    "E:\\dev\\data\\lirc-remotes\\leadtek\\Y0400052.xml",
+    "E:\\dev\\data\\lirc-remotes\\leadtek\\Y04G0004.xml",
+    "E:\\dev\\data\\lirc-remotes\\leadtek\\Y04G0033.xml"
+  ],
+  "Shannon": [
+    "E:\\dev\\data\\lirc-remotes\\shannon\\SWK-8630.xml"
+  ],
+  "Tekram": [
+    "E:\\dev\\data\\lirc-remotes\\tekram\\m230.xml"
+  ],
+  "X10": [
+    "E:\\dev\\data\\lirc-remotes\\x10\\atiusb.xml"
+  ]
+}

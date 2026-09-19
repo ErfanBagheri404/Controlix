@@ -1,0 +1,2153 @@
+{
+  "remotes": [
+    {
+      "id": 185,
+      "brand_id": 113,
+      "file_name": "Denon_AVR-2113CI_Main.ir",
+      "model_name": "Denon AVR-2113CI Main",
+      "source": "flipper",
+      "source_path": "Audio_and_Video_Receivers/Denon/Denon_AVR-2113CI_Main.ir"
+    },
+    {
+      "id": 186,
+      "brand_id": 113,
+      "file_name": "Denon_AVR-2113CI_Zone_2.ir",
+      "model_name": "Denon AVR-2113CI Zone 2",
+      "source": "flipper",
+      "source_path": "Audio_and_Video_Receivers/Denon/Denon_AVR-2113CI_Zone_2.ir"
+    },
+    {
+      "id": 189,
+      "brand_id": 113,
+      "file_name": "Denon_RC1253.ir",
+      "model_name": "Denon RC1253",
+      "source": "flipper",
+      "source_path": "Audio_and_Video_Receivers/Denon/Denon_RC1253.ir"
+    },
+    {
+      "id": 220,
+      "brand_id": 131,
+      "file_name": "Panasonic_N2QAYB000145.ir",
+      "model_name": "Panasonic N2QAYB000145",
+      "source": "flipper",
+      "source_path": "Audio_and_Video_Receivers/Panasonic/Panasonic_N2QAYB000145.ir"
+    },
+    {
+      "id": 221,
+      "brand_id": 131,
+      "file_name": "Panasonic_N2QAYB000210.ir",
+      "model_name": "Panasonic N2QAYB000210",
+      "source": "flipper",
+      "source_path": "Audio_and_Video_Receivers/Panasonic/Panasonic_N2QAYB000210.ir"
+    },
+    {
+      "id": 222,
+      "brand_id": 131,
+      "file_name": "Panasonic_N2QAYB001009.ir",
+      "model_name": "Panasonic N2QAYB001009",
+      "source": "flipper",
+      "source_path": "Audio_and_Video_Receivers/Panasonic/Panasonic_N2QAYB001009.ir"
+    },
+    {
+      "id": 223,
+      "brand_id": 131,
+      "file_name": "Panasonic_SA_PM602.ir",
+      "model_name": "Panasonic SA PM602",
+      "source": "flipper",
+      "source_path": "Audio_and_Video_Receivers/Panasonic/Panasonic_SA_PM602.ir"
+    },
+    {
+      "id": 224,
+      "brand_id": 131,
+      "file_name": "Panasonic_SA_PT660.ir",
+      "model_name": "Panasonic SA PT660",
+      "source": "flipper",
+      "source_path": "Audio_and_Video_Receivers/Panasonic/Panasonic_SA_PT660.ir"
+    },
+    {
+      "id": 225,
+      "brand_id": 131,
+      "file_name": "Panasonic_SC-AK15.ir",
+      "model_name": "Panasonic SC-AK15",
+      "source": "flipper",
+      "source_path": "Audio_and_Video_Receivers/Panasonic/Panasonic_SC-AK15.ir"
+    },
+    {
+      "id": 226,
+      "brand_id": 131,
+      "file_name": "Panasonic_SC-PMX92-94.ir",
+      "model_name": "Panasonic SC-PMX92-94",
+      "source": "flipper",
+      "source_path": "Audio_and_Video_Receivers/Panasonic/Panasonic_SC-PMX92-94.ir"
+    },
+    {
+      "id": 238,
+      "brand_id": 133,
+      "file_name": "Pioneer_AXD7741.ir",
+      "model_name": "Pioneer AXD7741",
+      "source": "flipper",
+      "source_path": "Audio_and_Video_Receivers/Pioneer/Pioneer_AXD7741.ir"
+    },
+    {
+      "id": 267,
+      "brand_id": 142,
+      "file_name": "Technics_EUR646496.ir",
+      "model_name": "Technics EUR646496",
+      "source": "flipper",
+      "source_path": "Audio_and_Video_Receivers/Technics/Technics_EUR646496.ir"
+    },
+    {
+      "id": 286,
+      "brand_id": 149,
+      "file_name": "JVC_XVBP1.ir",
+      "model_name": "JVC XVBP1",
+      "source": "flipper",
+      "source_path": "Blu-Ray/JVC/JVC_XVBP1.ir"
+    },
+    {
+      "id": 300,
+      "brand_id": 154,
+      "file_name": "Panasonic_DMP_BD75.ir",
+      "model_name": "Panasonic DMP BD75",
+      "source": "flipper",
+      "source_path": "Blu-Ray/Panasonic/Panasonic_DMP_BD75.ir"
+    },
+    {
+      "id": 301,
+      "brand_id": 154,
+      "file_name": "Panasonic_DMPBDT167.ir",
+      "model_name": "Panasonic DMPBDT167",
+      "source": "flipper",
+      "source_path": "Blu-Ray/Panasonic/Panasonic_DMPBDT167.ir"
+    },
+    {
+      "id": 302,
+      "brand_id": 154,
+      "file_name": "Panasonic_DMRBWT720.ir",
+      "model_name": "Panasonic DMRBWT720",
+      "source": "flipper",
+      "source_path": "Blu-Ray/Panasonic/Panasonic_DMRBWT720.ir"
+    },
+    {
+      "id": 303,
+      "brand_id": 154,
+      "file_name": "Panasonic_DPUB420.ir",
+      "model_name": "Panasonic DPUB420",
+      "source": "flipper",
+      "source_path": "Blu-Ray/Panasonic/Panasonic_DPUB420.ir"
+    },
+    {
+      "id": 304,
+      "brand_id": 154,
+      "file_name": "Panasonic_DPUB820.ir",
+      "model_name": "Panasonic DPUB820",
+      "source": "flipper",
+      "source_path": "Blu-Ray/Panasonic/Panasonic_DPUB820.ir"
+    },
+    {
+      "id": 305,
+      "brand_id": 154,
+      "file_name": "Panasonic_Region_Unlock.ir",
+      "model_name": "Panasonic Region Unlock",
+      "source": "flipper",
+      "source_path": "Blu-Ray/Panasonic/Universal_Region_Unlock/Panasonic_Region_Unlock.ir"
+    },
+    {
+      "id": 309,
+      "brand_id": 156,
+      "file_name": "Pioneer_BDP150.ir",
+      "model_name": "Pioneer BDP150",
+      "source": "flipper",
+      "source_path": "Blu-Ray/Pioneer/Pioneer_BDP150.ir"
+    },
+    {
+      "id": 310,
+      "brand_id": 156,
+      "file_name": "Pioneer_BDP320.ir",
+      "model_name": "Pioneer BDP320",
+      "source": "flipper",
+      "source_path": "Blu-Ray/Pioneer/Pioneer_BDP320.ir"
+    },
+    {
+      "id": 311,
+      "brand_id": 156,
+      "file_name": "Pioneer_BDP43FD.ir",
+      "model_name": "Pioneer BDP43FD",
+      "source": "flipper",
+      "source_path": "Blu-Ray/Pioneer/Pioneer_BDP43FD.ir"
+    },
+    {
+      "id": 352,
+      "brand_id": 175,
+      "file_name": "Xfinity_XiOneSC-b.ir",
+      "model_name": "Xfinity XiOneSC-b",
+      "source": "flipper",
+      "source_path": "Cable_Boxes/Comcast/Xfinity_XiOneSC-b.ir"
+    },
+    {
+      "id": 411,
+      "brand_id": 216,
+      "file_name": "Panasonic_config01.ir",
+      "model_name": "Panasonic config01",
+      "source": "flipper",
+      "source_path": "Cameras/Panasonic/Panasonic_config01.ir"
+    },
+    {
+      "id": 412,
+      "brand_id": 216,
+      "file_name": "Panasonic_N2QAEC000017_MiniDV_remote.ir",
+      "model_name": "Panasonic N2QAEC000017 MiniDV remote",
+      "source": "flipper",
+      "source_path": "Cameras/Panasonic/Panasonic_N2QAEC000017_MiniDV_remote.ir"
+    },
+    {
+      "id": 454,
+      "brand_id": 231,
+      "file_name": "Denon_RC_1199.ir",
+      "model_name": "Denon RC 1199",
+      "source": "flipper",
+      "source_path": "CD_Players/Denon/Denon_RC_1199.ir"
+    },
+    {
+      "id": 463,
+      "brand_id": 237,
+      "file_name": "Panasonic_RXDS750.ir",
+      "model_name": "Panasonic RXDS750",
+      "source": "flipper",
+      "source_path": "CD_Players/Panasonic/Panasonic_RXDS750.ir"
+    },
+    {
+      "id": 464,
+      "brand_id": 237,
+      "file_name": "Panasonic_SAPM03.ir",
+      "model_name": "Panasonic SAPM03",
+      "source": "flipper",
+      "source_path": "CD_Players/Panasonic/Panasonic_SAPM03.ir"
+    },
+    {
+      "id": 465,
+      "brand_id": 237,
+      "file_name": "Panasonic_SC-HC58.ir",
+      "model_name": "Panasonic SC-HC58",
+      "source": "flipper",
+      "source_path": "CD_Players/Panasonic/Panasonic_SC-HC58.ir"
+    },
+    {
+      "id": 466,
+      "brand_id": 237,
+      "file_name": "Panasonic_SC-PM254.ir",
+      "model_name": "Panasonic SC-PM254",
+      "source": "flipper",
+      "source_path": "CD_Players/Panasonic/Panasonic_SC-PM254.ir"
+    },
+    {
+      "id": 481,
+      "brand_id": 244,
+      "file_name": "Technics_ST-HD60.ir",
+      "model_name": "Technics ST-HD60",
+      "source": "flipper",
+      "source_path": "CD_Players/Technics/Technics_ST-HD60.ir"
+    },
+    {
+      "id": 510,
+      "brand_id": 266,
+      "file_name": "Panasonic_DPVF1615ZA.ir",
+      "model_name": "Panasonic DPVF1615ZA",
+      "source": "flipper",
+      "source_path": "Digital_Signs/Panasonic/Panasonic_DPVF1615ZA.ir"
+    },
+    {
+      "id": 534,
+      "brand_id": 286,
+      "file_name": "Panasonic_DVD_TV.ir",
+      "model_name": "Panasonic DVD TV",
+      "source": "flipper",
+      "source_path": "DVD_Players/Panasonic/Panasonic_DVD_TV.ir"
+    },
+    {
+      "id": 535,
+      "brand_id": 286,
+      "file_name": "Panasonic_EUR7621070.ir",
+      "model_name": "Panasonic EUR7621070",
+      "source": "flipper",
+      "source_path": "DVD_Players/Panasonic/Panasonic_EUR7621070.ir"
+    },
+    {
+      "id": 536,
+      "brand_id": 286,
+      "file_name": "Panasonic_Region_Unlock.ir",
+      "model_name": "Panasonic Region Unlock",
+      "source": "flipper",
+      "source_path": "DVD_Players/Panasonic/Universal_Region_Unlock/Panasonic_Region_Unlock.ir"
+    },
+    {
+      "id": 1136,
+      "brand_id": 692,
+      "file_name": "Denon_Projector.ir",
+      "model_name": "Denon Projector",
+      "source": "flipper",
+      "source_path": "Projectors/Denon/Denon_Projector.ir"
+    },
+    {
+      "id": 1252,
+      "brand_id": 744,
+      "file_name": "Denon-RC-1236.ir",
+      "model_name": "Denon-RC-1236",
+      "source": "flipper",
+      "source_path": "SoundBars/Denon/Denon-RC-1236.ir"
+    },
+    {
+      "id": 1253,
+      "brand_id": 744,
+      "file_name": "Denon_DHT_S216.ir",
+      "model_name": "Denon DHT S216",
+      "source": "flipper",
+      "source_path": "SoundBars/Denon/Denon_DHT_S216.ir"
+    },
+    {
+      "id": 1255,
+      "brand_id": 744,
+      "file_name": "Denon_RC-1230.ir",
+      "model_name": "Denon RC-1230",
+      "source": "flipper",
+      "source_path": "SoundBars/Denon/Denon_RC-1230.ir"
+    },
+    {
+      "id": 1281,
+      "brand_id": 758,
+      "file_name": "Panasonic_SCH-TB8.ir",
+      "model_name": "Panasonic SCH-TB8",
+      "source": "flipper",
+      "source_path": "SoundBars/Panasonic/Panasonic_SCH-TB8.ir"
+    },
+    {
+      "id": 1390,
+      "brand_id": 804,
+      "file_name": "Panasonic_N2QAYB000145.ir",
+      "model_name": "Panasonic N2QAYB000145",
+      "source": "flipper",
+      "source_path": "Speakers/Panasonic/Panasonic_N2QAYB000145.ir"
+    },
+    {
+      "id": 1391,
+      "brand_id": 804,
+      "file_name": "Panasonic_SA-PM602.ir",
+      "model_name": "Panasonic SA-PM602",
+      "source": "flipper",
+      "source_path": "Speakers/Panasonic/Panasonic_SA-PM602.ir"
+    },
+    {
+      "id": 1392,
+      "brand_id": 804,
+      "file_name": "Panasonic_SC-PMX92-94.ir",
+      "model_name": "Panasonic SC-PMX92-94",
+      "source": "flipper",
+      "source_path": "Speakers/Panasonic/Panasonic_SC-PMX92-94.ir"
+    },
+    {
+      "id": 1648,
+      "brand_id": 935,
+      "file_name": "N2QAYB001109.ir",
+      "model_name": "N2QAYB001109",
+      "source": "flipper",
+      "source_path": "TVs/Panasonic/N2QAYB001109.ir"
+    },
+    {
+      "id": 1649,
+      "brand_id": 935,
+      "file_name": "N2QAYB001109_full.ir",
+      "model_name": "N2QAYB001109 full",
+      "source": "flipper",
+      "source_path": "TVs/Panasonic/N2QAYB001109_full.ir"
+    },
+    {
+      "id": 1653,
+      "brand_id": 935,
+      "file_name": "Panasonic_N2QAYB000705.ir",
+      "model_name": "Panasonic N2QAYB000705",
+      "source": "flipper",
+      "source_path": "TVs/Panasonic/Panasonic_N2QAYB000705.ir"
+    },
+    {
+      "id": 1658,
+      "brand_id": 935,
+      "file_name": "Panasonic_TC-P50S2.ir",
+      "model_name": "Panasonic TC-P50S2",
+      "source": "flipper",
+      "source_path": "TVs/Panasonic/Panasonic_TC-P50S2.ir"
+    },
+    {
+      "id": 1659,
+      "brand_id": 935,
+      "file_name": "Panasonic_TC-P50U1.ir",
+      "model_name": "Panasonic TC-P50U1",
+      "source": "flipper",
+      "source_path": "TVs/Panasonic/Panasonic_TC-P50U1.ir"
+    },
+    {
+      "id": 1661,
+      "brand_id": 935,
+      "file_name": "Panasonic_TX-40HX800B.ir",
+      "model_name": "Panasonic TX-40HX800B",
+      "source": "flipper",
+      "source_path": "TVs/Panasonic/Panasonic_TX-40HX800B.ir"
+    },
+    {
+      "id": 1663,
+      "brand_id": 935,
+      "file_name": "Panasonic_TX29AS10C.ir",
+      "model_name": "Panasonic TX29AS10C",
+      "source": "flipper",
+      "source_path": "TVs/Panasonic/Panasonic_TX29AS10C.ir"
+    },
+    {
+      "id": 1664,
+      "brand_id": 935,
+      "file_name": "Panasonic_TX_42AS650E.ir",
+      "model_name": "Panasonic TX 42AS650E",
+      "source": "flipper",
+      "source_path": "TVs/Panasonic/Panasonic_TX_42AS650E.ir"
+    },
+    {
+      "id": 1665,
+      "brand_id": 935,
+      "file_name": "Panasonic_TX_43GXW584.ir",
+      "model_name": "Panasonic TX 43GXW584",
+      "source": "flipper",
+      "source_path": "TVs/Panasonic/Panasonic_TX_43GXW584.ir"
+    },
+    {
+      "id": 1667,
+      "brand_id": 935,
+      "file_name": "Panasonic_Unknown_Full.ir",
+      "model_name": "Panasonic Unknown Full",
+      "source": "flipper",
+      "source_path": "TVs/Panasonic/Panasonic_Unknown_Full.ir"
+    },
+    {
+      "id": 1668,
+      "brand_id": 935,
+      "file_name": "Panasonic_Viera.ir",
+      "model_name": "Panasonic Viera",
+      "source": "flipper",
+      "source_path": "TVs/Panasonic/Panasonic_Viera.ir"
+    },
+    {
+      "id": 1922,
+      "brand_id": 1005,
+      "file_name": "Panasonic_AG7350.ir",
+      "model_name": "Panasonic AG7350",
+      "source": "flipper",
+      "source_path": "VCR/Panasonic/Panasonic_AG7350.ir"
+    },
+    {
+      "id": 1925,
+      "brand_id": 1005,
+      "file_name": "Panasonic_VCR_NV-HV-61EF.ir",
+      "model_name": "Panasonic VCR NV-HV-61EF",
+      "source": "flipper",
+      "source_path": "VCR/Panasonic/Panasonic_VCR_NV-HV-61EF.ir"
+    },
+    {
+      "id": 1927,
+      "brand_id": 1005,
+      "file_name": "Panasonic_VSQS1331_VCR.ir",
+      "model_name": "Panasonic VSQS1331 VCR",
+      "source": "flipper",
+      "source_path": "VCR/Panasonic/Panasonic_VSQS1331_VCR.ir"
+    },
+    {
+      "id": 3950,
+      "brand_id": 1575,
+      "file_name": "irblaster-3492.ir",
+      "model_name": "LUNEAU",
+      "source": "irblaster",
+      "source_path": "iodn/android-ir-blaster@master keys.3492"
+    },
+    {
+      "id": 6262,
+      "brand_id": 2151,
+      "file_name": "irblaster-7679.ir",
+      "model_name": "ROMTELECOM DOLCE",
+      "source": "irblaster",
+      "source_path": "iodn/android-ir-blaster@master keys.7679"
+    },
+    {
+      "id": 7268,
+      "brand_id": 2271,
+      "file_name": "ADB_Set Top Box_42,17.irdb",
+      "model_name": "42,17",
+      "source": "irdb",
+      "source_path": "ADB\\Set Top Box\\42,17.csv"
+    },
+    {
+      "id": 7414,
+      "brand_id": 2317,
+      "file_name": "Arcam_CD Player_16,-1.irdb",
+      "model_name": "16,-1",
+      "source": "irdb",
+      "source_path": "Arcam\\CD Player\\16,-1.csv"
+    },
+    {
+      "id": 7422,
+      "brand_id": 2320,
+      "file_name": "Arcam_Receiver_0,-1.irdb",
+      "model_name": "0,-1",
+      "source": "irdb",
+      "source_path": "Arcam\\Receiver\\0,-1.csv"
+    },
+    {
+      "id": 7428,
+      "brand_id": 2320,
+      "file_name": "Arcam_Surround Receiver_0,-1.irdb",
+      "model_name": "0,-1",
+      "source": "irdb",
+      "source_path": "Arcam\\Surround Receiver\\0,-1.csv"
+    },
+    {
+      "id": 7524,
+      "brand_id": 2372,
+      "file_name": "Bell ExpressVu_HD DVR_7,-1.irdb",
+      "model_name": "7,-1",
+      "source": "irdb",
+      "source_path": "Bell ExpressVu\\HD DVR\\7,-1.csv"
+    },
+    {
+      "id": 7535,
+      "brand_id": 170,
+      "file_name": "Bell_Satellite_16,1.irdb",
+      "model_name": "16,1",
+      "source": "irdb",
+      "source_path": "Bell\\Satellite\\16,1.csv"
+    },
+    {
+      "id": 7548,
+      "brand_id": 2378,
+      "file_name": "BnK Components_2-Channel Preamp_11,-1.irdb",
+      "model_name": "11,-1",
+      "source": "irdb",
+      "source_path": "BnK Components\\2-Channel Preamp\\11,-1.csv"
+    },
+    {
+      "id": 7633,
+      "brand_id": 2378,
+      "file_name": "BnK Components_Pre-Amplifier_11,-1.irdb",
+      "model_name": "11,-1",
+      "source": "irdb",
+      "source_path": "BnK Components\\Pre-Amplifier\\11,-1.csv"
+    },
+    {
+      "id": 7702,
+      "brand_id": 2382,
+      "file_name": "Bose_Unknown_Wave_-1,-1.irdb",
+      "model_name": "-1,-1",
+      "source": "irdb",
+      "source_path": "Bose\\Unknown_Wave\\-1,-1.csv"
+    },
+    {
+      "id": 7705,
+      "brand_id": 2385,
+      "file_name": "Boxlight_Projector_48,206.irdb",
+      "model_name": "48,206",
+      "source": "irdb",
+      "source_path": "Boxlight\\Projector\\48,206.csv"
+    },
+    {
+      "id": 7864,
+      "brand_id": 175,
+      "file_name": "Comcast_Cable Box_62,16.irdb",
+      "model_name": "62,16",
+      "source": "irdb",
+      "source_path": "Comcast\\Cable Box\\62,16.csv"
+    },
+    {
+      "id": 7927,
+      "brand_id": 2476,
+      "file_name": "DVDO_Scaler_0,45.irdb",
+      "model_name": "0,45",
+      "source": "irdb",
+      "source_path": "DVDO\\Scaler\\0,45.csv"
+    },
+    {
+      "id": 7929,
+      "brand_id": 2476,
+      "file_name": "DVDO_Video Processor_0,45.irdb",
+      "model_name": "0,45",
+      "source": "irdb",
+      "source_path": "DVDO\\Video Processor\\0,45.csv"
+    },
+    {
+      "id": 7972,
+      "brand_id": 2489,
+      "file_name": "Denon_Blu-Ray_2,1.irdb",
+      "model_name": "2,1",
+      "source": "irdb",
+      "source_path": "Denon\\Blu-Ray\\2,1.csv"
+    },
+    {
+      "id": 7976,
+      "brand_id": 231,
+      "file_name": "Denon_CD Player_175,-1.irdb",
+      "model_name": "175,-1",
+      "source": "irdb",
+      "source_path": "Denon\\CD Player\\175,-1.csv"
+    },
+    {
+      "id": 7991,
+      "brand_id": 2490,
+      "file_name": "Denon_DVD Player_2,1.irdb",
+      "model_name": "2,1",
+      "source": "irdb",
+      "source_path": "Denon\\DVD Player\\2,1.csv"
+    },
+    {
+      "id": 8003,
+      "brand_id": 2489,
+      "file_name": "Denon_Processor_4,1.irdb",
+      "model_name": "4,1",
+      "source": "irdb",
+      "source_path": "Denon\\Processor\\4,1.csv"
+    },
+    {
+      "id": 8004,
+      "brand_id": 2489,
+      "file_name": "Denon_Processor_4,3.irdb",
+      "model_name": "4,3",
+      "source": "irdb",
+      "source_path": "Denon\\Processor\\4,3.csv"
+    },
+    {
+      "id": 8005,
+      "brand_id": 2489,
+      "file_name": "Denon_Processor_4,5.irdb",
+      "model_name": "4,5",
+      "source": "irdb",
+      "source_path": "Denon\\Processor\\4,5.csv"
+    },
+    {
+      "id": 8008,
+      "brand_id": 113,
+      "file_name": "Denon_Receiver_2,3.irdb",
+      "model_name": "2,3",
+      "source": "irdb",
+      "source_path": "Denon\\Receiver\\2,3.csv"
+    },
+    {
+      "id": 8010,
+      "brand_id": 113,
+      "file_name": "Denon_Receiver_4,1.irdb",
+      "model_name": "4,1",
+      "source": "irdb",
+      "source_path": "Denon\\Receiver\\4,1.csv"
+    },
+    {
+      "id": 8011,
+      "brand_id": 113,
+      "file_name": "Denon_Receiver_4,2.irdb",
+      "model_name": "4,2",
+      "source": "irdb",
+      "source_path": "Denon\\Receiver\\4,2.csv"
+    },
+    {
+      "id": 8012,
+      "brand_id": 113,
+      "file_name": "Denon_Receiver_4,3.irdb",
+      "model_name": "4,3",
+      "source": "irdb",
+      "source_path": "Denon\\Receiver\\4,3.csv"
+    },
+    {
+      "id": 8013,
+      "brand_id": 113,
+      "file_name": "Denon_Receiver_4,5.irdb",
+      "model_name": "4,5",
+      "source": "irdb",
+      "source_path": "Denon\\Receiver\\4,5.csv"
+    },
+    {
+      "id": 8014,
+      "brand_id": 113,
+      "file_name": "Denon_Receiver_4,7.irdb",
+      "model_name": "4,7",
+      "source": "irdb",
+      "source_path": "Denon\\Receiver\\4,7.csv"
+    },
+    {
+      "id": 8016,
+      "brand_id": 113,
+      "file_name": "Denon_Receiver_7,4.irdb",
+      "model_name": "7,4",
+      "source": "irdb",
+      "source_path": "Denon\\Receiver\\7,4.csv"
+    },
+    {
+      "id": 8017,
+      "brand_id": 113,
+      "file_name": "Denon_Receiver_7,5.irdb",
+      "model_name": "7,5",
+      "source": "irdb",
+      "source_path": "Denon\\Receiver\\7,5.csv"
+    },
+    {
+      "id": 8018,
+      "brand_id": 113,
+      "file_name": "Denon_Receiver_7,6.irdb",
+      "model_name": "7,6",
+      "source": "irdb",
+      "source_path": "Denon\\Receiver\\7,6.csv"
+    },
+    {
+      "id": 8019,
+      "brand_id": 113,
+      "file_name": "Denon_Receiver_7,7.irdb",
+      "model_name": "7,7",
+      "source": "irdb",
+      "source_path": "Denon\\Receiver\\7,7.csv"
+    },
+    {
+      "id": 8020,
+      "brand_id": 113,
+      "file_name": "Denon_Receiver_7,8.irdb",
+      "model_name": "7,8",
+      "source": "irdb",
+      "source_path": "Denon\\Receiver\\7,8.csv"
+    },
+    {
+      "id": 8057,
+      "brand_id": 2503,
+      "file_name": "DirecTV_Receiver HDDVR_64,-1.irdb",
+      "model_name": "64,-1",
+      "source": "irdb",
+      "source_path": "DirecTV\\Receiver HDDVR\\64,-1.csv"
+    },
+    {
+      "id": 8058,
+      "brand_id": 2503,
+      "file_name": "DirecTV_Receiver HDDVR_71,-1.irdb",
+      "model_name": "71,-1",
+      "source": "irdb",
+      "source_path": "DirecTV\\Receiver HDDVR\\71,-1.csv"
+    },
+    {
+      "id": 8068,
+      "brand_id": 2500,
+      "file_name": "DirecTV_Satellite_4,-1.irdb",
+      "model_name": "4,-1",
+      "source": "irdb",
+      "source_path": "DirecTV\\Satellite\\4,-1.csv"
+    },
+    {
+      "id": 8115,
+      "brand_id": 2509,
+      "file_name": "Dream_Satellite_10,0.irdb",
+      "model_name": "10,0",
+      "source": "irdb",
+      "source_path": "Dream\\Satellite\\10,0.csv"
+    },
+    {
+      "id": 8116,
+      "brand_id": 2509,
+      "file_name": "Dream_Satellite_11,0.irdb",
+      "model_name": "11,0",
+      "source": "irdb",
+      "source_path": "Dream\\Satellite\\11,0.csv"
+    },
+    {
+      "id": 8117,
+      "brand_id": 2509,
+      "file_name": "Dream_Satellite_25,0.irdb",
+      "model_name": "25,0",
+      "source": "irdb",
+      "source_path": "Dream\\Satellite\\25,0.csv"
+    },
+    {
+      "id": 8118,
+      "brand_id": 2509,
+      "file_name": "Dream_Satellite_26,0.irdb",
+      "model_name": "26,0",
+      "source": "irdb",
+      "source_path": "Dream\\Satellite\\26,0.csv"
+    },
+    {
+      "id": 8119,
+      "brand_id": 2509,
+      "file_name": "Dream_Satellite_41,0.irdb",
+      "model_name": "41,0",
+      "source": "irdb",
+      "source_path": "Dream\\Satellite\\41,0.csv"
+    },
+    {
+      "id": 8163,
+      "brand_id": 2525,
+      "file_name": "Elan_HD_2,-1.irdb",
+      "model_name": "2,-1",
+      "source": "irdb",
+      "source_path": "Elan\\HD\\2,-1.csv"
+    },
+    {
+      "id": 8204,
+      "brand_id": 2540,
+      "file_name": "Escient_CD Jukebox_14,0.irdb",
+      "model_name": "14,0",
+      "source": "irdb",
+      "source_path": "Escient\\CD Jukebox\\14,0.csv"
+    },
+    {
+      "id": 8205,
+      "brand_id": 2540,
+      "file_name": "Escient_CD Jukebox_15,0.irdb",
+      "model_name": "15,0",
+      "source": "irdb",
+      "source_path": "Escient\\CD Jukebox\\15,0.csv"
+    },
+    {
+      "id": 8206,
+      "brand_id": 2540,
+      "file_name": "Escient_CD Jukebox_48,-1.irdb",
+      "model_name": "48,-1",
+      "source": "irdb",
+      "source_path": "Escient\\CD Jukebox\\48,-1.csv"
+    },
+    {
+      "id": 8207,
+      "brand_id": 2540,
+      "file_name": "Escient_CD Jukebox_91,-1.irdb",
+      "model_name": "91,-1",
+      "source": "irdb",
+      "source_path": "Escient\\CD Jukebox\\91,-1.csv"
+    },
+    {
+      "id": 8209,
+      "brand_id": 2540,
+      "file_name": "Escient_CD Management_14,0.irdb",
+      "model_name": "14,0",
+      "source": "irdb",
+      "source_path": "Escient\\CD Management\\14,0.csv"
+    },
+    {
+      "id": 8210,
+      "brand_id": 2540,
+      "file_name": "Escient_CD Management_91,-1.irdb",
+      "model_name": "91,-1",
+      "source": "irdb",
+      "source_path": "Escient\\CD Management\\91,-1.csv"
+    },
+    {
+      "id": 8218,
+      "brand_id": 2542,
+      "file_name": "Escient_Digital Jukebox_15,0.irdb",
+      "model_name": "15,0",
+      "source": "irdb",
+      "source_path": "Escient\\Digital Jukebox\\15,0.csv"
+    },
+    {
+      "id": 8221,
+      "brand_id": 2542,
+      "file_name": "Escient_Hard Drive Recorder_15,0.irdb",
+      "model_name": "15,0",
+      "source": "irdb",
+      "source_path": "Escient\\Hard Drive Recorder\\15,0.csv"
+    },
+    {
+      "id": 8229,
+      "brand_id": 2542,
+      "file_name": "Escient_Media Manager_15,0.irdb",
+      "model_name": "15,0",
+      "source": "irdb",
+      "source_path": "Escient\\Media Manager\\15,0.csv"
+    },
+    {
+      "id": 8234,
+      "brand_id": 2542,
+      "file_name": "Escient_Media Manager_48,-1.irdb",
+      "model_name": "48,-1",
+      "source": "irdb",
+      "source_path": "Escient\\Media Manager\\48,-1.csv"
+    },
+    {
+      "id": 8242,
+      "brand_id": 2547,
+      "file_name": "Ezcoo_HDMI Matrix Switch 4x2 ARC_128,-1.irdb",
+      "model_name": "128,-1",
+      "source": "irdb",
+      "source_path": "Ezcoo\\HDMI Matrix Switch 4x2 ARC\\128,-1.csv"
+    },
+    {
+      "id": 8251,
+      "brand_id": 2554,
+      "file_name": "Faroudja_DVD Player_175,-1.irdb",
+      "model_name": "175,-1",
+      "source": "irdb",
+      "source_path": "Faroudja\\DVD Player\\175,-1.csv"
+    },
+    {
+      "id": 8257,
+      "brand_id": 2556,
+      "file_name": "Faroudja_Video Projector_0,-1.irdb",
+      "model_name": "0,-1",
+      "source": "irdb",
+      "source_path": "Faroudja\\Video Projector\\0,-1.csv"
+    },
+    {
+      "id": 8259,
+      "brand_id": 2556,
+      "file_name": "Faroudja_Video Projector_13,-1.irdb",
+      "model_name": "13,-1",
+      "source": "irdb",
+      "source_path": "Faroudja\\Video Projector\\13,-1.csv"
+    },
+    {
+      "id": 8263,
+      "brand_id": 2556,
+      "file_name": "Faroudja_Video Projector_30,-1.irdb",
+      "model_name": "30,-1",
+      "source": "irdb",
+      "source_path": "Faroudja\\Video Projector\\30,-1.csv"
+    },
+    {
+      "id": 8267,
+      "brand_id": 2559,
+      "file_name": "Fisher_Surround Processor_48,48.irdb",
+      "model_name": "48,48",
+      "source": "irdb",
+      "source_path": "Fisher\\Surround Processor\\48,48.csv"
+    },
+    {
+      "id": 8269,
+      "brand_id": 2560,
+      "file_name": "Fisher_TV_0,-1.irdb",
+      "model_name": "0,-1",
+      "source": "irdb",
+      "source_path": "Fisher\\TV\\0,-1.csv"
+    },
+    {
+      "id": 8334,
+      "brand_id": 2584,
+      "file_name": "General Instrument_Cable Box_144,0.irdb",
+      "model_name": "144,0",
+      "source": "irdb",
+      "source_path": "General Instrument\\Cable Box\\144,0.csv"
+    },
+    {
+      "id": 8336,
+      "brand_id": 2584,
+      "file_name": "General Instrument_Cable Box_64,-1.irdb",
+      "model_name": "64,-1",
+      "source": "irdb",
+      "source_path": "General Instrument\\Cable Box\\64,-1.csv"
+    },
+    {
+      "id": 8337,
+      "brand_id": 2584,
+      "file_name": "General Instrument_Cable Box_87,-1.irdb",
+      "model_name": "87,-1",
+      "source": "irdb",
+      "source_path": "General Instrument\\Cable Box\\87,-1.csv"
+    },
+    {
+      "id": 8340,
+      "brand_id": 2585,
+      "file_name": "General Instruments_Unknown_550_-1,-1.irdb",
+      "model_name": "-1,-1",
+      "source": "irdb",
+      "source_path": "General Instruments\\Unknown_550\\-1,-1.csv"
+    },
+    {
+      "id": 8376,
+      "brand_id": 2608,
+      "file_name": "Grundig_Satellite_1,-1.irdb",
+      "model_name": "1,-1",
+      "source": "irdb",
+      "source_path": "Grundig\\Satellite\\1,-1.csv"
+    },
+    {
+      "id": 8392,
+      "brand_id": 2609,
+      "file_name": "Grundig_Video Recorder_127,-1.irdb",
+      "model_name": "127,-1",
+      "source": "irdb",
+      "source_path": "Grundig\\Video Recorder\\127,-1.csv"
+    },
+    {
+      "id": 8455,
+      "brand_id": 2623,
+      "file_name": "Harman Kardon_Video Projector_30,-1.irdb",
+      "model_name": "30,-1",
+      "source": "irdb",
+      "source_path": "Harman Kardon\\Video Projector\\30,-1.csv"
+    },
+    {
+      "id": 8460,
+      "brand_id": 2625,
+      "file_name": "Harmony_PS3 Adaptor_11,-1.irdb",
+      "model_name": "11,-1",
+      "source": "irdb",
+      "source_path": "Harmony\\PS3 Adaptor\\11,-1.csv"
+    },
+    {
+      "id": 8478,
+      "brand_id": 2638,
+      "file_name": "Hirschmann_Unknown_RC426_54,-1.irdb",
+      "model_name": "54,-1",
+      "source": "irdb",
+      "source_path": "Hirschmann\\Unknown_RC426\\54,-1.csv"
+    },
+    {
+      "id": 8494,
+      "brand_id": 2643,
+      "file_name": "Hitachi_Monitor_96,158.irdb",
+      "model_name": "96,158",
+      "source": "irdb",
+      "source_path": "Hitachi\\Monitor\\96,158.csv"
+    },
+    {
+      "id": 8537,
+      "brand_id": 2650,
+      "file_name": "Hughes_DSS_71,-1.irdb",
+      "model_name": "71,-1",
+      "source": "irdb",
+      "source_path": "Hughes\\DSS\\71,-1.csv"
+    },
+    {
+      "id": 8549,
+      "brand_id": 2651,
+      "file_name": "Hughes_Satellite_71,-1.irdb",
+      "model_name": "71,-1",
+      "source": "irdb",
+      "source_path": "Hughes\\Satellite\\71,-1.csv"
+    },
+    {
+      "id": 8596,
+      "brand_id": 700,
+      "file_name": "InFocus_Video Projector_1,-1.irdb",
+      "model_name": "1,-1",
+      "source": "irdb",
+      "source_path": "InFocus\\Video Projector\\1,-1.csv"
+    },
+    {
+      "id": 8737,
+      "brand_id": 2686,
+      "file_name": "JVC_Unknown_JvcDishPlayer500_3,0.irdb",
+      "model_name": "3,0",
+      "source": "irdb",
+      "source_path": "JVC\\Unknown_JvcDishPlayer500\\3,0.csv"
+    },
+    {
+      "id": 8754,
+      "brand_id": 2683,
+      "file_name": "JVC_Unknown_RM-SMXJ100E_0,4.irdb",
+      "model_name": "0,4",
+      "source": "irdb",
+      "source_path": "JVC\\Unknown_RM-SMXJ100E\\0,4.csv"
+    },
+    {
+      "id": 8786,
+      "brand_id": 2689,
+      "file_name": "Jerrold_Unknown_MRC_-1,-1.irdb",
+      "model_name": "-1,-1",
+      "source": "irdb",
+      "source_path": "Jerrold\\Unknown_MRC\\-1,-1.csv"
+    },
+    {
+      "id": 8873,
+      "brand_id": 2709,
+      "file_name": "Kingbox_h265_1,254.irdb",
+      "model_name": "1,254",
+      "source": "irdb",
+      "source_path": "Kingbox\\h265\\1,254.csv"
+    },
+    {
+      "id": 8997,
+      "brand_id": 924,
+      "file_name": "Loewe_TV_31,-1.irdb",
+      "model_name": "31,-1",
+      "source": "irdb",
+      "source_path": "Loewe\\TV\\31,-1.csv"
+    },
+    {
+      "id": 9005,
+      "brand_id": 2748,
+      "file_name": "Loewe_VCR_5,-1.irdb",
+      "model_name": "5,-1",
+      "source": "irdb",
+      "source_path": "Loewe\\VCR\\5,-1.csv"
+    },
+    {
+      "id": 9008,
+      "brand_id": 2749,
+      "file_name": "Lumagen_Scaler_2,-1.irdb",
+      "model_name": "2,-1",
+      "source": "irdb",
+      "source_path": "Lumagen\\Scaler\\2,-1.csv"
+    },
+    {
+      "id": 9078,
+      "brand_id": 126,
+      "file_name": "Marantz_Pre-Amplifier_11,-1.irdb",
+      "model_name": "11,-1",
+      "source": "irdb",
+      "source_path": "Marantz\\Pre-Amplifier\\11,-1.csv"
+    },
+    {
+      "id": 9099,
+      "brand_id": 2779,
+      "file_name": "Marantz_TV_144,0.irdb",
+      "model_name": "144,0",
+      "source": "irdb",
+      "source_path": "Marantz\\TV\\144,0.csv"
+    },
+    {
+      "id": 9176,
+      "brand_id": 250,
+      "file_name": "Microsoft_Unknown_xbox_10,-1.irdb",
+      "model_name": "10,-1",
+      "source": "irdb",
+      "source_path": "Microsoft\\Unknown_xbox\\10,-1.csv"
+    },
+    {
+      "id": 9195,
+      "brand_id": 2812,
+      "file_name": "Mitsubishi_HDTV Receiver_71,-1.irdb",
+      "model_name": "71,-1",
+      "source": "irdb",
+      "source_path": "Mitsubishi\\HDTV Receiver\\71,-1.csv"
+    },
+    {
+      "id": 9197,
+      "brand_id": 2810,
+      "file_name": "Mitsubishi_Laser Disc_175,-1.irdb",
+      "model_name": "175,-1",
+      "source": "irdb",
+      "source_path": "Mitsubishi\\Laser Disc\\175,-1.csv"
+    },
+    {
+      "id": 9223,
+      "brand_id": 2815,
+      "file_name": "Mitsubishi_VCR_23,-1.irdb",
+      "model_name": "23,-1",
+      "source": "irdb",
+      "source_path": "Mitsubishi\\VCR\\23,-1.csv"
+    },
+    {
+      "id": 9229,
+      "brand_id": 2817,
+      "file_name": "Monitor Mobile_camera_134,107.irdb",
+      "model_name": "134,107",
+      "source": "irdb",
+      "source_path": "Monitor Mobile\\camera\\134,107.csv"
+    },
+    {
+      "id": 9237,
+      "brand_id": 2820,
+      "file_name": "Motorola_Cable Box_18,0.irdb",
+      "model_name": "18,0",
+      "source": "irdb",
+      "source_path": "Motorola\\Cable Box\\18,0.csv"
+    },
+    {
+      "id": 9238,
+      "brand_id": 2820,
+      "file_name": "Motorola_Cable Box_3,-1.irdb",
+      "model_name": "3,-1",
+      "source": "irdb",
+      "source_path": "Motorola\\Cable Box\\3,-1.csv"
+    },
+    {
+      "id": 9249,
+      "brand_id": 2821,
+      "file_name": "Motorola_IP box_16,0.irdb",
+      "model_name": "16,0",
+      "source": "irdb",
+      "source_path": "Motorola\\IP box\\16,0.csv"
+    },
+    {
+      "id": 9251,
+      "brand_id": 2821,
+      "file_name": "Motorola_Remote_3,-1.irdb",
+      "model_name": "3,-1",
+      "source": "irdb",
+      "source_path": "Motorola\\Remote\\3,-1.csv"
+    },
+    {
+      "id": 9252,
+      "brand_id": 2822,
+      "file_name": "Motorola_Unknown_4dtv_0,-1.irdb",
+      "model_name": "0,-1",
+      "source": "irdb",
+      "source_path": "Motorola\\Unknown_4dtv\\0,-1.csv"
+    },
+    {
+      "id": 9294,
+      "brand_id": 2830,
+      "file_name": "NAD_Surround Processor_93,-1.irdb",
+      "model_name": "93,-1",
+      "source": "irdb",
+      "source_path": "NAD\\Surround Processor\\93,-1.csv"
+    },
+    {
+      "id": 9369,
+      "brand_id": 2852,
+      "file_name": "Nokia_Satellite_24,-1.irdb",
+      "model_name": "24,-1",
+      "source": "irdb",
+      "source_path": "Nokia\\Satellite\\24,-1.csv"
+    },
+    {
+      "id": 9462,
+      "brand_id": 2877,
+      "file_name": "Pace_Unknown_PaceMSS_1,-1.irdb",
+      "model_name": "1,-1",
+      "source": "irdb",
+      "source_path": "Pace\\Unknown_PaceMSS\\1,-1.csv"
+    },
+    {
+      "id": 9630,
+      "brand_id": 2891,
+      "file_name": "Pioneer_Cable Box_168,40.irdb",
+      "model_name": "168,40",
+      "source": "irdb",
+      "source_path": "Pioneer\\Cable Box\\168,40.csv"
+    },
+    {
+      "id": 9635,
+      "brand_id": 288,
+      "file_name": "Pioneer_DVD Changer_175,-1.irdb",
+      "model_name": "175,-1",
+      "source": "irdb",
+      "source_path": "Pioneer\\DVD Changer\\175,-1.csv"
+    },
+    {
+      "id": 9637,
+      "brand_id": 288,
+      "file_name": "Pioneer_DVD Jukebox_175,-1.irdb",
+      "model_name": "175,-1",
+      "source": "irdb",
+      "source_path": "Pioneer\\DVD Jukebox\\175,-1.csv"
+    },
+    {
+      "id": 9639,
+      "brand_id": 288,
+      "file_name": "Pioneer_DVD Player_175,-1.irdb",
+      "model_name": "175,-1",
+      "source": "irdb",
+      "source_path": "Pioneer\\DVD Player\\175,-1.csv"
+    },
+    {
+      "id": 9642,
+      "brand_id": 2892,
+      "file_name": "Pioneer_Laser Disc_175,-1.irdb",
+      "model_name": "175,-1",
+      "source": "irdb",
+      "source_path": "Pioneer\\Laser Disc\\175,-1.csv"
+    },
+    {
+      "id": 9646,
+      "brand_id": 938,
+      "file_name": "Pioneer_TV_175,-1.irdb",
+      "model_name": "175,-1",
+      "source": "irdb",
+      "source_path": "Pioneer\\TV\\175,-1.csv"
+    },
+    {
+      "id": 9752,
+      "brand_id": 2940,
+      "file_name": "STRONG_8209_DVB-T2_1,254.irdb",
+      "model_name": "1,254",
+      "source": "irdb",
+      "source_path": "STRONG\\8209_DVB-T2\\1,254.csv"
+    },
+    {
+      "id": 9764,
+      "brand_id": 74,
+      "file_name": "Samsung_Air Conditioner_1,8.irdb",
+      "model_name": "1,8",
+      "source": "irdb",
+      "source_path": "Samsung\\Air Conditioner\\1,8.csv"
+    },
+    {
+      "id": 9792,
+      "brand_id": 636,
+      "file_name": "Samsung_Unknown_ARH-700_1,8.irdb",
+      "model_name": "1,8",
+      "source": "irdb",
+      "source_path": "Samsung\\Unknown_ARH-700\\1,8.csv"
+    },
+    {
+      "id": 9812,
+      "brand_id": 2948,
+      "file_name": "Samsung_Unknown_RCD-M70_0,4.irdb",
+      "model_name": "0,4",
+      "source": "irdb",
+      "source_path": "Samsung\\Unknown_RCD-M70\\0,4.csv"
+    },
+    {
+      "id": 9870,
+      "brand_id": 2963,
+      "file_name": "Seleco_TV_30,-1.irdb",
+      "model_name": "30,-1",
+      "source": "irdb",
+      "source_path": "Seleco\\TV\\30,-1.csv"
+    },
+    {
+      "id": 9883,
+      "brand_id": 2967,
+      "file_name": "Sharp_Unknown_RRMCGA030WJSA_8,48.irdb",
+      "model_name": "8,48",
+      "source": "irdb",
+      "source_path": "Sharp\\Unknown_RRMCGA030WJSA\\8,48.csv"
+    },
+    {
+      "id": 9934,
+      "brand_id": 242,
+      "file_name": "Sony_CD Jukebox_23,-1.irdb",
+      "model_name": "23,-1",
+      "source": "irdb",
+      "source_path": "Sony\\CD Jukebox\\23,-1.csv"
+    },
+    {
+      "id": 9936,
+      "brand_id": 242,
+      "file_name": "Sony_CD Jukebox_36,-1.irdb",
+      "model_name": "36,-1",
+      "source": "irdb",
+      "source_path": "Sony\\CD Jukebox\\36,-1.csv"
+    },
+    {
+      "id": 9971,
+      "brand_id": 141,
+      "file_name": "Sony_Pre-Amplifier_11,-1.irdb",
+      "model_name": "11,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Pre-Amplifier\\11,-1.csv"
+    },
+    {
+      "id": 9974,
+      "brand_id": 141,
+      "file_name": "Sony_Pre-Amplifier_15,-1.irdb",
+      "model_name": "15,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Pre-Amplifier\\15,-1.csv"
+    },
+    {
+      "id": 9976,
+      "brand_id": 141,
+      "file_name": "Sony_Pre-Amplifier_17,-1.irdb",
+      "model_name": "17,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Pre-Amplifier\\17,-1.csv"
+    },
+    {
+      "id": 9978,
+      "brand_id": 141,
+      "file_name": "Sony_Pre-Amplifier_183,-1.irdb",
+      "model_name": "183,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Pre-Amplifier\\183,-1.csv"
+    },
+    {
+      "id": 9979,
+      "brand_id": 141,
+      "file_name": "Sony_Pre-Amplifier_2,-1.irdb",
+      "model_name": "2,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Pre-Amplifier\\2,-1.csv"
+    },
+    {
+      "id": 9980,
+      "brand_id": 141,
+      "file_name": "Sony_Pre-Amplifier_20,-1.irdb",
+      "model_name": "20,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Pre-Amplifier\\20,-1.csv"
+    },
+    {
+      "id": 9981,
+      "brand_id": 141,
+      "file_name": "Sony_Pre-Amplifier_23,-1.irdb",
+      "model_name": "23,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Pre-Amplifier\\23,-1.csv"
+    },
+    {
+      "id": 9983,
+      "brand_id": 141,
+      "file_name": "Sony_Pre-Amplifier_26,73.irdb",
+      "model_name": "26,73",
+      "source": "irdb",
+      "source_path": "Sony\\Pre-Amplifier\\26,73.csv"
+    },
+    {
+      "id": 9985,
+      "brand_id": 141,
+      "file_name": "Sony_Pre-Amplifier_6,-1.irdb",
+      "model_name": "6,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Pre-Amplifier\\6,-1.csv"
+    },
+    {
+      "id": 9986,
+      "brand_id": 141,
+      "file_name": "Sony_Pre-Amplifier_7,-1.irdb",
+      "model_name": "7,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Pre-Amplifier\\7,-1.csv"
+    },
+    {
+      "id": 9999,
+      "brand_id": 141,
+      "file_name": "Sony_Receiver_20,-1.irdb",
+      "model_name": "20,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Receiver\\20,-1.csv"
+    },
+    {
+      "id": 10000,
+      "brand_id": 141,
+      "file_name": "Sony_Receiver_23,-1.irdb",
+      "model_name": "23,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Receiver\\23,-1.csv"
+    },
+    {
+      "id": 10006,
+      "brand_id": 141,
+      "file_name": "Sony_Receiver_6,-1.irdb",
+      "model_name": "6,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Receiver\\6,-1.csv"
+    },
+    {
+      "id": 10007,
+      "brand_id": 141,
+      "file_name": "Sony_Receiver_7,-1.irdb",
+      "model_name": "7,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Receiver\\7,-1.csv"
+    },
+    {
+      "id": 10008,
+      "brand_id": 141,
+      "file_name": "Sony_Receiver_8,-1.irdb",
+      "model_name": "8,-1",
+      "source": "irdb",
+      "source_path": "Sony\\Receiver\\8,-1.csv"
+    },
+    {
+      "id": 10097,
+      "brand_id": 1007,
+      "file_name": "Sony_VCR_0,-1.irdb",
+      "model_name": "0,-1",
+      "source": "irdb",
+      "source_path": "Sony\\VCR\\0,-1.csv"
+    },
+    {
+      "id": 10135,
+      "brand_id": 3005,
+      "file_name": "TEAC_DVD Player_175,-1.irdb",
+      "model_name": "175,-1",
+      "source": "irdb",
+      "source_path": "TEAC\\DVD Player\\175,-1.csv"
+    },
+    {
+      "id": 10204,
+      "brand_id": 3027,
+      "file_name": "Theta Digital_DVD Player_175,-1.irdb",
+      "model_name": "175,-1",
+      "source": "irdb",
+      "source_path": "Theta Digital\\DVD Player\\175,-1.csv"
+    },
+    {
+      "id": 10388,
+      "brand_id": 145,
+      "file_name": "Yamaha_Receiver_8,-1.irdb",
+      "model_name": "8,-1",
+      "source": "irdb",
+      "source_path": "Yamaha\\Receiver\\8,-1.csv"
+    },
+    {
+      "id": 10453,
+      "brand_id": 3106,
+      "file_name": "Zephir_ZDEBT2_0,191.irdb",
+      "model_name": "0,191",
+      "source": "irdb",
+      "source_path": "Zephir\\ZDEBT2\\0,191.csv"
+    }
+  ],
+  "brands": [
+    {
+      "id": 149,
+      "category_id": 5,
+      "name": "JVC"
+    },
+    {
+      "id": 154,
+      "category_id": 5,
+      "name": "Panasonic"
+    },
+    {
+      "id": 156,
+      "category_id": 5,
+      "name": "Pioneer"
+    },
+    {
+      "id": 216,
+      "category_id": 7,
+      "name": "Panasonic"
+    },
+    {
+      "id": 237,
+      "category_id": 10,
+      "name": "Panasonic"
+    },
+    {
+      "id": 266,
+      "category_id": 15,
+      "name": "Panasonic"
+    },
+    {
+      "id": 692,
+      "category_id": 33,
+      "name": "Denon"
+    },
+    {
+      "id": 758,
+      "category_id": 34,
+      "name": "Panasonic"
+    },
+    {
+      "id": 804,
+      "category_id": 35,
+      "name": "Panasonic"
+    },
+    {
+      "id": 1575,
+      "category_id": 47,
+      "name": "LUNEAU"
+    },
+    {
+      "id": 2151,
+      "category_id": 47,
+      "name": "ROMTELECOM DOLCE"
+    },
+    {
+      "id": 2547,
+      "category_id": 29,
+      "name": "Ezcoo"
+    },
+    {
+      "id": 2625,
+      "category_id": 13,
+      "name": "Harmony"
+    },
+    {
+      "id": 2638,
+      "category_id": 29,
+      "name": "Hirschmann"
+    },
+    {
+      "id": 2709,
+      "category_id": 29,
+      "name": "Kingbox"
+    },
+    {
+      "id": 2749,
+      "category_id": 29,
+      "name": "Lumagen"
+    },
+    {
+      "id": 2817,
+      "category_id": 7,
+      "name": "Monitor Mobile"
+    },
+    {
+      "id": 2948,
+      "category_id": 10,
+      "name": "Samsung"
+    },
+    {
+      "id": 3106,
+      "category_id": 29,
+      "name": "Zephir"
+    },
+    {
+      "id": 3196,
+      "category_id": 29,
+      "name": "Atiusb"
+    },
+    {
+      "id": 3225,
+      "category_id": 29,
+      "name": "Bestbuy"
+    },
+    {
+      "id": 3246,
+      "category_id": 29,
+      "name": "Chronos"
+    },
+    {
+      "id": 3251,
+      "category_id": 29,
+      "name": "Comag"
+    },
+    {
+      "id": 3277,
+      "category_id": 29,
+      "name": "Devinput"
+    },
+    {
+      "id": 3358,
+      "category_id": 29,
+      "name": "Goldstar"
+    },
+    {
+      "id": 3378,
+      "category_id": 29,
+      "name": "Hercules"
+    },
+    {
+      "id": 3403,
+      "category_id": 29,
+      "name": "Imon"
+    },
+    {
+      "id": 3429,
+      "category_id": 29,
+      "name": "Kanam Accent"
+    },
+    {
+      "id": 3441,
+      "category_id": 29,
+      "name": "Knc One"
+    },
+    {
+      "id": 3455,
+      "category_id": 29,
+      "name": "Leadtek"
+    },
+    {
+      "id": 3651,
+      "category_id": 29,
+      "name": "Shannon"
+    },
+    {
+      "id": 3723,
+      "category_id": 29,
+      "name": "Tekram"
+    },
+    {
+      "id": 3795,
+      "category_id": 29,
+      "name": "X10"
+    }
+  ],
+  "remote_models": [
+    {
+      "remote_id": 3950,
+      "model": "PROJECTOR"
+    },
+    {
+      "remote_id": 6262,
+      "model": "SOME MODELS"
+    },
+    {
+      "remote_id": 7268,
+      "model": "42,17"
+    },
+    {
+      "remote_id": 7414,
+      "model": "16,-1"
+    },
+    {
+      "remote_id": 7422,
+      "model": "0,-1"
+    },
+    {
+      "remote_id": 7428,
+      "model": "0,-1"
+    },
+    {
+      "remote_id": 7524,
+      "model": "7,-1"
+    },
+    {
+      "remote_id": 7535,
+      "model": "16,1"
+    },
+    {
+      "remote_id": 7548,
+      "model": "11,-1"
+    },
+    {
+      "remote_id": 7633,
+      "model": "11,-1"
+    },
+    {
+      "remote_id": 7702,
+      "model": "-1,-1"
+    },
+    {
+      "remote_id": 7705,
+      "model": "48,206"
+    },
+    {
+      "remote_id": 7864,
+      "model": "62,16"
+    },
+    {
+      "remote_id": 7927,
+      "model": "0,45"
+    },
+    {
+      "remote_id": 7929,
+      "model": "0,45"
+    },
+    {
+      "remote_id": 7972,
+      "model": "2,1"
+    },
+    {
+      "remote_id": 7976,
+      "model": "175,-1"
+    },
+    {
+      "remote_id": 7991,
+      "model": "2,1"
+    },
+    {
+      "remote_id": 8003,
+      "model": "4,1"
+    },
+    {
+      "remote_id": 8004,
+      "model": "4,3"
+    },
+    {
+      "remote_id": 8005,
+      "model": "4,5"
+    },
+    {
+      "remote_id": 8008,
+      "model": "2,3"
+    },
+    {
+      "remote_id": 8010,
+      "model": "4,1"
+    },
+    {
+      "remote_id": 8011,
+      "model": "4,2"
+    },
+    {
+      "remote_id": 8012,
+      "model": "4,3"
+    },
+    {
+      "remote_id": 8013,
+      "model": "4,5"
+    },
+    {
+      "remote_id": 8014,
+      "model": "4,7"
+    },
+    {
+      "remote_id": 8016,
+      "model": "7,4"
+    },
+    {
+      "remote_id": 8017,
+      "model": "7,5"
+    },
+    {
+      "remote_id": 8018,
+      "model": "7,6"
+    },
+    {
+      "remote_id": 8019,
+      "model": "7,7"
+    },
+    {
+      "remote_id": 8020,
+      "model": "7,8"
+    },
+    {
+      "remote_id": 8057,
+      "model": "64,-1"
+    },
+    {
+      "remote_id": 8058,
+      "model": "71,-1"
+    },
+    {
+      "remote_id": 8068,
+      "model": "4,-1"
+    },
+    {
+      "remote_id": 8115,
+      "model": "10,0"
+    },
+    {
+      "remote_id": 8116,
+      "model": "11,0"
+    },
+    {
+      "remote_id": 8117,
+      "model": "25,0"
+    },
+    {
+      "remote_id": 8118,
+      "model": "26,0"
+    },
+    {
+      "remote_id": 8119,
+      "model": "41,0"
+    },
+    {
+      "remote_id": 8163,
+      "model": "2,-1"
+    },
+    {
+      "remote_id": 8204,
+      "model": "14,0"
+    },
+    {
+      "remote_id": 8205,
+      "model": "15,0"
+    },
+    {
+      "remote_id": 8206,
+      "model": "48,-1"
+    },
+    {
+      "remote_id": 8207,
+      "model": "91,-1"
+    },
+    {
+      "remote_id": 8209,
+      "model": "14,0"
+    },
+    {
+      "remote_id": 8210,
+      "model": "91,-1"
+    },
+    {
+      "remote_id": 8218,
+      "model": "15,0"
+    },
+    {
+      "remote_id": 8221,
+      "model": "15,0"
+    },
+    {
+      "remote_id": 8229,
+      "model": "15,0"
+    },
+    {
+      "remote_id": 8234,
+      "model": "48,-1"
+    },
+    {
+      "remote_id": 8242,
+      "model": "128,-1"
+    },
+    {
+      "remote_id": 8251,
+      "model": "175,-1"
+    },
+    {
+      "remote_id": 8257,
+      "model": "0,-1"
+    },
+    {
+      "remote_id": 8259,
+      "model": "13,-1"
+    },
+    {
+      "remote_id": 8263,
+      "model": "30,-1"
+    },
+    {
+      "remote_id": 8267,
+      "model": "48,48"
+    },
+    {
+      "remote_id": 8269,
+      "model": "0,-1"
+    },
+    {
+      "remote_id": 8334,
+      "model": "144,0"
+    },
+    {
+      "remote_id": 8336,
+      "model": "64,-1"
+    },
+    {
+      "remote_id": 8337,
+      "model": "87,-1"
+    },
+    {
+      "remote_id": 8340,
+      "model": "-1,-1"
+    },
+    {
+      "remote_id": 8376,
+      "model": "1,-1"
+    },
+    {
+      "remote_id": 8392,
+      "model": "127,-1"
+    },
+    {
+      "remote_id": 8455,
+      "model": "30,-1"
+    },
+    {
+      "remote_id": 8460,
+      "model": "11,-1"
+    },
+    {
+      "remote_id": 8478,
+      "model": "54,-1"
+    },
+    {
+      "remote_id": 8494,
+      "model": "96,158"
+    },
+    {
+      "remote_id": 8537,
+      "model": "71,-1"
+    },
+    {
+      "remote_id": 8549,
+      "model": "71,-1"
+    },
+    {
+      "remote_id": 8596,
+      "model": "1,-1"
+    },
+    {
+      "remote_id": 8737,
+      "model": "3,0"
+    },
+    {
+      "remote_id": 8754,
+      "model": "0,4"
+    },
+    {
+      "remote_id": 8786,
+      "model": "-1,-1"
+    },
+    {
+      "remote_id": 8873,
+      "model": "1,254"
+    },
+    {
+      "remote_id": 8997,
+      "model": "31,-1"
+    },
+    {
+      "remote_id": 9005,
+      "model": "5,-1"
+    },
+    {
+      "remote_id": 9008,
+      "model": "2,-1"
+    },
+    {
+      "remote_id": 9078,
+      "model": "11,-1"
+    },
+    {
+      "remote_id": 9099,
+      "model": "144,0"
+    },
+    {
+      "remote_id": 9176,
+      "model": "10,-1"
+    },
+    {
+      "remote_id": 9195,
+      "model": "71,-1"
+    },
+    {
+      "remote_id": 9197,
+      "model": "175,-1"
+    },
+    {
+      "remote_id": 9223,
+      "model": "23,-1"
+    },
+    {
+      "remote_id": 9229,
+      "model": "134,107"
+    },
+    {
+      "remote_id": 9237,
+      "model": "18,0"
+    },
+    {
+      "remote_id": 9238,
+      "model": "3,-1"
+    },
+    {
+      "remote_id": 9249,
+      "model": "16,0"
+    },
+    {
+      "remote_id": 9251,
+      "model": "3,-1"
+    },
+    {
+      "remote_id": 9252,
+      "model": "0,-1"
+    },
+    {
+      "remote_id": 9294,
+      "model": "93,-1"
+    },
+    {
+      "remote_id": 9369,
+      "model": "24,-1"
+    },
+    {
+      "remote_id": 9462,
+      "model": "1,-1"
+    },
+    {
+      "remote_id": 9630,
+      "model": "168,40"
+    },
+    {
+      "remote_id": 9635,
+      "model": "175,-1"
+    },
+    {
+      "remote_id": 9637,
+      "model": "175,-1"
+    },
+    {
+      "remote_id": 9639,
+      "model": "175,-1"
+    },
+    {
+      "remote_id": 9642,
+      "model": "175,-1"
+    },
+    {
+      "remote_id": 9646,
+      "model": "175,-1"
+    },
+    {
+      "remote_id": 9752,
+      "model": "1,254"
+    },
+    {
+      "remote_id": 9764,
+      "model": "1,8"
+    },
+    {
+      "remote_id": 9792,
+      "model": "1,8"
+    },
+    {
+      "remote_id": 9812,
+      "model": "0,4"
+    },
+    {
+      "remote_id": 9870,
+      "model": "30,-1"
+    },
+    {
+      "remote_id": 9883,
+      "model": "8,48"
+    },
+    {
+      "remote_id": 9934,
+      "model": "23,-1"
+    },
+    {
+      "remote_id": 9936,
+      "model": "36,-1"
+    },
+    {
+      "remote_id": 9971,
+      "model": "11,-1"
+    },
+    {
+      "remote_id": 9974,
+      "model": "15,-1"
+    },
+    {
+      "remote_id": 9976,
+      "model": "17,-1"
+    },
+    {
+      "remote_id": 9978,
+      "model": "183,-1"
+    },
+    {
+      "remote_id": 9979,
+      "model": "2,-1"
+    },
+    {
+      "remote_id": 9980,
+      "model": "20,-1"
+    },
+    {
+      "remote_id": 9981,
+      "model": "23,-1"
+    },
+    {
+      "remote_id": 9983,
+      "model": "26,73"
+    },
+    {
+      "remote_id": 9985,
+      "model": "6,-1"
+    },
+    {
+      "remote_id": 9986,
+      "model": "7,-1"
+    },
+    {
+      "remote_id": 9999,
+      "model": "20,-1"
+    },
+    {
+      "remote_id": 10000,
+      "model": "23,-1"
+    },
+    {
+      "remote_id": 10006,
+      "model": "6,-1"
+    },
+    {
+      "remote_id": 10007,
+      "model": "7,-1"
+    },
+    {
+      "remote_id": 10008,
+      "model": "8,-1"
+    },
+    {
+      "remote_id": 10097,
+      "model": "0,-1"
+    },
+    {
+      "remote_id": 10135,
+      "model": "175,-1"
+    },
+    {
+      "remote_id": 10204,
+      "model": "175,-1"
+    },
+    {
+      "remote_id": 10388,
+      "model": "8,-1"
+    },
+    {
+      "remote_id": 10453,
+      "model": "0,191"
+    }
+  ]
+}

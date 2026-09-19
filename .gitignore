@@ -14,3 +14,4 @@ captures/
 
 # Kotlin compiler error logs
 .kotlin/
+__pycache__/
