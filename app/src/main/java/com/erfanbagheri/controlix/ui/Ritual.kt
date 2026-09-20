@@ -90,17 +90,12 @@ fun RitualScreen(
     }
 
     LaunchedEffect(powerIndex, testStep, lockedRemoteId) {
-        if (testStep < 0) {
-            val code = candidates.getOrNull(powerIndex) ?: return@LaunchedEffect
-            send(code.carrierHz, code.pattern)
-        } else {
-            val id = lockedRemoteId ?: return@LaunchedEffect
-            val pair = followUpTests.getOrNull(testStep)
-            if (pair == null) onDone(id, candidates.size)
-            else {
-                send(pair.second.carrierHz, pair.second.pattern)
-            }
-        }
+        // No auto-send: the user presses the big button to fire each code.
+        transmission = SetupTransmission(
+            canConfirm = false,
+            message = if (transmitter.hasIrEmitter()) "Press the button below to send the command."
+            else "This device has no IR blaster. Setup cannot test this remote.",
+        )
     }
 
     val current: Pair<TestKind, () -> Unit> = if (testStep < 0) {
@@ -115,9 +110,9 @@ fun RitualScreen(
     val totalTests = if (testStep < 0) 1 else 1 + followUpTests.size
     val position = if (testStep < 0) 1 else testStep + 2
 
-    Column(Modifier.fillMaxSize().navigationBarsPadding()) {
+    Column(Modifier.fillMaxSize().applyTopInset().navigationBarsPadding()) {
         Column(Modifier.weight(1f).padding(horizontal = 24.dp)) {
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(14.dp))
             BackRow(onBack)
             Spacer(Modifier.height(20.dp))
 
@@ -181,6 +176,7 @@ fun RitualScreen(
                         val code = candidates.getOrNull(powerIndex) ?: return@AnswerChip
                         lockedRemoteId = code.remoteId
                         testStep = 0
+                        if (followUpTests.isEmpty()) onDone(code.remoteId, candidates.size)
                     } else {
                         val id = lockedRemoteId ?: return@AnswerChip
                         if (testStep < followUpTests.lastIndex) testStep++

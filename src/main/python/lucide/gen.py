@@ -249,6 +249,32 @@ def to_kotlin(name, svg_text, prop_name, stroke=2.0):
             body.append(f'{" "*20}lineTo({fmt(px)}, {fmt(py)})')
         if p.startswith('<polygon'):
             body.append(f'{" "*20}close()')
+    for r in rects:
+        x = float(re.search(r'x="([^"]+)"', r).group(1))
+        y = float(re.search(r'y="([^"]+)"', r).group(1))
+        w = float(re.search(r'width="([^"]+)"', r).group(1))
+        h = float(re.search(r'height="([^"]+)"', r).group(1))
+        rxm = re.search(r'rx="([^"]+)"', r)
+        rx = float(rxm.group(1)) if rxm else 0.0
+        if rx <= 0:
+            body.append(f'{" "*20}moveTo({fmt(x)}, {fmt(y)})')
+            body.append(f'{" "*20}lineTo({fmt(x + w)}, {fmt(y)})')
+            body.append(f'{" "*20}lineTo({fmt(x + w)}, {fmt(y + h)})')
+            body.append(f'{" "*20}lineTo({fmt(x)}, {fmt(y + h)})')
+            body.append(f'{" "*20}close()')
+        else:
+            rx = min(rx, w / 2, h / 2)
+            x0, x1, y0, y1 = x, x + w, y, y + h
+            body.append(f'{" "*20}moveTo({fmt(x0 + rx)}, {fmt(y0)})')
+            body.append(f'{" "*20}lineTo({fmt(x1 - rx)}, {fmt(y0)})')
+            body.append(f'{" "*20}arcTo({fmt(rx)}, {fmt(rx)}, 0f, false, true, {fmt(x1)}, {fmt(y0 + rx)})')
+            body.append(f'{" "*20}lineTo({fmt(x1)}, {fmt(y1 - rx)})')
+            body.append(f'{" "*20}arcTo({fmt(rx)}, {fmt(rx)}, 0f, false, true, {fmt(x1 - rx)}, {fmt(y1)})')
+            body.append(f'{" "*20}lineTo({fmt(x0 + rx)}, {fmt(y1)})')
+            body.append(f'{" "*20}arcTo({fmt(rx)}, {fmt(rx)}, 0f, false, true, {fmt(x0)}, {fmt(y1 - rx)})')
+            body.append(f'{" "*20}lineTo({fmt(x0)}, {fmt(y0 + rx)})')
+            body.append(f'{" "*20}arcTo({fmt(rx)}, {fmt(rx)}, 0f, false, true, {fmt(x0 + rx)}, {fmt(y0)})')
+            body.append(f'{" "*20}close()')
     return f'''val {prop_name}: ImageVector
     get() = lucideIcon("{name}") {{
 {chr(10).join(body)}
