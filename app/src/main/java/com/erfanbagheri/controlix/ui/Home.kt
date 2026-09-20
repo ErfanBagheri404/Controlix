@@ -53,7 +53,6 @@ fun HomeScreen(
 ) {
     var sheetDevice by remember { mutableStateOf<SavedDevice?>(null) }
     var selectedRoom by remember { mutableStateOf<String?>(null) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 
     Column(Modifier.fillMaxSize().applyTopInset()) {
         Spacer(Modifier.height(14.dp))
@@ -115,28 +114,49 @@ fun HomeScreen(
     }
 
     sheetDevice?.let { dev ->
-        ModalBottomSheet(
-            onDismissRequest = { sheetDevice = null },
-            sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-        ) {
-            Column(Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
-                Text(dev.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(4.dp))
-                Text(dev.brand, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
-                Spacer(Modifier.height(20.dp))
-                SheetAction("Edit", "name, room, shortcut") { sheetDevice = null; onEdit(dev) }
-                SheetAction(
-                    if (dev.pinned) "Unpin" else "Pin",
-                    if (dev.pinned) "remove the star" else "mark with a star",
-                ) { model.togglePin(dev.remoteId); sheetDevice = null; toast.show(if (dev.pinned) "${dev.name} unpinned" else "${dev.name} pinned") }
-                SheetAction("Share", "show QR code") { sheetDevice = null; onShare(dev) }
-                SheetAction("Delete", null, destructive = true) {
-                    model.remove(dev.remoteId)
-                    sheetDevice = null
-                    toast.show("${dev.name} removed", "Undo") { model.save(dev) }
-                }
+        DeviceActionSheet(
+            dev = dev,
+            model = model,
+            toast = toast,
+            onEdit = { onEdit(it) },
+            onShare = { onShare(it) },
+            onDismiss = { sheetDevice = null },
+        )
+    }
+}
+
+/** The long-press action sheet. Shared by Home tiles and the pad's overflow. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DeviceActionSheet(
+    dev: SavedDevice,
+    model: DeviceModel,
+    toast: ToastState,
+    onEdit: (SavedDevice) -> Unit,
+    onShare: (SavedDevice) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
+        Column(Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
+            Text(dev.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(4.dp))
+            Text(dev.brand, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
+            Spacer(Modifier.height(20.dp))
+            SheetAction("Edit", "name, room, shortcut") { onDismiss(); onEdit(dev) }
+            SheetAction(
+                if (dev.pinned) "Unpin" else "Pin",
+                if (dev.pinned) "remove the star" else "mark with a star",
+            ) { model.togglePin(dev.remoteId); onDismiss(); toast.show(if (dev.pinned) "${dev.name} unpinned" else "${dev.name} pinned") }
+            SheetAction("Share", "show QR code") { onDismiss(); onShare(dev) }
+            SheetAction("Delete", null, destructive = true) {
+                model.remove(dev.remoteId)
+                onDismiss()
+                toast.show("${dev.name} removed", "Undo") { model.save(dev) }
             }
         }
     }

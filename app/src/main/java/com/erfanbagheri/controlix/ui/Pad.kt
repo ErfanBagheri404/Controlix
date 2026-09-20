@@ -1,44 +1,22 @@
 package com.erfanbagheri.controlix.ui
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.Mic
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Remove
-import androidx.compose.material.icons.rounded.VolumeDown
-import androidx.compose.material.icons.rounded.VolumeUp
-import androidx.compose.material.icons.rounded.Power
-import androidx.compose.material.icons.rounded.SettingsInputAntenna
-import androidx.compose.material.icons.rounded.Mic
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,12 +25,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.ButtonNames
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
+
+/**
+ * Remote pad. Two stacked regions under the header:
+ *  1. the chevron pad (directional only), small side padding
+ *  2. the controls section — VOL / CH columns flanking a 2x2 key grid and a
+ *     full-width "…" key that expands the full key set over region 1.
+ * The header name is a bordered pill (opens the device switcher); the "…" in
+ * the header opens the same action sheet Home shows on long-press.
+ */
+
+/** Height of the 2x2 grid + the dots row: 56 + 10 + 56 + 10 + 48. */
+private val CONTROL_BLOCK = 180.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,17 +54,24 @@ fun PadScreen(
     repo: IrCodeRepository?,
     transmitter: IrTransmitter,
     devices: List<SavedDevice>,
+    model: DeviceModel,
     toast: ToastState,
     onSwitchDevice: (SavedDevice) -> Unit,
+    onEdit: (SavedDevice) -> Unit,
+    onShare: (SavedDevice) -> Unit,
     onBack: () -> Unit,
 ) {
     var lastSent by remember(remoteId) { mutableStateOf<String?>(null) }
     var emitKey by remember(remoteId) { mutableStateOf<Any?>(null) }
     var switcherOpen by remember { mutableStateOf(false) }
+    var sheetOpen by remember { mutableStateOf(false) }
+    var expanded by remember(remoteId) { mutableStateOf(false) }
 
     val buttons = remember(remoteId) {
         runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
     }
+    val saved = devices.firstOrNull { it.remoteId == remoteId }
+
     fun fire(name: String) {
         val p = when (name) {
             "power" -> buttons.firstOrNull { ButtonNames.power(it.name) }
@@ -105,121 +103,212 @@ fun PadScreen(
     Column(
         Modifier.fillMaxSize().applyTopInset().applyBottomInset().padding(horizontal = 24.dp),
     ) {
-        // ── Top bar: back · status pill · power ──────────────────────────
+        // ── Header: back · bordered name pill · overflow ─────────────────
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack, modifier = Modifier.size(44.dp)) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(26.dp))
-            }
+            ActionIconView(
+                ActionIcon.Back, 26.dp, MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.pressable(onBack).padding(9.dp),
+            )
             Spacer(Modifier.weight(1f))
-            Row(Modifier.pressable { switcherOpen = true }.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
-                    EmitPulse(emitKey, Modifier.size(24.dp))
+            Row(
+                Modifier
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(24.dp))
+                    .pressable { switcherOpen = true }
+                    .padding(horizontal = 14.dp, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
+                    EmitPulse(emitKey, Modifier.size(20.dp))
                     androidx.compose.foundation.Canvas(Modifier.size(8.dp)) { drawCircle(Accent) }
                 }
-                Text(deviceName ?: "Remote", style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(vertical = 4.dp))
+                Text(deviceName ?: "Remote", style = MaterialTheme.typography.titleMedium)
             }
             Spacer(Modifier.weight(1f))
-            IconButton(onClick = { fire("power") }, modifier = Modifier.size(44.dp)) {
-                Icon(Icons.Rounded.Power, contentDescription = "Power",
-                    tint = Accent, modifier = Modifier.size(26.dp))
+            ActionIconView(
+                ActionIcon.Dots, 26.dp, MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.pressable { sheetOpen = true }.padding(9.dp),
+            )
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        // ── Region 1: chevron pad — swapped out for the full key set ─────
+        ContentSwap(expanded, Modifier.fillMaxWidth().weight(1f)) { open ->
+            if (open) {
+                ExpandedKeys(::fire, Modifier.fillMaxSize())
+            } else {
+                ChevronPad(::fire, Modifier.fillMaxSize())
             }
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // ── VOL / CH pills + center cluster ──────────────────────────────
-        Row(Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
-            // VOL pill
-            VChPill(label = "VOL", down = Icons.Rounded.Remove, up = Icons.Rounded.Add,
-                onDown = { fire("volume_down") }, onUp = { fire("volume_up") },
-                modifier = Modifier.weight(1f))
+        // ── Region 2: controls section — VOL / keys / CH ─────────────────
+        Row(Modifier.fillMaxWidth().height(CONTROL_BLOCK), verticalAlignment = Alignment.CenterVertically) {
+            // No capsule: the keys sit directly on the screen surface.
+            RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL",
+                onUp = { fire("volume_up") }, onDown = { fire("volume_down") })
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(14.dp))
 
-            // Center cluster
-            Column(horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PadBtn(Icons.Rounded.SettingsInputAntenna, 42.dp, 20.dp) { fire("source") }
-                    PadBtn(Icons.Rounded.Mic, 42.dp, 20.dp) { fire("mute") }
+            Column(
+                Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    PadBtn(ActionIcon.Home, Modifier.weight(1f).fillMaxHeight()) { fire("home") }
+                    PadBtn(ActionIcon.Back, Modifier.weight(1f).fillMaxHeight()) { fire("back") }
                 }
-                PadBtn(Icons.Rounded.PlayArrow, 60.dp, 28.dp, accent = true) { fire("play_pause") }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PadBtn(Icons.AutoMirrored.Rounded.ArrowBack, 42.dp, 20.dp) { fire("back") }
-                    PadBtn(Icons.Rounded.Home, 42.dp, 20.dp) { fire("home") }
+                Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight()) { fire("mute") }
+                    PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight()) { fire("play_pause") }
                 }
-                PadBtn(Icons.Rounded.Menu, 36.dp, 16.dp) { fire("menu") }
+                PadBtn(ActionIcon.Dots, Modifier.fillMaxWidth().height(48.dp)) { expanded = !expanded }
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(14.dp))
 
-            // CH pill
-            VChPill(label = "CH", down = Icons.Rounded.KeyboardArrowDown, up = Icons.Rounded.KeyboardArrowUp,
-                onDown = { fire("channel_down") }, onUp = { fire("channel_up") },
-                modifier = Modifier.weight(1f))
+            RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH",
+                onUp = { fire("channel_up") }, onDown = { fire("channel_down") })
         }
-
-        Spacer(Modifier.height(8.dp))
 
         if (lastSent != null) {
             Text(lastSent.orEmpty(), style = MaterialTheme.typography.labelSmall, color = PaperFaint,
-                modifier = Modifier.padding(bottom = 8.dp))
+                modifier = Modifier.padding(top = 10.dp))
+        } else {
+            Spacer(Modifier.height(10.dp))
         }
     }
 
     if (switcherOpen) {
-        ModalBottomSheet(
-            onDismissRequest = { switcherOpen = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
+        RemoteSwitcher(devices, remoteId) { dev ->
+            switcherOpen = false
+            if (dev.remoteId != remoteId) onSwitchDevice(dev)
+        }
+    }
+
+    if (sheetOpen && saved != null) {
+        DeviceActionSheet(
+            dev = saved,
+            model = model,
+            toast = toast,
+            onEdit = { sheetOpen = false; onEdit(it) },
+            onShare = { sheetOpen = false; onShare(it) },
+            onDismiss = { sheetOpen = false },
+        )
+    }
+}
+
+/** Chevrons only — no keys, no OK. Small side padding so the pad breathes. */
+@Composable
+private fun ChevronPad(fire: (String) -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier.padding(horizontal = 12.dp),
+        verticalArrangement = Arrangement.SpaceEvenly,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        PadBtn(ActionIcon.ChevronUp, Modifier.size(64.dp)) { fire("up") }
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
-                Text("Switch remote", style = MaterialTheme.typography.titleMedium, color = PaperFaint)
-                Spacer(Modifier.height(16.dp))
-                devices.forEach { dev ->
-                    val isCurrent = dev.remoteId == remoteId
-                    Text(
-                        "${dev.name}  ·  ${dev.brand}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (isCurrent) Accent else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.fillMaxWidth().pressable {
-                            switcherOpen = false
-                            if (!isCurrent) onSwitchDevice(dev)
-                        }.padding(vertical = 14.dp),
-                    )
+            PadBtn(ActionIcon.ChevronLeft, Modifier.size(64.dp)) { fire("left") }
+            PadBtn(ActionIcon.ChevronRight, Modifier.size(64.dp)) { fire("right") }
+        }
+        PadBtn(ActionIcon.ChevronDown, Modifier.size(64.dp)) { fire("down") }
+    }
+}
+
+/** The full key set, laid out on the same grid rhythm as the controls section. */
+@Composable
+private fun ExpandedKeys(fire: (String) -> Unit, modifier: Modifier = Modifier) {
+    val rows = listOf(
+        listOf("1", "2", "3"),
+        listOf("4", "5", "6"),
+        listOf("7", "8", "9"),
+        listOf("exit", "0", "guide"),
+    )
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        rows.forEach { row ->
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { key ->
+                    KeyTile(key, Modifier.weight(1f).fillMaxHeight()) { fire(key) }
                 }
-                Spacer(Modifier.height(32.dp))
             }
+        }
+        Row(Modifier.fillMaxWidth().height(52.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight()) { fire("power") }
+            PadBtn(ActionIcon.Menu, Modifier.weight(1f).fillMaxHeight()) { fire("menu") }
+            PadBtn(ActionIcon.Info, Modifier.weight(1f).fillMaxHeight()) { fire("info") }
         }
     }
 }
 
+/** Digit / word key — same tile surface as the icon keys. */
 @Composable
-private fun VChPill(label: String, down: ImageVector, up: ImageVector,
-    onDown: () -> Unit, onUp: () -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth().height(140.dp),
+private fun KeyTile(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier.bgTile(20.dp).pressable(onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+/** VOL / CH pair. Bare keys stacked around a mono label — no background capsule. */
+@Composable
+private fun RockerColumn(
+    up: ActionIcon,
+    down: ActionIcon,
+    label: String,
+    onUp: () -> Unit,
+    onDown: () -> Unit,
+) {
+    Column(
+        Modifier.fillMaxHeight().width(64.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween) {
-        PadBtn(up, 48.dp, 22.dp) { onUp() }
-        Text(label, style = MaterialTheme.typography.titleSmall, color = PaperFaint)
-        PadBtn(down, 48.dp, 22.dp) { onDown() }
+        verticalArrangement = Arrangement.SpaceBetween,
+    ) {
+        PadBtn(up, Modifier.size(56.dp)) { onUp() }
+        Text(label, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
+        PadBtn(down, Modifier.size(56.dp)) { onDown() }
     }
 }
 
 @Composable
-private fun PadBtn(icon: ImageVector, size: Dp, iconSize: Dp,
-    accent: Boolean = false, onClick: () -> Unit) {
-    val bg = if (accent) Accent else MaterialTheme.colorScheme.surfaceVariant
-    val tint = if (accent) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface
-    Box(contentAlignment = Alignment.Center,
-        modifier = Modifier.size(size)
-            .bgTile(if (accent) 30.dp else 24.dp, bg)
-            .pressable(onClick)) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
+private fun PadBtn(icon: ActionIcon, modifier: Modifier = Modifier, accent: Boolean = false, onClick: () -> Unit) {
+    Box(
+        modifier.bgTile(20.dp, if (accent) Accent else MaterialTheme.colorScheme.surfaceVariant).pressable(onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RemoteSwitcher(devices: List<SavedDevice>, remoteId: Int, onPick: (SavedDevice) -> Unit) {
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = {},
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
+        Column(Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
+            Text("Switch remote", style = MaterialTheme.typography.titleMedium, color = PaperFaint)
+            Spacer(Modifier.height(16.dp))
+            devices.forEach { dev ->
+                val isCurrent = dev.remoteId == remoteId
+                Text(
+                    "${dev.name}  ·  ${dev.brand}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (isCurrent) Accent else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.fillMaxWidth().pressable { onPick(dev) }.padding(vertical = 14.dp),
+                )
+            }
+            Spacer(Modifier.height(32.dp))
+        }
     }
 }

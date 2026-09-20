@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -55,6 +56,7 @@ private sealed interface Route {
     data object Macros : Route
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
     val model = rememberDeviceModel()
@@ -176,8 +178,11 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                             repo = repo,
                             transmitter = ir,
                             devices = model.devices,
+                            model = model,
                             toast = toast,
                             onSwitchDevice = { route = Route.Pad(it.remoteId) },
+                            onEdit = { route = Route.Edit(it.remoteId) },
+                            onShare = { route = Route.Share(it.remoteId) },
                             onBack = { route = Route.Home },
                         )
                     }

@@ -10,12 +10,12 @@ BASE = 'https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/'
 NAMES = [
     # action glyphs
     'power', 'power-off', 'volume-1', 'volume-2', 'volume-x', 'mic-off',
-    'chevron-up', 'chevron-down', 'chevron-right', 'arrow-up', 'arrow-down',
+    'chevron-up', 'chevron-down', 'chevron-right', 'chevron-left', 'arrow-up', 'arrow-down',
     'arrow-left', 'arrow-right', 'check', 'x', 'trash', 'star', 'share-2',
     'pencil', 'list-filter', 'list-checks', 'scan-line', 'settings', 'menu',
     'circle-play', 'circle-dot', 'ellipsis-vertical', 'minus', 'plus',
     'qr-code', 'workflow', 'vibrate', 'moon', 'palette', 'gauge', 'info',
-    'wifi', 'undo-2',
+    'wifi', 'undo-2', 'house',
     # category glyphs
     'tv', 'monitor', 'fan', 'snowflake', 'heater', 'projector', 'radio',
     'speaker', 'cast', 'camera', 'disc', 'gamepad-2', 'clock', 'flame',

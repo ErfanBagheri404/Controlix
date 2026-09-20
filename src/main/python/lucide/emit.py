@@ -9,11 +9,13 @@ OUT = pathlib.Path('E:/dev/projects/Controlix/app/src/main/java/com/erfanbagheri
 NAMES = {
     'power': 'Power', 'volume-1': 'VolumeDown', 'volume-2': 'VolumeUp', 'volume-x': 'VolumeMute',
     'chevron-up': 'ChevronUp', 'chevron-down': 'ChevronDown', 'chevron-right': 'ChevronRight',
+    'chevron-left': 'ChevronLeft',
     'mic-off': 'MicOff', 'arrow-up': 'ArrowUp', 'arrow-down': 'ArrowDown',
     'arrow-left': 'ArrowLeft', 'arrow-right': 'ArrowRight',
     'check': 'Check', 'x': 'X', 'trash': 'Trash', 'star': 'Star', 'share-2': 'Share',
     'pencil': 'Pencil', 'list-filter': 'Filter', 'scan-line': 'ScanLine', 'settings': 'Settings',
     'menu': 'Menu', 'wind': 'Wind', 'droplet': 'Droplet', 'audio-lines': 'AudioLines',
+    'house': 'House',
     'circle-play': 'Play', 'ellipsis-vertical': 'MoreVertical', 'minus': 'Minus', 'plus': 'Plus',
     'tv': 'Tv', 'monitor': 'Monitor', 'fan': 'Fan', 'snowflake': 'Snowflake', 'heater': 'Heater',
     'projector': 'Projector', 'radio': 'Radio', 'speaker': 'Speaker', 'cast': 'Cast',

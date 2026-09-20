@@ -165,6 +165,12 @@ object Lucide {
                     lineTo(12f, 15f)
                     lineTo(18f, 9f)
     }
+    val ChevronLeft: ImageVector
+        get() =         lucideIcon("chevron-left") {
+                    moveTo(15f, 18f)
+                    lineTo(9f, 12f)
+                    lineTo(15f, 6f)
+    }
     val ChevronRight: ImageVector
         get() =         lucideIcon("chevron-right") {
                     moveTo(9f, 18f)
@@ -385,6 +391,26 @@ object Lucide {
                     lineTo(5f, 22f)
                     moveTo(19f, 20f)
                     lineTo(19f, 22f)
+    }
+    val House: ImageVector
+        get() =         lucideIcon("house") {
+                    moveTo(15f, 21f)
+                    lineTo(15f, 13f)
+                    curveTo(15f, 12.4477f, 14.5523f, 12f, 14f, 12f)
+                    lineTo(10f, 12f)
+                    curveTo(9.4477f, 12f, 9f, 12.4477f, 9f, 13f)
+                    lineTo(9f, 21f)
+                    moveTo(3f, 10f)
+                    curveTo(2.9999f, 9.4111f, 3.2592f, 8.8521f, 3.709f, 8.472f)
+                    lineTo(10.709f, 2.472f)
+                    curveTo(11.4544f, 1.842f, 12.5456f, 1.842f, 13.291f, 2.472f)
+                    lineTo(20.291f, 8.472f)
+                    curveTo(20.7408f, 8.8521f, 21.0001f, 9.4111f, 21f, 10f)
+                    lineTo(21f, 19f)
+                    curveTo(21f, 20.1046f, 20.1046f, 21f, 19f, 21f)
+                    lineTo(5f, 21f)
+                    curveTo(3.8954f, 21f, 3f, 20.1046f, 3f, 19f)
+                    close()
     }
     val Info: ImageVector
         get() =         lucideIcon("info") {

@@ -60,7 +60,11 @@ fun actionVector(icon: ActionIcon) = when (icon) {
     ActionIcon.Source -> Lucide.Cast
     ActionIcon.Play -> Lucide.Play
     ActionIcon.Dots -> Lucide.MoreVertical
+    ActionIcon.Home -> Lucide.House
     ActionIcon.Minus -> Lucide.Minus
     ActionIcon.ChevronUp -> Lucide.ChevronUp
     ActionIcon.ChevronDown -> Lucide.ChevronDown
+    ActionIcon.ChevronLeft -> Lucide.ChevronLeft
+    ActionIcon.ChevronRight -> Lucide.ChevronRight
+    ActionIcon.Info -> Lucide.Info
 }
