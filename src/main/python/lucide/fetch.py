@@ -13,7 +13,7 @@ NAMES = [
     'chevron-up', 'chevron-down', 'chevron-right', 'chevron-left', 'arrow-up', 'arrow-down',
     'arrow-left', 'arrow-right', 'check', 'x', 'trash', 'star', 'share-2',
     'pencil', 'list-filter', 'list-checks', 'scan-line', 'settings', 'menu',
-    'circle-play', 'circle-dot', 'ellipsis-vertical', 'minus', 'plus',
+    'circle-play', 'circle-dot', 'ellipsis-vertical', 'ellipsis', 'minus', 'plus',
     'qr-code', 'workflow', 'vibrate', 'moon', 'palette', 'gauge', 'info',
     'wifi', 'undo-2', 'house',
     # category glyphs

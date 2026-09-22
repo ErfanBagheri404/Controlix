@@ -70,7 +70,9 @@ fun PadScreen(
     val buttons = remember(remoteId) {
         runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
     }
+    // Always resolvable so the header menu opens even if the list is stale.
     val saved = devices.firstOrNull { it.remoteId == remoteId }
+        ?: SavedDevice(remoteId, deviceName ?: "Remote", "", "", 0)
 
     fun fire(name: String) {
         val p = when (name) {
@@ -165,7 +167,7 @@ fun PadScreen(
                     PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight()) { fire("mute") }
                     PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight()) { fire("play_pause") }
                 }
-                PadBtn(ActionIcon.Dots, Modifier.fillMaxWidth().height(48.dp)) { expanded = !expanded }
+                PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp)) { expanded = !expanded }
             }
 
             Spacer(Modifier.width(14.dp))
@@ -189,7 +191,7 @@ fun PadScreen(
         }
     }
 
-    if (sheetOpen && saved != null) {
+    if (sheetOpen) {
         DeviceActionSheet(
             dev = saved,
             model = model,

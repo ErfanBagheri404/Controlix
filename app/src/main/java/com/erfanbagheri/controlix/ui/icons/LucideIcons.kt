@@ -283,6 +283,27 @@ object Lucide {
                     curveTo(5f, 18.866f, 8.134f, 22f, 12f, 22f)
                     close()
     }
+    val Ellipsis: ImageVector
+        get() =         lucideIcon("ellipsis") {
+                    moveTo(13f, 12f)
+                    curveTo(13f, 12.5523f, 12.5523f, 13f, 12f, 13f)
+                    curveTo(11.4477f, 13f, 11f, 12.5523f, 11f, 12f)
+                    curveTo(11f, 11.4477f, 11.4477f, 11f, 12f, 11f)
+                    curveTo(12.5523f, 11f, 13f, 11.4477f, 13f, 12f)
+                    close()
+                    moveTo(20f, 12f)
+                    curveTo(20f, 12.5523f, 19.5523f, 13f, 19f, 13f)
+                    curveTo(18.4477f, 13f, 18f, 12.5523f, 18f, 12f)
+                    curveTo(18f, 11.4477f, 18.4477f, 11f, 19f, 11f)
+                    curveTo(19.5523f, 11f, 20f, 11.4477f, 20f, 12f)
+                    close()
+                    moveTo(6f, 12f)
+                    curveTo(6f, 12.5523f, 5.5523f, 13f, 5f, 13f)
+                    curveTo(4.4477f, 13f, 4f, 12.5523f, 4f, 12f)
+                    curveTo(4f, 11.4477f, 4.4477f, 11f, 5f, 11f)
+                    curveTo(5.5523f, 11f, 6f, 11.4477f, 6f, 12f)
+                    close()
+    }
     val Fan: ImageVector
         get() =         lucideIcon("fan") {
                     moveTo(10.827f, 16.379f)

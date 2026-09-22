@@ -16,7 +16,7 @@ NAMES = {
     'pencil': 'Pencil', 'list-filter': 'Filter', 'scan-line': 'ScanLine', 'settings': 'Settings',
     'menu': 'Menu', 'wind': 'Wind', 'droplet': 'Droplet', 'audio-lines': 'AudioLines',
     'house': 'House',
-    'circle-play': 'Play', 'ellipsis-vertical': 'MoreVertical', 'minus': 'Minus', 'plus': 'Plus',
+    'circle-play': 'Play', 'ellipsis-vertical': 'MoreVertical', 'ellipsis': 'Ellipsis', 'minus': 'Minus', 'plus': 'Plus',
     'tv': 'Tv', 'monitor': 'Monitor', 'fan': 'Fan', 'snowflake': 'Snowflake', 'heater': 'Heater',
     'projector': 'Projector', 'radio': 'Radio', 'speaker': 'Speaker', 'cast': 'Cast',
     'camera': 'Camera', 'disc': 'Disc', 'gamepad-2': 'Gamepad', 'clock': 'Clock',
