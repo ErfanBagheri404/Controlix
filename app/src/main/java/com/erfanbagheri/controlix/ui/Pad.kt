@@ -185,7 +185,7 @@ fun PadScreen(
     }
 
     if (switcherOpen) {
-        RemoteSwitcher(devices, remoteId) { dev ->
+        RemoteSwitcher(devices, remoteId, onDismiss = { switcherOpen = false }) { dev ->
             switcherOpen = false
             if (dev.remoteId != remoteId) onSwitchDevice(dev)
         }
@@ -292,9 +292,14 @@ private fun PadBtn(icon: ActionIcon, modifier: Modifier = Modifier, accent: Bool
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun RemoteSwitcher(devices: List<SavedDevice>, remoteId: Int, onPick: (SavedDevice) -> Unit) {
+private fun RemoteSwitcher(
+    devices: List<SavedDevice>,
+    remoteId: Int,
+    onDismiss: () -> Unit,
+    onPick: (SavedDevice) -> Unit,
+) {
     androidx.compose.material3.ModalBottomSheet(
-        onDismissRequest = {},
+        onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
