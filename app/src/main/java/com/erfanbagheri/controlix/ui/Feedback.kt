@@ -66,41 +66,64 @@ object Feedback {
 
     /** UI press: light tick. */
     fun tap(view: View?) {
-        if (hapticsOn) view?.performHapticFeedback(
-            HapticFeedbackConstants.VIRTUAL_KEY,
-            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING,
-        )
+        tick(view, Tick.Light)
     }
 
     /** Long-press (destructive): heavier tick, no chirp. */
     fun longPress(view: View?) {
-        if (hapticsOn) view?.performHapticFeedback(
-            HapticFeedbackConstants.LONG_PRESS,
-            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING,
-        )
+        tick(view, Tick.Strong)
     }
 
     /** IR fired: acknowledgment tick. */
     fun send(view: View?) {
-        if (hapticsOn) view?.performHapticFeedback(
-            HapticFeedbackConstants.VIRTUAL_KEY,
-            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING,
-        )
+        tick(view, Tick.Light)
     }
 
     /** Yes/answer in the ritual or a saved macro. */
     fun confirm(view: View?) {
-        if (hapticsOn) view?.performHapticFeedback(
-            HapticFeedbackConstants.VIRTUAL_KEY,
-            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING,
-        )
+        tick(view, Tick.Light)
     }
 
     /** No / wrong-answer thud. */
     fun deny(view: View?) {
-        if (hapticsOn) view?.performHapticFeedback(
-            HapticFeedbackConstants.LONG_PRESS,
+        tick(view, Tick.Strong)
+    }
+
+    /** The one tick emitter; [Tick.Strong] reads as a firmer press. */
+    private fun tick(view: View?, weight: Tick) {
+        if (!hapticsOn) return
+        view?.performHapticFeedback(
+            when (weight) {
+                Tick.Light -> HapticFeedbackConstants.VIRTUAL_KEY
+                Tick.Strong -> HapticFeedbackConstants.LONG_PRESS
+            },
             HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING,
         )
     }
+
+    /**
+     * Which keys read as commits: power and the volume rockers get the heavier
+     * tick; navigation, transport and the keypad stay light so a held stream
+     * of navigation doesn't turn into buzz.
+     */
+    fun tickFor(key: String): Tick = when (key) {
+        "power", "volume_up", "volume_down" -> Tick.Strong
+        else -> Tick.Light
+    }
+
+    /** Pad key press: one tick, at the key's own weight. */
+    fun press(view: View?, name: String) {
+        ticksFor(name).forEach { tick(view, it) }
+    }
+
+    /**
+     * The tick schedule for one key activation — the contract the pad keys use
+     * so a press can't double-tick. Empty when the global toggle is off, which
+     * makes the toggle affect the very next press with no extra plumbing.
+     */
+    fun ticksFor(key: String, enabled: Boolean = hapticsOn): List<Tick> =
+        if (enabled) listOf(tickFor(key)) else emptyList()
 }
+
+/** Haptic weight. Native view feedback only — no sound, no custom patterns. */
+enum class Tick { Light, Strong }
