@@ -18,14 +18,22 @@ class IrTransmitter(context: Context) {
     fun carrierFrequencies(): Array<out ConsumerIrManager.CarrierFrequencyRange> =
         manager?.carrierFrequencies ?: arrayOf()
 
-    fun transmit(carrierHz: Int, pattern: IntArray): Boolean {
-        val m = manager ?: return false
-        if (!hasIrEmitter()) return false
+    fun transmit(carrierHz: Int, pattern: IntArray): Boolean =
+        transmitResult(carrierHz, pattern) is com.erfanbagheri.controlix.ui.SendResult.Sent
+
+    /**
+     * Typed outcome: keeps the real reason a code was rejected instead of
+     * collapsing every failure into false. `NoHardware` is the only case
+     * the ritual treats as blocking; `Failed` is per-code and recoverable.
+     */
+    fun transmitResult(carrierHz: Int, pattern: IntArray): com.erfanbagheri.controlix.ui.SendResult {
+        val m = manager ?: return com.erfanbagheri.controlix.ui.SendResult.NoHardware
+        if (!hasIrEmitter()) return com.erfanbagheri.controlix.ui.SendResult.NoHardware
         return try {
             m.transmit(carrierHz, pattern)
-            true
-        } catch (_: Exception) {
-            false
+            com.erfanbagheri.controlix.ui.SendResult.Sent
+        } catch (e: Exception) {
+            com.erfanbagheri.controlix.ui.SendResult.Failed(e.message ?: e.javaClass.simpleName)
         }
     }
 
@@ -35,12 +43,16 @@ class IrTransmitter(context: Context) {
      * Flipper recordings mark "time since last event") and pads an odd
      * pattern to on/off pairs.
      */
-    fun transmitButton(carrierHz: Int, raw: IntArray): Boolean {
+    fun transmitButton(carrierHz: Int, raw: IntArray): Boolean =
+        transmitButtonResult(carrierHz, raw) is com.erfanbagheri.controlix.ui.SendResult.Sent
+
+    /** Typed variant of [transmitButton]; [transmitButton] delegates here. */
+    fun transmitButtonResult(carrierHz: Int, raw: IntArray): com.erfanbagheri.controlix.ui.SendResult {
         var p = raw
         if (p.size > 2 && p[0] > 100_000) p = p.copyOfRange(1, p.size)
         if (p.size % 2 == 1) p = p + intArrayOf(0)
-        if (p.size < 4) return false
-        return transmit(carrierHz, p)
+        if (p.size < 4) return com.erfanbagheri.controlix.ui.SendResult.Failed("pattern too short (${p.size} durations)")
+        return transmitResult(carrierHz, p)
     }
 
     /** Transmits a Pronto Hex code once. */
