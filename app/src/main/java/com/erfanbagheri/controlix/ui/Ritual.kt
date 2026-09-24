@@ -57,12 +57,17 @@ fun RitualScreen(
     brandId: Int,
     brandName: String,
     categoryName: String,
+    categorySlug: String,
     onDone: (remoteId: Int, candidateCount: Int) -> Unit,
     onBack: () -> Unit,
+    onMissingCode: (buttonName: String) -> Unit,
 ) {
     val candidates = remember(brandId) { repo.powerCodes(brandId) }
     if (candidates.isEmpty()) {
-        EmptyRitual(brandName, categoryName, onBack)
+        EmptyRitual(
+            brandName, categoryName, onBack,
+            onMissingCode = { onMissingCode("Power") },
+        )
         return
     }
 
@@ -154,8 +159,20 @@ fun RitualScreen(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.End,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             )
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                // Flat link, not a chip: the ritual stays the funnel, this is the escape hatch.
+                Text(
+                    "Missing this button? Report it",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.pressable { onMissingCode(test.title) }.padding(8.dp),
+                )
+            }
         }
 
         // Bottom block: the real button press + answers.
@@ -195,7 +212,12 @@ fun RitualScreen(
 }
 
 @Composable
-private fun EmptyRitual(brandName: String, categoryName: String, onBack: () -> Unit) {
+private fun EmptyRitual(
+    brandName: String,
+    categoryName: String,
+    onBack: () -> Unit,
+    onMissingCode: () -> Unit,
+) {
     Column(
         Modifier.fillMaxSize().navigationBarsPadding().padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -206,7 +228,14 @@ private fun EmptyRitual(brandName: String, categoryName: String, onBack: () -> U
             "No power codes for $brandName in $categoryName. The power-off sweep still brute-forces every brand — try that instead.",
             style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
+        Text(
+            "Missing a code? Report it",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.pressable(onMissingCode).padding(vertical = 12.dp),
+        )
+        Spacer(Modifier.height(8.dp))
         BackRow(onBack)
     }
 }

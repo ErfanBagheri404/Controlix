@@ -51,6 +51,12 @@ private sealed interface Route {
     data class Pad(val remoteId: Int) : Route
     data class Edit(val remoteId: Int) : Route
     data class Share(val remoteId: Int) : Route
+    data class MissingCode(
+        val brand: String = "",
+        val category: String = "",
+        val remote: String = "",
+        val button: String = "",
+    ) : Route
     data object Sweep : Route
     data object SelfTest : Route
     data object Macros : Route
@@ -80,6 +86,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                     onMacros = { scope.launch { drawerState.close() }; route = Route.Macros },
                     onSweep = { scope.launch { drawerState.close() }; route = Route.Sweep },
                     onSelfTest = { scope.launch { drawerState.close() }; route = Route.SelfTest },
+                    onMissingCode = { scope.launch { drawerState.close() }; route = Route.MissingCode() },
                 )
             },
         ) {
@@ -153,6 +160,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                         brandId = r.brandId,
                         brandName = r.brandName,
                         categoryName = r.catName,
+                        categorySlug = r.catSlug,
                         onDone = { remoteId, _ ->
                             model.save(
                                 SavedDevice(
@@ -167,6 +175,14 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                             toast.show("${r.brandName} added")
                         },
                         onBack = { route = Route.Home },
+                        onMissingCode = { button ->
+                            route = Route.MissingCode(
+                                brand = r.brandName,
+                                category = r.catSlug,
+                                remote = "",
+                                button = button,
+                            )
+                        },
                     )
 
                     is Route.Pad -> {
@@ -211,6 +227,13 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
 
                     is Route.Sweep -> SweepScreen(repo, ir) { route = Route.Home }
                     is Route.SelfTest -> SelfTestScreen(ir) { route = Route.Home }
+                    is Route.MissingCode -> MissingCodeScreen(
+                        initialBrand = r.brand,
+                        initialCategory = r.category,
+                        initialRemote = r.remote,
+                        initialButton = r.button,
+                        onBack = { route = Route.Home },
+                    )
                     is Route.Macros -> MacrosScreen(
                         repo = repo,
                         transmitter = ir,
@@ -249,6 +272,7 @@ private fun MenuDrawer(
     onMacros: () -> Unit,
     onSweep: () -> Unit,
     onSelfTest: () -> Unit,
+    onMissingCode: () -> Unit,
 ) {
     ModalDrawerSheet(
         drawerContainerColor = MaterialTheme.colorScheme.background,
@@ -263,6 +287,10 @@ private fun MenuDrawer(
             DrawerRow(ActionIcon.Macros, "Macros", onMacros)
             DrawerRow(ActionIcon.Sweep, "Power-off sweep", onSweep)
             DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead("Contribute")
+            DrawerRow(ActionIcon.Info, "Missing a code?", onMissingCode)
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Appearance")
