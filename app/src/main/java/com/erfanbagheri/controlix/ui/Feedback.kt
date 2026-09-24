@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
@@ -23,10 +24,20 @@ object Feedback {
     var animationsOn by mutableStateOf(true)
         private set
 
+    /** Hold VOL/CH rockers to repeat (issue #11). Default on. */
+    var rockerRepeatOn by mutableStateOf(true)
+        private set
+
+    /** Hold-to-repeat interval in ms; 400 ms initial delay is fixed. */
+    var rockerRepeatIntervalMs by mutableIntStateOf(HoldRepeatTiming.DEFAULT_INTERVAL_MS.toInt())
+        private set
+
     fun init(ctx: Context) {
         prefs = ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         hapticsOn = prefs?.getBoolean("haptics", true) ?: true
         animationsOn = prefs?.getBoolean("animations", true) ?: true
+        rockerRepeatOn = prefs?.getBoolean("rockerRepeat", true) ?: true
+        rockerRepeatIntervalMs = prefs?.getInt("rockerRepeatMs", 180) ?: 180
     }
 
     fun setHaptics(v: Boolean) {
@@ -38,6 +49,20 @@ object Feedback {
         animationsOn = v
         prefs?.edit()?.putBoolean("animations", v)?.apply()
     }
+
+    fun setRockerRepeat(v: Boolean) {
+        rockerRepeatOn = v
+        prefs?.edit()?.putBoolean("rockerRepeat", v)?.apply()
+    }
+
+    fun setRockerRepeatInterval(ms: Int) {
+        rockerRepeatIntervalMs = ms.coerceIn(60, 400)
+        prefs?.edit()?.putInt("rockerRepeatMs", rockerRepeatIntervalMs)?.apply()
+    }
+
+    /** Repeat schedule for one rocker hold, built from live settings. */
+    fun rockerTiming(): HoldRepeatTiming =
+        HoldRepeatTiming(initialDelayMs = 400, intervalMs = rockerRepeatIntervalMs.toLong())
 
     /** UI press: light tick. */
     fun tap(view: View?) {

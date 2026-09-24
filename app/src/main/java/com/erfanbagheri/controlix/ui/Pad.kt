@@ -291,9 +291,23 @@ private fun RockerColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        PadBtn(up, Modifier.size(56.dp)) { onUp() }
+        RockerKey(up) { onUp() }
         Text(label, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
-        PadBtn(down, Modifier.size(56.dp)) { onDown() }
+        RockerKey(down) { onDown() }
+    }
+}
+
+/** Rocker key: immediate send, then hold-to-repeat per issue #11 settings. */
+@Composable
+private fun RockerKey(icon: ActionIcon, onFire: () -> Unit) {
+    Box(
+        Modifier
+            .size(56.dp)
+            .bgTile(20.dp, MaterialTheme.colorScheme.surfaceVariant)
+            .rockerPressable(repeatEnabled = Feedback.rockerRepeatOn, onFire = onFire),
+        contentAlignment = Alignment.Center,
+    ) {
+        ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
     }
 }
 
