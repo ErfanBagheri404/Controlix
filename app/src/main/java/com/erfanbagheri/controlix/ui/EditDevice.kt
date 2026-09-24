@@ -26,11 +26,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.ui.theme.Ink
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.Danger
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
+import com.erfanbagheri.controlix.widget.WidgetBinding
+import com.erfanbagheri.controlix.widget.WidgetStore
 
 /**
  * Device edit screen. Check (save) + back at top, then name input with
@@ -48,6 +51,7 @@ fun EditDeviceScreen(
     var roomIdx by remember { mutableIntStateOf(Room.indexFor(device.roomSlug)) }
     var shortcutOn by remember { mutableStateOf(device.pinned) }
     var enabledOn by remember { mutableStateOf(device.enabled) }
+    val ctx = LocalContext.current
 
     fun save() {
         val updated = device.copy(
@@ -57,6 +61,16 @@ fun EditDeviceScreen(
             enabled = enabledOn,
         )
         model.save(updated)
+        // "Add to home screen" doubles as the widget target: pin the tile
+        // and bind the single-button widget to Power. Only clear the target
+        // when it belongs to this device — never clobber another's binding.
+        // ponytail: key picker (mute/vol) comes with the widget settings
+        // screen, not before.
+        val current = WidgetStore.target(ctx)
+        when {
+            shortcutOn -> WidgetStore.setTarget(ctx, WidgetBinding.Target(device.remoteId, "power"))
+            current?.remoteId == device.remoteId -> WidgetStore.setTarget(ctx, null)
+        }
         onDone()
     }
 
