@@ -1,5 +1,6 @@
 package com.erfanbagheri.controlix.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -58,14 +59,30 @@ private sealed interface Route {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
+fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean = true) {
     val model = rememberDeviceModel()
     val macroModel = rememberMacroModel()
-    var route: Route by remember { mutableStateOf(Route.Home) }
+    // Cold start only: process recreation (savedInstanceState != null) restores
+    // whatever screen was already on top, no redirect. Pad back still returns
+    // to Home — no trap.
+    var route: Route by remember {
+        mutableStateOf(
+            resumeRestoreTarget(
+                enabled = effectiveResumeEnabled(ResumeState.explicit, model.devices.isNotEmpty()),
+                lastRemoteId = ResumeState.lastRemoteId,
+                enabledDeviceIds = model.devices.filter { it.enabled }.map { it.remoteId }.toSet(),
+            )?.takeIf { coldStart }?.let { Route.Pad(it) } ?: Route.Home,
+        )
+    }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val view = LocalView.current
     val toast = rememberToastState()
+
+    fun openPad(remoteId: Int) {
+        ResumeState.recordLastRemote(remoteId)
+        route = Route.Pad(remoteId)
+    }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         if (repo == null) {
@@ -77,6 +94,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
             drawerState = drawerState,
             drawerContent = {
                 MenuDrawer(
+                    hasDevices = model.devices.isNotEmpty(),
                     onMacros = { scope.launch { drawerState.close() }; route = Route.Macros },
                     onSweep = { scope.launch { drawerState.close() }; route = Route.Sweep },
                     onSelfTest = { scope.launch { drawerState.close() }; route = Route.SelfTest },
@@ -105,7 +123,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                         model = model,
                         repo = repo,
                         transmitter = ir,
-                        onOpenDevice = { route = Route.Pad(it.remoteId) },
+                        onOpenDevice = { openPad(it.remoteId) },
                         onAddDevice = { route = Route.AddDevice },
                         onToggleDrawer = { Feedback.tap(view); scope.launch { drawerState.open() } },
                         onEdit = { route = Route.Edit(it.remoteId) },
@@ -139,7 +157,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                                             buttonCount = repo.buttons(rid).size,
                                         )
                                     )
-                                    route = Route.Pad(rid)
+                                    openPad(rid)
                                 } else route = Route.AddDevice
                             } else route = Route.AddDevice
                         },
@@ -163,13 +181,15 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                                     buttonCount = repo.buttons(remoteId).size,
                                 )
                             )
-                            route = Route.Pad(remoteId)
+                            openPad(remoteId)
                             toast.show("${r.brandName} added")
                         },
                         onBack = { route = Route.Home },
                     )
 
                     is Route.Pad -> {
+                        // System back from a cold-start-restored pad returns Home, never traps.
+                        BackHandler { route = Route.Home }
                         val saved = model.devices.firstOrNull { it.remoteId == r.remoteId }
                         PadScreen(
                             deviceName = saved?.name,
@@ -180,7 +200,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                             devices = model.devices,
                             model = model,
                             toast = toast,
-                            onSwitchDevice = { route = Route.Pad(it.remoteId) },
+                            onSwitchDevice = { openPad(it.remoteId) },
                             onEdit = { route = Route.Edit(it.remoteId) },
                             onShare = { route = Route.Share(it.remoteId) },
                             onBack = { route = Route.Home },
@@ -246,6 +266,7 @@ private fun MissingDb() {
 }
 @Composable
 private fun MenuDrawer(
+    hasDevices: Boolean,
     onMacros: () -> Unit,
     onSweep: () -> Unit,
     onSelfTest: () -> Unit,
@@ -263,6 +284,14 @@ private fun MenuDrawer(
             DrawerRow(ActionIcon.Macros, "Macros", onMacros)
             DrawerRow(ActionIcon.Sweep, "Power-off sweep", onSweep)
             DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead("Settings")
+            DrawerToggle(
+                "Resume last remote",
+                effectiveResumeEnabled(ResumeState.explicit, hasDevices),
+                ResumeState::setEnabled,
+            )
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Appearance")
