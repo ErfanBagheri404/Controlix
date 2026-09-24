@@ -44,6 +44,7 @@ import com.erfanbagheri.controlix.feature.preflightMessage
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import kotlinx.coroutines.delay
 import java.util.Locale
+import com.erfanbagheri.controlix.ui.SendResult
 
 private const val HOLD_MS = 800L
 
@@ -181,9 +182,9 @@ fun SweepScreen(
                         sendResultLabel(d.result),
                         style = MaterialTheme.typography.labelMedium,
                         color = when (d.result) {
-                            IrTransmitter.SendResult.Sent -> MaterialTheme.colorScheme.primary
-                            IrTransmitter.SendResult.NoEmitter -> MaterialTheme.colorScheme.onSurfaceVariant
-                            is IrTransmitter.SendResult.Failed -> MaterialTheme.colorScheme.error
+                            SendResult.Sent -> MaterialTheme.colorScheme.primary
+                            SendResult.NoHardware -> MaterialTheme.colorScheme.onSurfaceVariant
+                            is SendResult.Failed -> MaterialTheme.colorScheme.error
                         },
                     )
                 }
@@ -302,10 +303,10 @@ private fun mmss(ms: Long): String {
     return String.format(Locale.US, "%02d:%02d", t / 60, t % 60)
 }
 
-private fun sendResultLabel(r: IrTransmitter.SendResult): String = when (r) {
-    IrTransmitter.SendResult.Sent -> "Sent"
-    IrTransmitter.SendResult.NoEmitter -> "No IR emitter"
-    is IrTransmitter.SendResult.Failed -> "Failed"
+private fun sendResultLabel(r: SendResult): String = when (r) {
+    SendResult.Sent -> "Sent"
+    SendResult.NoHardware -> "No IR emitter"
+    is SendResult.Failed -> "Failed"
 }
 
 /**

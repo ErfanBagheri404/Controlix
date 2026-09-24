@@ -5,6 +5,7 @@ import com.erfanbagheri.controlix.ir.IrTransmitter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import com.erfanbagheri.controlix.ui.SendResult
 
 /**
  * Power-off sweep (TVKILL-style, but offline and data-driven).
@@ -20,7 +21,7 @@ class PowerOffSweep(
     private val repo: IrCodeRepository,
     private val transmitter: IrTransmitter
 ) {
-    data class DeviceResult(val brand: String, val result: IrTransmitter.SendResult)
+    data class DeviceResult(val brand: String, val result: SendResult)
     data class Progress(
         val sent: Int,
         val total: Int,
@@ -49,8 +50,8 @@ class PowerOffSweep(
         _progress.value = Progress(0, buttons.size, "")
         buttons.forEachIndexed { i, btn ->
             if (cancelled) return
-            val res = transmitter.transmitButtonDetailed(btn.carrierHz, btn.pattern)
-            if (res !is IrTransmitter.SendResult.Sent) failed++
+            val res = transmitter.transmitButtonResult(btn.carrierHz, btn.pattern)
+            if (res !is SendResult.Sent) failed++
             log.addLast(DeviceResult(btn.brandName, res))
             while (log.size > 12) log.removeFirst()
             _progress.value = Progress(i + 1, buttons.size, btn.brandName, failed, 0L, log.toList())
