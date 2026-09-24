@@ -15,6 +15,8 @@ import com.erfanbagheri.controlix.ui.theme.ThemeState
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Before setContent: the initial route reads ResumeState during composition.
+        ResumeState.init(this)
         setContent {
             val ctx = LocalContext.current
             val ir = remember { IrTransmitter(ctx) }
@@ -30,7 +32,7 @@ class MainActivity : ComponentActivity() {
                 (ctx as? Activity)?.requestedOrientation = Orientation.resolve(OrientationState.mode)
             }
             ControlixTheme {
-                ControlixNav(ir = ir, repo = repo)
+                ControlixNav(ir = ir, repo = repo, coldStart = savedInstanceState == null)
             }
         }
     }
