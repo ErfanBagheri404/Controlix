@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
  */
 enum class CategoryGlyph { TV, AC, Fan, Projector, Soundbar, AVR, SetTop, Speaker, Disc, Camera, Heater, Fireplace, Vacuum, Monitor, Console, Streaming, Humidifier, Purifier, Clock, VCR, Rays, Toy, Chip }
 
-enum class ActionIcon { Power, VolUp, VolDown, ChUp, ChDown, Mute, Up, Down, Left, Right, Ok, Back, Add, Check, Cross, Sweep, CameraTest, Trash, ChevRight, Menu, Macros, QrScan, Star, Share, Edit, Source, Play, Dots, DotsH, Minus, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Home, Info }
+enum class ActionIcon { Power, VolUp, VolDown, ChUp, ChDown, Mute, Up, Down, Left, Right, Ok, Back, Add, Check, Cross, Sweep, CameraTest, Trash, ChevRight, Menu, Macros, QrScan, Star, Share, Edit, Source, Play, Dots, DotsH, Minus, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Home, Info, Gauge }
 
 @Composable
 fun CategoryIcon(
@@ -155,6 +155,8 @@ private class IconScope(
             ActionIcon.ChevronDown -> { seg(10f, 20f, 24f, 34f); seg(38f, 20f, 24f, 34f) }
             ActionIcon.ChevronLeft -> { seg(28f, 10f, 14f, 24f); seg(14f, 24f, 28f, 38f) }
             ActionIcon.Info -> { ovalStroke(24f, 24f, 16f); seg(24f, 22f, 24f, 32f); dot(24f, 15f, 1.8f) }
+            // Gauge: arc, ticks, needle.
+            ActionIcon.Gauge -> { arc(24f, 28f, 16f, 200f, 140f); seg(11f, 22f, 14f, 27f); seg(24f, 12f, 24f, 18f); seg(37f, 22f, 34f, 27f); seg(24f, 28f, 33f, 18f); dot(24f, 28f, 2.5f) }
         }
     }
 
