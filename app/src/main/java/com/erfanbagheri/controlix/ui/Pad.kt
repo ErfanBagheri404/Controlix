@@ -55,6 +55,7 @@ fun PadScreen(
     transmitter: IrTransmitter,
     devices: List<SavedDevice>,
     model: DeviceModel,
+    favoritesModel: FavoritesModel,
     toast: ToastState,
     onSwitchDevice: (SavedDevice) -> Unit,
     onEdit: (SavedDevice) -> Unit,
@@ -119,6 +120,15 @@ fun PadScreen(
         }
     }
 
+    fun toggleFavorite(key: String) {
+        val wasFavorite = favoritesModel.favorites.any { it.remoteId == remoteId && it.key == key }
+        favoritesModel.toggleFavorite(remoteId, key)
+        toast.show(
+            if (wasFavorite) "${key.replace('_', ' ')} removed from favorites"
+            else "${key.replace('_', ' ')} added to favorites"
+        )
+    }
+
     Column(
         Modifier.fillMaxSize().applyTopInset().applyBottomInset().padding(horizontal = 24.dp),
     ) {
@@ -156,9 +166,9 @@ fun PadScreen(
         // ── Region 1: chevron pad — swapped out for the full key set ─────
         ContentSwap(expanded, Modifier.fillMaxWidth().weight(1f)) { open ->
             if (open) {
-                ExpandedKeys(::fire, Modifier.fillMaxSize())
+                ExpandedKeys(::fire, ::toggleFavorite, Modifier.fillMaxSize())
             } else {
-                ChevronPad(::fire, Modifier.fillMaxSize())
+                ChevronPad(::fire, ::toggleFavorite, Modifier.fillMaxSize())
             }
         }
 
@@ -167,7 +177,7 @@ fun PadScreen(
         // ── Region 2: controls section — VOL / keys / CH ─────────────────
         Row(Modifier.fillMaxWidth().height(CONTROL_BLOCK), verticalAlignment = Alignment.CenterVertically) {
             // No capsule: the keys sit directly on the screen surface.
-            RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL",
+            RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL", ::toggleFavorite,
                 onUp = { fire("volume_up") }, onDown = { fire("volume_down") })
 
             Spacer(Modifier.width(14.dp))
@@ -177,19 +187,19 @@ fun PadScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PadBtn(ActionIcon.Home, Modifier.weight(1f).fillMaxHeight()) { fire("home") }
-                    PadBtn(ActionIcon.Back, Modifier.weight(1f).fillMaxHeight()) { fire("back") }
+                    PadBtn(ActionIcon.Home, onLongClick = { toggleFavorite("home") }, modifier = Modifier.weight(1f).fillMaxHeight()) { fire("home") }
+                    PadBtn(ActionIcon.Back, onLongClick = { toggleFavorite("back") }, modifier = Modifier.weight(1f).fillMaxHeight()) { fire("back") }
                 }
                 Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight()) { fire("mute") }
-                    PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight()) { fire("play_pause") }
+                    PadBtn(ActionIcon.Mute, onLongClick = { toggleFavorite("mute") }, modifier = Modifier.weight(1f).fillMaxHeight()) { fire("mute") }
+                    PadBtn(ActionIcon.Play, onLongClick = { toggleFavorite("play_pause") }, modifier = Modifier.weight(1f).fillMaxHeight()) { fire("play_pause") }
                 }
                 PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp)) { expanded = !expanded }
             }
 
             Spacer(Modifier.width(14.dp))
 
-            RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH",
+            RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH", ::toggleFavorite,
                 onUp = { fire("channel_up") }, onDown = { fire("channel_down") })
         }
 
@@ -222,28 +232,28 @@ fun PadScreen(
 
 /** Chevrons only — no keys, no OK. Small side padding so the pad breathes. */
 @Composable
-private fun ChevronPad(fire: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun ChevronPad(fire: (String) -> Unit, onLongPress: (String) -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier.padding(horizontal = 12.dp),
         verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        PadBtn(ActionIcon.ChevronUp, Modifier.size(64.dp)) { fire("up") }
+        PadBtn(ActionIcon.ChevronUp, onLongClick = { onLongPress("up") }, modifier = Modifier.size(64.dp)) { fire("up") }
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            PadBtn(ActionIcon.ChevronLeft, Modifier.size(64.dp)) { fire("left") }
-            PadBtn(ActionIcon.ChevronRight, Modifier.size(64.dp)) { fire("right") }
+            PadBtn(ActionIcon.ChevronLeft, onLongClick = { onLongPress("left") }, modifier = Modifier.size(64.dp)) { fire("left") }
+            PadBtn(ActionIcon.ChevronRight, onLongClick = { onLongPress("right") }, modifier = Modifier.size(64.dp)) { fire("right") }
         }
-        PadBtn(ActionIcon.ChevronDown, Modifier.size(64.dp)) { fire("down") }
+        PadBtn(ActionIcon.ChevronDown, onLongClick = { onLongPress("down") }, modifier = Modifier.size(64.dp)) { fire("down") }
     }
 }
 
 /** The full key set, laid out on the same grid rhythm as the controls section. */
 @Composable
-private fun ExpandedKeys(fire: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun ExpandedKeys(fire: (String) -> Unit, onLongPress: (String) -> Unit, modifier: Modifier = Modifier) {
     val rows = listOf(
         listOf("1", "2", "3"),
         listOf("4", "5", "6"),
@@ -254,23 +264,28 @@ private fun ExpandedKeys(fire: (String) -> Unit, modifier: Modifier = Modifier) 
         rows.forEach { row ->
             Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEach { key ->
-                    KeyTile(key, Modifier.weight(1f).fillMaxHeight()) { fire(key) }
+                    KeyTile(key, Modifier.weight(1f).fillMaxHeight(), onLongClick = { onLongPress(key) }) { fire(key) }
                 }
             }
         }
         Row(Modifier.fillMaxWidth().height(52.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight()) { fire("power") }
-            PadBtn(ActionIcon.Menu, Modifier.weight(1f).fillMaxHeight()) { fire("menu") }
-            PadBtn(ActionIcon.Info, Modifier.weight(1f).fillMaxHeight()) { fire("info") }
+            PadBtn(ActionIcon.Power, onLongClick = { onLongPress("power") }, modifier = Modifier.weight(1f).fillMaxHeight()) { fire("power") }
+            PadBtn(ActionIcon.Menu, onLongClick = { onLongPress("menu") }, modifier = Modifier.weight(1f).fillMaxHeight()) { fire("menu") }
+            PadBtn(ActionIcon.Info, onLongClick = { onLongPress("info") }, modifier = Modifier.weight(1f).fillMaxHeight()) { fire("info") }
         }
     }
 }
 
 /** Digit / word key — same tile surface as the icon keys. */
 @Composable
-private fun KeyTile(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun KeyTile(
+    label: String,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
+) {
     Box(
-        modifier.bgTile(20.dp).pressable(onClick),
+        modifier.bgTile(20.dp).combinedPressable(onClick = onClick, onLongClick = onLongClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(label.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium)
@@ -283,6 +298,7 @@ private fun RockerColumn(
     up: ActionIcon,
     down: ActionIcon,
     label: String,
+    onLongPress: (String) -> Unit,
     onUp: () -> Unit,
     onDown: () -> Unit,
 ) {
@@ -291,16 +307,23 @@ private fun RockerColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        PadBtn(up, Modifier.size(56.dp)) { onUp() }
+        PadBtn(up, onLongClick = { onLongPress(if (label == "VOL") "volume_up" else "channel_up") }, modifier = Modifier.size(56.dp)) { onUp() }
         Text(label, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
-        PadBtn(down, Modifier.size(56.dp)) { onDown() }
+        PadBtn(down, onLongClick = { onLongPress(if (label == "VOL") "volume_down" else "channel_down") }, modifier = Modifier.size(56.dp)) { onDown() }
     }
 }
 
 @Composable
-private fun PadBtn(icon: ActionIcon, modifier: Modifier = Modifier, accent: Boolean = false, onClick: () -> Unit) {
+private fun PadBtn(
+    icon: ActionIcon,
+    modifier: Modifier = Modifier,
+    accent: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
+) {
     Box(
-        modifier.bgTile(20.dp, if (accent) Accent else MaterialTheme.colorScheme.surfaceVariant).pressable(onClick),
+        modifier.bgTile(20.dp, if (accent) Accent else MaterialTheme.colorScheme.surfaceVariant)
+            .combinedPressable(onClick = onClick, onLongClick = onLongClick),
         contentAlignment = Alignment.Center,
     ) {
         ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)

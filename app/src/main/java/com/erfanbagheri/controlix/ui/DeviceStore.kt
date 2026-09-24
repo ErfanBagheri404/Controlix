@@ -84,6 +84,8 @@ class DeviceStore(context: Context) {
         prefs.edit().putString("list", list.joinToString(";") { serialize(it) }).apply()
     }
 
+    // ponytail: favorites/scenes key off (remoteId, key) and are deliberately NOT purged here —
+    // they resolve at fire time and render disabled once the device or key is gone.
     fun remove(remoteId: Int) {
         prefs.edit().putString("list", load().filterNot { it.remoteId == remoteId }.joinToString(";") { serialize(it) }).apply()
     }

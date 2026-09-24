@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.feature.sceneFromMacro
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.ThemeState
 import kotlinx.coroutines.launch
@@ -61,6 +62,7 @@ private sealed interface Route {
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
     val model = rememberDeviceModel()
     val macroModel = rememberMacroModel()
+    val favoritesModel = rememberFavoritesModel()
     var route: Route by remember { mutableStateOf(Route.Home) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -105,6 +107,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                         model = model,
                         repo = repo,
                         transmitter = ir,
+                        favoritesModel = favoritesModel,
                         onOpenDevice = { route = Route.Pad(it.remoteId) },
                         onAddDevice = { route = Route.AddDevice },
                         onToggleDrawer = { Feedback.tap(view); scope.launch { drawerState.open() } },
@@ -179,6 +182,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                             transmitter = ir,
                             devices = model.devices,
                             model = model,
+                            favoritesModel = favoritesModel,
                             toast = toast,
                             onSwitchDevice = { route = Route.Pad(it.remoteId) },
                             onEdit = { route = Route.Edit(it.remoteId) },
@@ -224,6 +228,10 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
 
         ToastHost(toast, Modifier.align(Alignment.BottomCenter).applyBottomInset())
         LaunchedEffect(route) { if (route is Route.Home) model.reload() }
+        // Scenes mirror the macro store — one projection, no second editor.
+        LaunchedEffect(macroModel.macros) {
+            favoritesModel.replaceScenes(macroModel.macros.map { sceneFromMacro(it, it.id) })
+        }
     }
 }
 
