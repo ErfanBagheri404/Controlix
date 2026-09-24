@@ -61,6 +61,7 @@ private sealed interface Route {
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
     val model = rememberDeviceModel()
     val macroModel = rememberMacroModel()
+    val copiedModel = rememberCopiedButtonModel()
     var route: Route by remember { mutableStateOf(Route.Home) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -179,6 +180,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                             transmitter = ir,
                             devices = model.devices,
                             model = model,
+                            copied = copiedModel,
                             toast = toast,
                             onSwitchDevice = { route = Route.Pad(it.remoteId) },
                             onEdit = { route = Route.Edit(it.remoteId) },

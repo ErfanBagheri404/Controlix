@@ -135,6 +135,7 @@ fun DeviceActionSheet(
     onEdit: (SavedDevice) -> Unit,
     onShare: (SavedDevice) -> Unit,
     onDismiss: () -> Unit,
+    onCopiedKeys: (() -> Unit)? = null,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -147,6 +148,9 @@ fun DeviceActionSheet(
             Spacer(Modifier.height(4.dp))
             Text(dev.brand, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
             Spacer(Modifier.height(20.dp))
+            if (onCopiedKeys != null) {
+                SheetAction("Copied keys", "paste a copied code") { onDismiss(); onCopiedKeys() }
+            }
             SheetAction("Edit", "name, room, shortcut") { onDismiss(); onEdit(dev) }
             SheetAction(
                 if (dev.pinned) "Unpin" else "Pin",
