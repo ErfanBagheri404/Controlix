@@ -13,8 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +32,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.ManualKeys
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
@@ -66,6 +70,8 @@ fun PadScreen(
     var switcherOpen by remember { mutableStateOf(false) }
     var sheetOpen by remember { mutableStateOf(false) }
     var expanded by remember(remoteId) { mutableStateOf(false) }
+    // Issue #17: manual list open by default — expand → label is then 2 taps.
+    var manualOpen by remember(remoteId) { mutableStateOf(true) }
 
     val buttons = remember(remoteId) {
         runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
@@ -82,6 +88,13 @@ fun PadScreen(
     // Always resolvable so the header menu opens even if the list is stale.
     val saved = devices.firstOrNull { it.remoteId == remoteId }
         ?: SavedDevice(remoteId, deviceName ?: "Remote", "", "", 0)
+    // Own buttons only: distinct non-standard labels + "N on pad" counts.
+    val summary = remember(remoteId, buttons) { ManualKeys.summarize(buttons) }
+    // ponytail: saved.matched exists but no writer sets it false yet (raw
+    // remote-id / search picks still default true) — ceiling: until the add
+    // flow flags it, "covers zero standard keys" is the only honest
+    // not-matched signal (issue #17).
+    val manual = summary.extraCount > 0 && (!saved.matched || summary.onPad == 0)
 
     fun fire(name: String) {
         // Effective list first: standard keys (incl. digits/d-pad) may be
@@ -104,7 +117,11 @@ fun PadScreen(
                 ?: buttons.firstOrNull { it.name.contains("source", true) }
             else -> null
         }
-        val btn = p ?: buttons.firstOrNull { it.name.equals(name, true) }
+        // Exact name first: ManualKeys keeps case-variants ('ASPECT' vs 'Aspect')
+        // as distinct codes — case-insensitive lookup could fire the other row's
+        // pattern (issue #17).
+        val btn = buttons.firstOrNull { it.name == name }
+            ?: p ?: buttons.firstOrNull { it.name.equals(name, true) }
             ?: buttons.firstOrNull { it.name.contains(name, true) }
         if (btn != null) {
             if (transmitter.transmitButton(btn.carrierHz, btn.pattern)) {
@@ -156,7 +173,13 @@ fun PadScreen(
         // ── Region 1: chevron pad — swapped out for the full key set ─────
         ContentSwap(expanded, Modifier.fillMaxWidth().weight(1f)) { open ->
             if (open) {
-                ExpandedKeys(::fire, Modifier.fillMaxSize())
+                if (manual) {
+                    ManualKeyList(summary, ::fire, Modifier.fillMaxSize(), manualOpen) {
+                        manualOpen = !manualOpen
+                    }
+                } else {
+                    ExpandedKeys(::fire, Modifier.fillMaxSize())
+                }
             } else {
                 ChevronPad(::fire, Modifier.fillMaxSize())
             }
@@ -262,6 +285,52 @@ private fun ExpandedKeys(fire: (String) -> Unit, modifier: Modifier = Modifier) 
             PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight()) { fire("power") }
             PadBtn(ActionIcon.Menu, Modifier.weight(1f).fillMaxHeight()) { fire("menu") }
             PadBtn(ActionIcon.Info, Modifier.weight(1f).fillMaxHeight()) { fire("info") }
+        }
+    }
+}
+
+/**
+ * Issue #17, manual mode: flat "N on pad · M more" header toggling the
+ * remote's own non-standard labels — each row fires its own pattern through
+ * [fire]. Replaces the fixed grid; the expand "…" key stays the only way in.
+ */
+@Composable
+private fun ManualKeyList(
+    summary: ManualKeys.Summary,
+    fire: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    open: Boolean,
+    onToggle: () -> Unit,
+) {
+    Column(modifier) {
+        Row(
+            Modifier.fillMaxWidth().pressable(onClick = onToggle).padding(vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "${summary.onPad} on pad · ${summary.extraCount} more",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            ActionIconView(
+                if (open) ActionIcon.ChevronUp else ActionIcon.ChevronDown,
+                18.dp,
+                MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        if (open) {
+            LazyColumn(Modifier.weight(1f)) {
+                items(summary.extras, key = { it.label }) { entry ->
+                    Row(
+                        Modifier.fillMaxWidth().pressable { fire(entry.label) }.padding(vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(entry.label, style = MaterialTheme.typography.bodyLarge)
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                }
+            }
         }
     }
 }

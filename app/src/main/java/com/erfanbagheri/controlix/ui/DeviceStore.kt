@@ -15,6 +15,10 @@ import androidx.compose.ui.platform.LocalContext
  *
  * v0 fields: id|name|brand|catSlug|buttonCount
  * v1 fields: id|name|brand|catSlug|buttonCount|pinned(0/1)|enabled(0/1)|roomSlug
+ * v2 fields: ...|roomSlug|matched(0/1) — false when the setup ritual never
+ * confirmed the remote (raw remote-id / search pick); the pad then offers
+ * the manual key list (issue #17). Defaults true so pre-flag devices keep
+ * working.
  */
 data class SavedDevice(
     val remoteId: Int,
@@ -25,6 +29,7 @@ data class SavedDevice(
     val pinned: Boolean = false,
     val enabled: Boolean = true,
     val roomSlug: String = "",
+    val matched: Boolean = true,
 )
 
 enum class Room(val slug: String, val display: String) {
@@ -64,6 +69,7 @@ class DeviceStore(context: Context) {
             pinned = f.getOrNull(5) == "1",
             enabled = (f.getOrNull(6) ?: "1") != "0",
             roomSlug = f.getOrNull(7) ?: "",
+            matched = (f.getOrNull(8) ?: "1") != "0",
         )
     }
 
@@ -77,6 +83,7 @@ class DeviceStore(context: Context) {
             if (d.pinned) "1" else "0",
             if (d.enabled) "1" else "0",
             d.roomSlug,
+            if (d.matched) "1" else "0",
         ).joinToString("|")
 
     fun save(dev: SavedDevice) {
