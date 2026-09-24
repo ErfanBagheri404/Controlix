@@ -30,7 +30,7 @@ import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.erfanbagheri.controlix.data.ButtonNames
+import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
 
@@ -79,14 +79,20 @@ fun RitualScreen(
         emitTrigger = if (sent) Any() else null
     }
 
-    val followUpTests = remember(lockedRemoteId) {
+    // Follow-up tests use the locked remote's own codes first, then
+    // same-model siblings, then generic brand siblings. This is what fills
+    // the "power works but channel-up does not" gap without inventing codes.
+    val followUpTests = remember(lockedRemoteId, brandId) {
         val id = lockedRemoteId ?: return@remember emptyList()
-        val btns = runCatching { repo.buttons(id) }.getOrNull() ?: return@remember emptyList()
+        val own = runCatching { repo.buttons(id) }.getOrNull().orEmpty()
+        val sameModel = runCatching { repo.sameModelButtons(id) }.getOrNull().orEmpty()
+        val brand = runCatching { repo.brandButtons(brandId) }.getOrNull().orEmpty()
+        val effective = EffectiveButtons.resolve(id, own, sameModel + brand)
         listOf(
-            TestKind.VolUp to btns.firstOrNull { ButtonNames.volUp(it.name) },
-            TestKind.VolDown to btns.firstOrNull { ButtonNames.volDown(it.name) },
-            TestKind.Mute to btns.firstOrNull { ButtonNames.mute(it.name) },
-        ).mapNotNull { (kind, btn) -> if (btn != null) kind to btn else null }
+            TestKind.VolUp to effective.firstOrNull { it.key == "volume_up" },
+            TestKind.VolDown to effective.firstOrNull { it.key == "volume_down" },
+            TestKind.Mute to effective.firstOrNull { it.key == "mute" },
+        ).mapNotNull { (kind, r) -> if (r != null) kind to r else null }
     }
 
     LaunchedEffect(powerIndex, testStep, lockedRemoteId) {

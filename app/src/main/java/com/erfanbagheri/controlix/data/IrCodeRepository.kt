@@ -91,7 +91,7 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
     data class Category(val id: Int, val slug: String, val name: String)
     data class Brand(val id: Int, val name: String, val remoteCount: Int)
     data class Remote(val id: Int, val fileName: String, val modelName: String?)
-    data class Button(val name: String, val carrierHz: Int, val pattern: IntArray, val protocol: String?)
+    data class Button(val name: String, val carrierHz: Int, val pattern: IntArray, val protocol: String?, val remoteId: Int = -1)
     data class PowerButton(val brandName: String, val carrierHz: Int, val pattern: IntArray)
     /** A distinct candidate code during brand setup, deduped by wire pattern. */
     data class PowerCandidate(val buttonName: String, val carrierHz: Int, val pattern: IntArray, val remoteId: Int)
@@ -163,7 +163,59 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
             buildList {
                 while (c.moveToNext()) {
                     val pattern = expandPattern(c.getBlob(2) ?: continue) ?: continue
-                    add(Button(c.getString(0), c.getInt(1), pattern, c.getString(3)))
+                    add(Button(c.getString(0), c.getInt(1), pattern, c.getString(3), remoteId))
+                }
+            }
+        }
+
+    /**
+     * Every button of every remote under a brand, for cross-remote fill.
+     * Loading a whole brand is bounded (Samsung TVs ~75 remotes) and lets
+     * SiblingButtonPicker rank patterns by how many remotes agree.
+     */
+    fun brandIdOf(remoteId: Int): Int? =
+        db.rawQuery("SELECT brand_id FROM remote WHERE id = ?", arrayOf(remoteId.toString())).use { c ->
+            if (c.moveToFirst()) c.getInt(0) else null
+        }
+
+    /**
+     * Buttons from remotes that claim the same model string as this remote's
+     * model_name, excluding the remote itself. Model agreement is the
+     * strongest compatibility signal in community data, so the ritual prefers
+     * these over generic brand siblings — at the cost of an extra query only
+     * during setup.
+     */
+    fun sameModelButtons(remoteId: Int): List<Button> {
+        val model = db.rawQuery(
+            "SELECT model_name FROM remote WHERE id = ?", arrayOf(remoteId.toString())
+        ).use { c -> if (c.moveToFirst()) c.getString(0) else null }
+        if (model.isNullOrBlank()) return emptyList()
+        return db.rawQuery(
+            """SELECT r.id, b.name, b.carrier_hz, b.pattern, b.protocol
+               FROM button b JOIN remote r ON r.id = b.remote_id
+               WHERE r.model_name = ? AND r.id != ? ORDER BY r.id, b.id""",
+            arrayOf(model, remoteId.toString())
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    val pattern = expandPattern(c.getBlob(3) ?: continue) ?: continue
+                    add(Button(c.getString(1), c.getInt(2), pattern, c.getString(4), c.getInt(0)))
+                }
+            }
+        }
+    }
+
+    fun brandButtons(brandId: Int): List<Button> =
+        db.rawQuery(
+            """SELECT r.id, b.name, b.carrier_hz, b.pattern, b.protocol
+               FROM button b JOIN remote r ON r.id = b.remote_id
+               WHERE r.brand_id = ? ORDER BY r.id, b.id""",
+            arrayOf(brandId.toString())
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    val pattern = expandPattern(c.getBlob(3) ?: continue) ?: continue
+                    add(Button(c.getString(1), c.getInt(2), pattern, c.getString(4), c.getInt(0)))
                 }
             }
         }
@@ -243,27 +295,4 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
         db.rawQuery("SELECT COUNT(*) FROM button", null).use { c ->
             c.moveToFirst(); c.getInt(0)
         }
-
-    /**
-     * One candidate button for a fuzzy predicate (ButtonNames.volUp etc.),
-     * within one brand. Used by the setup ritual's volume/mute tests.
-     * Returns the first remote that carries a matching button; null if none.
-     */
-    fun findButton(brandId: Int, pred: (String) -> Boolean): List<Button> {
-        val sql = """
-            SELECT b.name, b.carrier_hz, b.pattern, b.protocol, r.id
-            FROM button b JOIN remote r ON r.id = b.remote_id
-            WHERE r.brand_id = ?
-            ORDER BY r.id, b.id
-        """.trimIndent()
-        return db.rawQuery(sql, arrayOf(brandId.toString())).use { c ->
-            val out = ArrayList<Button>()
-            while (c.moveToNext()) {
-                if (!pred(c.getString(0))) continue
-                val pattern = expandPattern(c.getBlob(2) ?: continue) ?: continue
-                out += Button(c.getString(0), c.getInt(1), pattern, c.getString(3))
-            }
-            out
-        }
-    }
 }

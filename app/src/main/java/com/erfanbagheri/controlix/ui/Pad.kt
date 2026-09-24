@@ -27,7 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.erfanbagheri.controlix.data.ButtonNames
+import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
@@ -70,18 +70,35 @@ fun PadScreen(
     val buttons = remember(remoteId) {
         runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
     }
+    // Borrowed codes: the brand's siblings often carry channel/volume codes
+    // this remote lacks. Used when the remote's own buttons fall short.
+    val effective = remember(remoteId, buttons) {
+        val brand = runCatching { repo?.brandIdOf(remoteId) }.getOrNull()
+        val siblings = if (brand == null) null
+        else runCatching { repo?.brandButtons(brand) }.getOrNull()
+        if (siblings.isNullOrEmpty()) emptyList()
+        else EffectiveButtons.resolve(remoteId, buttons, siblings)
+    }
     // Always resolvable so the header menu opens even if the list is stale.
     val saved = devices.firstOrNull { it.remoteId == remoteId }
         ?: SavedDevice(remoteId, deviceName ?: "Remote", "", "", 0)
 
     fun fire(name: String) {
+        // Effective list first: standard keys (incl. digits/d-pad) may be
+        // borrowed from brand siblings. Semantic key == the action name the
+        // pad passes for CHECKS entries; raw-name lookup covers the rest.
+        val resolved = effective.firstOrNull { it.key == name }
+        if (resolved != null) {
+            if (transmitter.transmitButton(resolved.carrierHz, resolved.pattern)) {
+                lastSent = "Sent: ${resolved.name}"
+                emitKey = Any()
+            } else {
+                lastSent = "Not sent"
+                toast.show(if (!transmitter.hasIrEmitter()) "This device has no IR blaster." else "Couldn't send. Try again.")
+            }
+            return
+        }
         val p = when (name) {
-            "power" -> buttons.firstOrNull { ButtonNames.power(it.name) }
-            "volume_up" -> buttons.firstOrNull { ButtonNames.volUp(it.name) }
-            "volume_down" -> buttons.firstOrNull { ButtonNames.volDown(it.name) }
-            "channel_up" -> buttons.firstOrNull { ButtonNames.chUp(it.name) }
-            "channel_down" -> buttons.firstOrNull { ButtonNames.chDown(it.name) }
-            "mute" -> buttons.firstOrNull { ButtonNames.mute(it.name) }
             "play_pause" -> buttons.firstOrNull { it.name.contains("play", true) }
             "source" -> buttons.firstOrNull { it.name.contains("input", true) }
                 ?: buttons.firstOrNull { it.name.contains("source", true) }

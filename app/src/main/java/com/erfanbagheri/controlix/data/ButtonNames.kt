@@ -7,6 +7,9 @@ package com.erfanbagheri.controlix.data
  * Rules validated against the full label list; the +/- guard rejects
  * compound labels ('VOL+ / FAVOR.- SEL.', 'CH +/DOWN') that are ambiguous
  * between up and down — better a missing key than a wrong-sending one.
+ *
+ * Covers EVERY action the pad renders, not only power/volume/channel: the
+ * borrow layer can only fill a key that has a predicate here.
  */
 object ButtonNames {
 
@@ -44,4 +47,63 @@ object ButtonNames {
         return (x.contains("ch") || x.contains("channel")) && !x.contains('+') &&
             (x.contains('-') || x.contains("down") || x.contains("dn"))
     }
+
+    // ── D-pad ────────────────────────────────────────────────────────────
+    // Guard: page/volume/channel "up" labels are different keys — route
+    // them back to their own predicate instead of the d-pad.
+
+    fun up(n: String): Boolean {
+        val x = norm(n)
+        return (x == "up" || x.endsWith("up")) &&
+            !x.contains("page") && !x.contains("vol") && !x.contains("ch") && !x.contains('+')
+    }
+
+    fun down(n: String): Boolean {
+        val x = norm(n)
+        return (x == "down" || x.endsWith("down")) &&
+            !x.contains("page") && !x.contains("vol") && !x.contains("ch")
+    }
+
+    fun left(n: String): Boolean = norm(n).let { it == "left" || it.endsWith("left") }
+
+    fun right(n: String): Boolean = norm(n).let { it == "right" || it.endsWith("right") }
+
+    fun ok(n: String): Boolean = norm(n) in setOf("ok", "okay", "enter", "select", "sel", "action")
+
+    // ── App keys ─────────────────────────────────────────────────────────
+
+    fun home(n: String): Boolean = norm(n).let { it == "home" || it == "tvhome" || it.endsWith("home") }
+
+    fun back(n: String): Boolean = norm(n).let { it == "back" || it == "return" || it.endsWith("back") }
+
+    fun exit(n: String): Boolean = norm(n) in setOf("exit", "quit")
+
+    fun guide(n: String): Boolean = norm(n).let { it == "guide" || it == "epg" || it.endsWith("guide") }
+
+    /** Settings/Setup/Options drive the same menu key on most TVs. */
+    fun menu(n: String): Boolean = norm(n) in setOf("menu", "settings", "setup", "options", "option")
+
+    /**
+     * Deliberately NOT 'Display': on several TVs Display cycles inputs —
+     * aliasing it here would send an input switch from the info key.
+     */
+    fun info(n: String): Boolean = norm(n).let { it == "info" || it.startsWith("info") }
+
+    fun source(n: String): Boolean =
+        norm(n).let { it.contains("input") || it.contains("source") || it == "tvav" }
+
+    /** 'replay' contains 'play' but is a different key — reject it. */
+    fun playPause(n: String): Boolean = norm(n).let { it.contains("play") && !it.contains("replay") }
+
+    // ── Keypad ───────────────────────────────────────────────────────────
+
+    /** A label for some digit key: trailing single digit, letters before it. */
+    fun digit(n: String): Boolean {
+        val x = norm(n)
+        return x.isNotEmpty() && x.last().isDigit() && x.count { it.isDigit() } == 1 &&
+            x.dropLast(1).all { it.isLetter() }
+    }
+
+    /** The label is specifically this digit ('KEY_5' yes, 'KEY_6' no). */
+    fun digit(n: String, d: Char): Boolean = digit(n) && norm(n).last() == d
 }
