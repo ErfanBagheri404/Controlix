@@ -97,6 +97,9 @@ class DeviceStore(context: Context) {
     fun togglePin(remoteId: Int) { val d = load().find { it.remoteId == remoteId } ?: return; save(d.copy(pinned = !d.pinned)) }
     fun toggleEnabled(remoteId: Int) { val d = load().find { it.remoteId == remoteId } ?: return; save(d.copy(enabled = !d.enabled)) }
     fun setRoom(remoteId: Int, slug: String) { val d = load().find { it.remoteId == remoteId } ?: return; save(d.copy(roomSlug = slug)) }
+    fun replaceAll(devices: List<SavedDevice>) {
+        prefs.edit().putString("list", devices.joinToString(";") { serialize(it) }).apply()
+    }
     private fun clean(s: String): String = s.replace('|', '/').replace(';', ',')
 }
 
@@ -111,6 +114,7 @@ class DeviceModel(private val store: DeviceStore) {
     fun togglePin(remoteId: Int) { store.togglePin(remoteId); devices = store.load() }
     fun toggleEnabled(remoteId: Int) { store.toggleEnabled(remoteId); devices = store.load() }
     fun setRoom(remoteId: Int, slug: String) { store.setRoom(remoteId, slug); devices = store.load() }
+    fun replaceAll(devices: List<SavedDevice>) { store.replaceAll(devices); this.devices = store.load() }
 }
 
 @Composable
