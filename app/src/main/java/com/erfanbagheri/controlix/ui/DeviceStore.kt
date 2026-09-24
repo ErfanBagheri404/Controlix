@@ -7,6 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.erfanbagheri.controlix.data.FreeLayout
+import com.erfanbagheri.controlix.data.FreeLayoutCodec
 
 /**
  * Saved devices, persisted in SharedPreferences.
@@ -97,6 +99,10 @@ class DeviceStore(context: Context) {
     fun togglePin(remoteId: Int) { val d = load().find { it.remoteId == remoteId } ?: return; save(d.copy(pinned = !d.pinned)) }
     fun toggleEnabled(remoteId: Int) { val d = load().find { it.remoteId == remoteId } ?: return; save(d.copy(enabled = !d.enabled)) }
     fun setRoom(remoteId: Int, slug: String) { val d = load().find { it.remoteId == remoteId } ?: return; save(d.copy(roomSlug = slug)) }
+    // ponytail: setter lands with the layout editor UI (next step).
+    fun freeLayout(remoteId: Int): FreeLayout =
+        runCatching { FreeLayoutCodec.decode(prefs.getString("layout_$remoteId", null)) }
+            .getOrElse { FreeLayout.default() }
     private fun clean(s: String): String = s.replace('|', '/').replace(';', ',')
 }
 

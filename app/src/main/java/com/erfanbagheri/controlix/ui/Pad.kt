@@ -25,9 +25,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.EffectiveButtons
+import com.erfanbagheri.controlix.data.FreeLayout
+import com.erfanbagheri.controlix.data.FreeLayout.Slot
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
@@ -82,6 +85,9 @@ fun PadScreen(
     // Always resolvable so the header menu opens even if the list is stale.
     val saved = devices.firstOrNull { it.remoteId == remoteId }
         ?: SavedDevice(remoteId, deviceName ?: "Remote", "", "", 0)
+
+    val context = LocalContext.current
+    val freeLayout = remember(remoteId) { DeviceStore(context).freeLayout(remoteId) }
 
     fun fire(name: String) {
         // Effective list first: standard keys (incl. digits/d-pad) may be
@@ -156,7 +162,8 @@ fun PadScreen(
         // ── Region 1: chevron pad — swapped out for the full key set ─────
         ContentSwap(expanded, Modifier.fillMaxWidth().weight(1f)) { open ->
             if (open) {
-                ExpandedKeys(::fire, Modifier.fillMaxSize())
+                if (freeLayout == FreeLayout.default()) ExpandedKeys(::fire, Modifier.fillMaxSize())
+                else FreeGrid(freeLayout, ::fire, Modifier.fillMaxSize())
             } else {
                 ChevronPad(::fire, Modifier.fillMaxSize())
             }
@@ -262,6 +269,25 @@ private fun ExpandedKeys(fire: (String) -> Unit, modifier: Modifier = Modifier) 
             PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight()) { fire("power") }
             PadBtn(ActionIcon.Menu, Modifier.weight(1f).fillMaxHeight()) { fire("menu") }
             PadBtn(ActionIcon.Info, Modifier.weight(1f).fillMaxHeight()) { fire("info") }
+        }
+    }
+}
+
+/** Stored free layout: column count honoured, blanks keep their grid cell. */
+// ponytail: next step is the editor UI — column picker + move controls.
+@Composable
+private fun FreeGrid(layout: FreeLayout, fire: (String) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        layout.slots.chunked(layout.columns).forEach { row ->
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { slot ->
+                    when (slot) {
+                        is Slot.Key -> KeyTile(slot.name, Modifier.weight(1f).fillMaxHeight()) { fire(slot.name) }
+                        Slot.Blank -> Spacer(Modifier.weight(1f).fillMaxHeight())
+                    }
+                }
+                repeat(layout.columns - row.size) { Spacer(Modifier.weight(1f).fillMaxHeight()) }
+            }
         }
     }
 }
