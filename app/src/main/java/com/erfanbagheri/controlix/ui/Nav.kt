@@ -54,6 +54,7 @@ private sealed interface Route {
     data object Sweep : Route
     data object SelfTest : Route
     data object Macros : Route
+    data object Builder : Route
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,6 +78,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
             drawerState = drawerState,
             drawerContent = {
                 MenuDrawer(
+                    onBuild = { scope.launch { drawerState.close() }; route = Route.Builder },
                     onMacros = { scope.launch { drawerState.close() }; route = Route.Macros },
                     onSweep = { scope.launch { drawerState.close() }; route = Route.Sweep },
                     onSelfTest = { scope.launch { drawerState.close() }; route = Route.SelfTest },
@@ -211,6 +213,13 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
 
                     is Route.Sweep -> SweepScreen(repo, ir) { route = Route.Home }
                     is Route.SelfTest -> SelfTestScreen(ir) { route = Route.Home }
+                    is Route.Builder -> BuilderScreen(
+                        repo = repo,
+                        model = model,
+                        toast = toast,
+                        onSaved = { route = Route.Pad(it) },
+                        onBack = { route = Route.Home },
+                    )
                     is Route.Macros -> MacrosScreen(
                         repo = repo,
                         transmitter = ir,
@@ -246,6 +255,7 @@ private fun MissingDb() {
 }
 @Composable
 private fun MenuDrawer(
+    onBuild: () -> Unit,
     onMacros: () -> Unit,
     onSweep: () -> Unit,
     onSelfTest: () -> Unit,
@@ -260,6 +270,7 @@ private fun MenuDrawer(
             Spacer(Modifier.height(32.dp))
 
             SectionHead("Tools")
+            DrawerRow(ActionIcon.Add, "Build remote", onBuild)
             DrawerRow(ActionIcon.Macros, "Macros", onMacros)
             DrawerRow(ActionIcon.Sweep, "Power-off sweep", onSweep)
             DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)

@@ -70,7 +70,7 @@ class DeviceStore(context: Context) {
     private fun serialize(d: SavedDevice): String =
         listOfNotNull(
             d.remoteId.toString(),
-            d.name,
+            clean(d.name),
             d.brand,
             d.categorySlug,
             d.buttonCount.toString(),

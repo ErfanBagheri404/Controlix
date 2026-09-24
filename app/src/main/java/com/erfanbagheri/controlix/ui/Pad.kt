@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.EffectiveButtons
@@ -67,17 +68,34 @@ fun PadScreen(
     var sheetOpen by remember { mutableStateOf(false) }
     var expanded by remember(remoteId) { mutableStateOf(false) }
 
-    val buttons = remember(remoteId) {
-        runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
+    // Custom remotes carry negative ids: their buttons are recipe
+    // references resolved from the DB at fire time, never stored codes.
+    val context = LocalContext.current
+    val recipe = remember(remoteId) {
+        if (remoteId >= 0) null
+        else BuilderStore(context).load(remoteId)
+            .validate { rid, n -> runCatching { repo?.buttonByName(rid, n) != null }.getOrDefault(false) }
+    }
+    val buttons = remember(remoteId, recipe) {
+        if (recipe == null) runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
+        else recipe.buttons.mapNotNull { e ->
+            runCatching { repo?.buttonByName(e.remoteId, e.sourceName) }.getOrNull()
+                ?.copy(remoteId = e.remoteId)
+        }
     }
     // Borrowed codes: the brand's siblings often carry channel/volume codes
     // this remote lacks. Used when the remote's own buttons fall short.
-    val effective = remember(remoteId, buttons) {
-        val brand = runCatching { repo?.brandIdOf(remoteId) }.getOrNull()
-        val siblings = if (brand == null) null
-        else runCatching { repo?.brandButtons(brand) }.getOrNull()
-        if (siblings.isNullOrEmpty()) emptyList()
-        else EffectiveButtons.resolve(remoteId, buttons, siblings)
+    // Custom remotes resolve against their own set only — the recipe is
+    // exactly what the user picked; borrowing would override their choices.
+    val effective = remember(remoteId, buttons, recipe) {
+        if (recipe != null) EffectiveButtons.resolve(remoteId, buttons, buttons)
+        else {
+            val brand = runCatching { repo?.brandIdOf(remoteId) }.getOrNull()
+            val siblings = if (brand == null) null
+            else runCatching { repo?.brandButtons(brand) }.getOrNull()
+            if (siblings.isNullOrEmpty()) emptyList()
+            else EffectiveButtons.resolve(remoteId, buttons, siblings)
+        }
     }
     // Always resolvable so the header menu opens even if the list is stale.
     val saved = devices.firstOrNull { it.remoteId == remoteId }
