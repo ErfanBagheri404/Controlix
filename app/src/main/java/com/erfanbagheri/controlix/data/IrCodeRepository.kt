@@ -92,7 +92,12 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
     data class Brand(val id: Int, val name: String, val remoteCount: Int)
     data class Remote(val id: Int, val fileName: String, val modelName: String?)
     data class Button(val name: String, val carrierHz: Int, val pattern: IntArray, val protocol: String?, val remoteId: Int = -1)
-    data class PowerButton(val brandName: String, val carrierHz: Int, val pattern: IntArray)
+    data class PowerButton(
+        val brandName: String,
+        val carrierHz: Int,
+        val pattern: IntArray,
+        val remoteId: Int = -1,
+    )
     /** A distinct candidate code during brand setup, deduped by wire pattern. */
     data class PowerCandidate(val buttonName: String, val carrierHz: Int, val pattern: IntArray, val remoteId: Int)
 
@@ -260,6 +265,26 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
     }
 
     fun close() = db.close()
+
+    /**
+     * Remotes in sweep categories with no usable power button.
+     * The sweep skips these; the pre-flight screen shows the count.
+     */
+    fun tvRemotesWithoutPowerCount(): Int =
+        db.rawQuery(
+            """SELECT COUNT(*) FROM remote r
+               JOIN brand br ON br.id = r.brand_id
+               JOIN category cat ON cat.id = br.category_id
+               WHERE cat.slug IN ('tvs','projectors','iodn_irblaster')
+               AND NOT EXISTS (
+                 SELECT 1 FROM button b WHERE b.remote_id = r.id
+                 AND (lower(b.name) LIKE '%power%' OR lower(b.name) IN ('on','off','on/off','standby'))
+                 AND b.pattern IS NOT NULL
+               )""",
+            null,
+        ).use { c ->
+            c.moveToFirst(); c.getInt(0)
+        }
 
     /**
      * Distinct power codes for a brand, for the setup ritual. The same

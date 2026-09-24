@@ -12,20 +12,30 @@ class IrTransmitter(context: Context) {
     private val manager: ConsumerIrManager? =
         context.getSystemService(Context.CONSUMER_IR_SERVICE) as? ConsumerIrManager
 
+    /** Typed transmit outcome — keeps the failure cause instead of collapsing to false. */
+    sealed interface SendResult {
+        data object Sent : SendResult
+        data object NoEmitter : SendResult
+        data class Failed(val reason: String?, val cause: Throwable? = null) : SendResult
+    }
+
     fun hasIrEmitter(): Boolean = manager?.hasIrEmitter() ?: false
 
     /** Supported carrier frequency ranges, for diagnostics and DB filtering. */
     fun carrierFrequencies(): Array<out ConsumerIrManager.CarrierFrequencyRange> =
         manager?.carrierFrequencies ?: arrayOf()
 
-    fun transmit(carrierHz: Int, pattern: IntArray): Boolean {
-        val m = manager ?: return false
-        if (!hasIrEmitter()) return false
+    fun transmit(carrierHz: Int, pattern: IntArray): Boolean =
+        transmitDetailed(carrierHz, pattern) is SendResult.Sent
+
+    fun transmitDetailed(carrierHz: Int, pattern: IntArray): SendResult {
+        val m = manager ?: return SendResult.NoEmitter
+        if (!hasIrEmitter()) return SendResult.NoEmitter
         return try {
             m.transmit(carrierHz, pattern)
-            true
-        } catch (_: Exception) {
-            false
+            SendResult.Sent
+        } catch (e: Exception) {
+            SendResult.Failed(e.message, e)
         }
     }
 
@@ -35,12 +45,15 @@ class IrTransmitter(context: Context) {
      * Flipper recordings mark "time since last event") and pads an odd
      * pattern to on/off pairs.
      */
-    fun transmitButton(carrierHz: Int, raw: IntArray): Boolean {
+    fun transmitButton(carrierHz: Int, raw: IntArray): Boolean =
+        transmitButtonDetailed(carrierHz, raw) is SendResult.Sent
+
+    fun transmitButtonDetailed(carrierHz: Int, raw: IntArray): SendResult {
         var p = raw
         if (p.size > 2 && p[0] > 100_000) p = p.copyOfRange(1, p.size)
         if (p.size % 2 == 1) p = p + intArrayOf(0)
-        if (p.size < 4) return false
-        return transmit(carrierHz, p)
+        if (p.size < 4) return SendResult.Failed("pattern too short")
+        return transmitDetailed(carrierHz, p)
     }
 
     /** Transmits a Pronto Hex code once. */
