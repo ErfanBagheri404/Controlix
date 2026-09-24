@@ -4,14 +4,19 @@ import com.erfanbagheri.controlix.ui.SetupTransmission
 import org.junit.Assert.*
 import org.junit.Test
 
+/**
+ * Superseded by SendResultTest's per-outcome contract; kept as the
+ * boolean-compat shim. Rejection is recoverable (Yes stays pressable),
+ * only missing hardware blocks.
+ */
 class SetupTransmissionTest {
-    @Test fun failedSendBlocksConfirmationAndExplainsFailure() {
-        val state = SetupTransmission.afterSend(false, false)
-        assertFalse(state.canConfirm)
-        assertEquals("This device has no IR blaster. Setup cannot test this remote.", state.message)
+    @Test fun failedSendWithHardwareLeavesConfirmationPressable() {
+        val noHardware = SetupTransmission.afterSend(false, false)
+        assertFalse(noHardware.canConfirm)
+        assertEquals("This device has no IR blaster. Setup cannot test this remote.", noHardware.message)
         val failure = SetupTransmission.afterSend(false, true)
-        assertFalse(failure.canConfirm)
-        assertEquals("Could not send the IR command. Press the button to retry.", failure.message)
+        assertTrue("a rejected code must not trap the user", failure.canConfirm)
+        assertTrue(failure.message.contains("No"))
     }
     @Test fun successfulSendAllowsUserConfirmationButDoesNotClaimDeviceResponse() {
         val state = SetupTransmission.afterSend(true, true)
