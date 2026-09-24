@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Light palette. values-night holds the Studio Dark variant. -->
+    <color name="widget_surface">#F4F4F4</color>
+    <color name="widget_hairline">#D0D0D0</color>
+    <color name="widget_title">#0D0D0D</color>
+    <color name="widget_status">#888888</color>
+    <color name="widget_key_fill">#FFFFFF</color>
+    <color name="widget_key_text">#0D0D0D</color>
+</resources>

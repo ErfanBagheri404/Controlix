@@ -79,9 +79,9 @@ fun RitualScreen(
         mutableStateOf(SetupTransmission(false, "Preparing IR command…"))
     }
     fun send(carrierHz: Int, pattern: IntArray) {
-        val sent = transmitter.transmitButton(carrierHz, pattern)
-        transmission = SetupTransmission.afterSend(sent, transmitter.hasIrEmitter())
-        emitTrigger = if (sent) Any() else null
+        val result = transmitter.transmitButtonResult(carrierHz, pattern)
+        transmission = SetupTransmission.afterSend(result)
+        emitTrigger = if (result is SendResult.Sent) Any() else null
     }
 
     // Follow-up tests use the locked remote's own codes first, then

@@ -1,5 +1,6 @@
 package com.erfanbagheri.controlix.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -8,6 +9,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -60,18 +64,36 @@ private sealed interface Route {
     data object Sweep : Route
     data object SelfTest : Route
     data object Macros : Route
+    data object DbHealth : Route
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
-    val model = rememberDeviceModel()
+fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean = true) {
+    val model = rememberDeviceModel(repo)
     val macroModel = rememberMacroModel()
-    var route: Route by remember { mutableStateOf(Route.Home) }
+    // Cold start only: a cold launch restores the last-used pad; Activity
+    // recreation (rotation, savedInstanceState != null) lands on Home —
+    // route is plain remember, not saveable. Pad back still returns
+    // to Home — no trap.
+    var route: Route by remember {
+        mutableStateOf(
+            resumeRestoreTarget(
+                enabled = effectiveResumeEnabled(ResumeState.explicit, model.devices.isNotEmpty()),
+                lastRemoteId = ResumeState.lastRemoteId,
+                enabledDeviceIds = model.devices.filter { it.enabled }.map { it.remoteId }.toSet(),
+            )?.takeIf { coldStart }?.let { Route.Pad(it) } ?: Route.Home,
+        )
+    }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val view = LocalView.current
     val toast = rememberToastState()
+
+    fun openPad(remoteId: Int) {
+        ResumeState.recordLastRemote(remoteId)
+        route = Route.Pad(remoteId)
+    }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         if (repo == null) {
@@ -83,10 +105,12 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
             drawerState = drawerState,
             drawerContent = {
                 MenuDrawer(
+                    hasDevices = model.devices.isNotEmpty(),
                     onMacros = { scope.launch { drawerState.close() }; route = Route.Macros },
                     onSweep = { scope.launch { drawerState.close() }; route = Route.Sweep },
                     onSelfTest = { scope.launch { drawerState.close() }; route = Route.SelfTest },
                     onMissingCode = { scope.launch { drawerState.close() }; route = Route.MissingCode() },
+                    onDbHealth = { scope.launch { drawerState.close() }; route = Route.DbHealth },
                 )
             },
         ) {
@@ -112,7 +136,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                         model = model,
                         repo = repo,
                         transmitter = ir,
-                        onOpenDevice = { route = Route.Pad(it.remoteId) },
+                        onOpenDevice = { openPad(it.remoteId) },
                         onAddDevice = { route = Route.AddDevice },
                         onToggleDrawer = { Feedback.tap(view); scope.launch { drawerState.open() } },
                         onEdit = { route = Route.Edit(it.remoteId) },
@@ -137,16 +161,15 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                                 val (id, name, brand, slug) = m.destructured
                                 val rid = id.toIntOrNull() ?: -1
                                 if (repo.buttons(rid).isNotEmpty()) {
-                                    model.save(
-                                        SavedDevice(
-                                            remoteId = rid,
-                                            name = java.net.URLDecoder.decode(name, "UTF-8").ifBlank { brand },
-                                            brand = java.net.URLDecoder.decode(brand, "UTF-8"),
-                                            categorySlug = slug,
-                                            buttonCount = repo.buttons(rid).size,
-                                        )
+                                    val decodedName = java.net.URLDecoder.decode(name, "UTF-8").ifBlank { brand }
+                                    model.saveById(
+                                        remoteId = rid,
+                                        name = decodedName,
+                                        brand = java.net.URLDecoder.decode(brand, "UTF-8"),
+                                        categorySlug = slug,
+                                        buttonCount = repo.buttons(rid).size,
                                     )
-                                    route = Route.Pad(rid)
+                                    openPad(rid)
                                 } else route = Route.AddDevice
                             } else route = Route.AddDevice
                         },
@@ -162,16 +185,14 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                         categoryName = r.catName,
                         categorySlug = r.catSlug,
                         onDone = { remoteId, _ ->
-                            model.save(
-                                SavedDevice(
-                                    remoteId = remoteId,
-                                    name = r.brandName,
-                                    brand = r.brandName,
-                                    categorySlug = r.catSlug,
-                                    buttonCount = repo.buttons(remoteId).size,
-                                )
+                            model.saveById(
+                                remoteId = remoteId,
+                                name = r.brandName,
+                                brand = r.brandName,
+                                categorySlug = r.catSlug,
+                                buttonCount = repo.buttons(remoteId).size,
                             )
-                            route = Route.Pad(remoteId)
+                            openPad(remoteId)
                             toast.show("${r.brandName} added")
                         },
                         onBack = { route = Route.Home },
@@ -186,17 +207,19 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                     )
 
                     is Route.Pad -> {
+                        // System back from a cold-start-restored pad returns Home, never traps.
+                        BackHandler { route = Route.Home }
                         val saved = model.devices.firstOrNull { it.remoteId == r.remoteId }
                         PadScreen(
                             deviceName = saved?.name,
-                            onRename = { model.rename(r.remoteId, it) },
+                            onRename = { newName -> saved?.let { model.rename(it.key, newName) } },
                             remoteId = r.remoteId,
                             repo = repo,
                             transmitter = ir,
                             devices = model.devices,
                             model = model,
                             toast = toast,
-                            onSwitchDevice = { route = Route.Pad(it.remoteId) },
+                            onSwitchDevice = { openPad(it.remoteId) },
                             onEdit = { route = Route.Edit(it.remoteId) },
                             onShare = { route = Route.Share(it.remoteId) },
                             onBack = { route = Route.Home },
@@ -241,6 +264,10 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                         model = macroModel,
                         onBack = { route = Route.Home },
                     )
+                    is Route.DbHealth -> DbHealthScreen(
+                        repo = repo,
+                        onBack = { route = Route.Home },
+                    )
                 }
             }
         }
@@ -269,10 +296,12 @@ private fun MissingDb() {
 }
 @Composable
 private fun MenuDrawer(
+    hasDevices: Boolean,
     onMacros: () -> Unit,
     onSweep: () -> Unit,
     onSelfTest: () -> Unit,
     onMissingCode: () -> Unit,
+    onDbHealth: () -> Unit,
 ) {
     ModalDrawerSheet(
         drawerContainerColor = MaterialTheme.colorScheme.background,
@@ -287,6 +316,15 @@ private fun MenuDrawer(
             DrawerRow(ActionIcon.Macros, "Macros", onMacros)
             DrawerRow(ActionIcon.Sweep, "Power-off sweep", onSweep)
             DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)
+            DrawerRow(ActionIcon.Gauge, "Database health", onDbHealth)
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead("Settings")
+            DrawerToggle(
+                "Resume last remote",
+                effectiveResumeEnabled(ResumeState.explicit, hasDevices),
+                ResumeState::setEnabled,
+            )
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Contribute")
@@ -300,8 +338,37 @@ private fun MenuDrawer(
             Spacer(Modifier.height(24.dp))
             SectionHead("Feedback")
             DrawerToggle("Haptics", Feedback.hapticsOn, Feedback::setHaptics)
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead("Rocker repeat")
+            DrawerToggle("Hold VOL/CH to repeat", Feedback.rockerRepeatOn, Feedback::setRockerRepeat)
+            if (Feedback.rockerRepeatOn) {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    listOf(120 to "Fast", 180 to "Standard", 300 to "Slow").forEach { (ms, label) ->
+                        DrawerChoice(label, Feedback.rockerRepeatIntervalMs == ms) {
+                            Feedback.setRockerRepeatInterval(ms)
+                        }
+                    }
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun DrawerChoice(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        label,
+        style = MaterialTheme.typography.labelMedium,
+        color = if (selected) com.erfanbagheri.controlix.ui.theme.Accent else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .border(1.dp, if (selected) com.erfanbagheri.controlix.ui.theme.Accent else MaterialTheme.colorScheme.outline, RoundedCornerShape(20.dp))
+            .pressable(onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    )
 }
 
 @Composable
