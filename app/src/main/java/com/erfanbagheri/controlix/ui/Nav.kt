@@ -64,7 +64,7 @@ private sealed interface Route {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean = true) {
-    val model = rememberDeviceModel()
+    val model = rememberDeviceModel(repo)
     val macroModel = rememberMacroModel()
     // Cold start only: a cold launch restores the last-used pad; Activity
     // recreation (rotation, savedInstanceState != null) lands on Home —
@@ -154,14 +154,13 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                                 val (id, name, brand, slug) = m.destructured
                                 val rid = id.toIntOrNull() ?: -1
                                 if (repo.buttons(rid).isNotEmpty()) {
-                                    model.save(
-                                        SavedDevice(
-                                            remoteId = rid,
-                                            name = java.net.URLDecoder.decode(name, "UTF-8").ifBlank { brand },
-                                            brand = java.net.URLDecoder.decode(brand, "UTF-8"),
-                                            categorySlug = slug,
-                                            buttonCount = repo.buttons(rid).size,
-                                        )
+                                    val decodedName = java.net.URLDecoder.decode(name, "UTF-8").ifBlank { brand }
+                                    model.saveById(
+                                        remoteId = rid,
+                                        name = decodedName,
+                                        brand = java.net.URLDecoder.decode(brand, "UTF-8"),
+                                        categorySlug = slug,
+                                        buttonCount = repo.buttons(rid).size,
                                     )
                                     openPad(rid)
                                 } else route = Route.AddDevice
@@ -178,14 +177,12 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         brandName = r.brandName,
                         categoryName = r.catName,
                         onDone = { remoteId, _ ->
-                            model.save(
-                                SavedDevice(
-                                    remoteId = remoteId,
-                                    name = r.brandName,
-                                    brand = r.brandName,
-                                    categorySlug = r.catSlug,
-                                    buttonCount = repo.buttons(remoteId).size,
-                                )
+                            model.saveById(
+                                remoteId = remoteId,
+                                name = r.brandName,
+                                brand = r.brandName,
+                                categorySlug = r.catSlug,
+                                buttonCount = repo.buttons(remoteId).size,
                             )
                             openPad(remoteId)
                             toast.show("${r.brandName} added")
@@ -199,7 +196,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         val saved = model.devices.firstOrNull { it.remoteId == r.remoteId }
                         PadScreen(
                             deviceName = saved?.name,
-                            onRename = { model.rename(r.remoteId, it) },
+                            onRename = { newName -> saved?.let { model.rename(it.key, newName) } },
                             remoteId = r.remoteId,
                             repo = repo,
                             transmitter = ir,

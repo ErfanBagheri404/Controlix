@@ -424,6 +424,30 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
             c.moveToFirst(); c.getInt(0)
         }
 
+    /**
+     * The full remote table as stable-identity rows, for issue #21 key
+     * resolution. One query, used by DeviceStore to turn saved
+     * (category, brand, fileName) keys into current ids.
+     */
+    fun remoteIndex(): RemoteIndex {
+        val rows = db.rawQuery(
+            """
+            SELECT r.id, cat.slug, br.name, r.file_name,
+                   (SELECT COUNT(*) FROM button b WHERE b.remote_id = r.id)
+            FROM remote r
+            JOIN brand br ON br.id = r.brand_id
+            JOIN category cat ON cat.id = br.category_id
+            """.trimIndent(),
+            null
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    add(RemoteRow(c.getInt(0), c.getString(1), c.getString(2), c.getString(3), c.getInt(4)))
+                }
+            }
+        }
+        return RemoteIndex.of(rows)
+    }
     // ── Database health (read-only; never mutates, deletes or hides rows) ──
 
     data class Totals(val remotes: Int, val buttons: Int, val brands: Int)

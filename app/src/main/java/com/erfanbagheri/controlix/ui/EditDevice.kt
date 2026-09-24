@@ -130,7 +130,7 @@ fun EditDeviceScreen(
         ToggleRow("Enabled", "Disabled devices are dimmed", enabledOn) { enabledOn = it }
 
         Spacer(Modifier.height(32.dp))
-        Row(Modifier.fillMaxWidth().pressable { model.remove(device.remoteId); onDone() }.padding(vertical = 14.dp)) {
+        Row(Modifier.fillMaxWidth().pressable { model.remove(device.key); onDone() }.padding(vertical = 14.dp)) {
             Text("Delete device", style = MaterialTheme.typography.titleMedium, color = Danger)
         }
 
