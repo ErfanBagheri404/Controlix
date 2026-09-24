@@ -37,9 +37,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import com.erfanbagheri.controlix.data.DbChangelog
+import com.erfanbagheri.controlix.data.DbRefresh
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.RefreshState
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.ThemeState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /** Every screen. Sealed route list, no nav library — app is 4 levels deep max. */
@@ -67,6 +71,20 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
     val view = LocalView.current
     val toast = rememberToastState()
 
+    // Database refresh (issue #12): pure plan in data/, thin IO shell here.
+    var refreshState by remember { mutableStateOf<RefreshState>(RefreshState.Idle) }
+    val dbCounts = remember(repo) { repo?.counts() ?: (0 to 0) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val onUpdateDb = {
+        if (refreshState == RefreshState.Idle || refreshState is RefreshState.Failed ||
+            refreshState is RefreshState.RolledBack || refreshState is RefreshState.Done
+        ) {
+            scope.launch(Dispatchers.IO) {
+                DbRefresh.run(context.getDatabasePath("bundled_codes.db")) { refreshState = it }
+            }
+        }
+    }
+
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         if (repo == null) {
             MissingDb()
@@ -80,6 +98,20 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
                     onMacros = { scope.launch { drawerState.close() }; route = Route.Macros },
                     onSweep = { scope.launch { drawerState.close() }; route = Route.Sweep },
                     onSelfTest = { scope.launch { drawerState.close() }; route = Route.SelfTest },
+                    onUpdateDb = onUpdateDb,
+                    dbChangelog = (refreshState as? RefreshState.Checked)?.let {
+                        DbChangelog.format(dbCounts.first, dbCounts.second, it.manifest.remoteCount, it.manifest.buttonCount)
+                    },
+                    dbState = when (val s = refreshState) {
+                        RefreshState.Idle -> null
+                        is RefreshState.Checked -> "Update available"
+                        is RefreshState.Downloading -> "Downloading…"
+                        is RefreshState.Verified -> "Verifying…"
+                        is RefreshState.Applying -> "Applying…"
+                        is RefreshState.Done -> "Database updated — restart to load it"
+                        is RefreshState.RolledBack -> "Rolled back: ${s.reason} — old database kept"
+                        is RefreshState.Failed -> s.reason
+                    },
                 )
             },
         ) {
@@ -249,6 +281,9 @@ private fun MenuDrawer(
     onMacros: () -> Unit,
     onSweep: () -> Unit,
     onSelfTest: () -> Unit,
+    onUpdateDb: () -> Unit,
+    dbChangelog: String?,
+    dbState: String?,
 ) {
     ModalDrawerSheet(
         drawerContainerColor = MaterialTheme.colorScheme.background,
@@ -263,6 +298,21 @@ private fun MenuDrawer(
             DrawerRow(ActionIcon.Macros, "Macros", onMacros)
             DrawerRow(ActionIcon.Sweep, "Power-off sweep", onSweep)
             DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)
+            DrawerRow(ActionIcon.Database, "Update code database", onUpdateDb)
+            if (dbChangelog != null) {
+                Text(
+                    dbChangelog,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (dbState != null) {
+                Text(
+                    dbState,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Appearance")

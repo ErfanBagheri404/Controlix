@@ -3,6 +3,7 @@ package com.erfanbagheri.controlix.data
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import com.erfanbagheri.controlix.ir.protocols.*
+import java.io.File
 
 /**
  * Read-only access to the bundled controlix.db (built by
@@ -22,7 +23,12 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
             val dest = context.getDatabasePath("bundled_codes.db")
             dest.parentFile?.mkdirs()
             val assetSize = context.assets.open(assetName).use { it.available().toLong() }
-            if (!dest.exists() || dest.length() != assetSize) {
+            val refreshed = File(dest.path + ".refreshed")
+            // ponytail: a marker file says the user opted into a CDN refresh;
+            // only a size change in a NEW APK build should override it, so once
+            // .refreshed exists the asset copy is skipped. Ceiling: no version
+            // compare — upgrade path is stamping an asset build id next to it.
+            if (!refreshed.exists() && (!dest.exists() || dest.length() != assetSize)) {
                 context.assets.open(assetName).use { input ->
                     dest.outputStream().use { output -> input.copyTo(output) }
                 }
@@ -294,5 +300,14 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
     fun buttonCount(): Int =
         db.rawQuery("SELECT COUNT(*) FROM button", null).use { c ->
             c.moveToFirst(); c.getInt(0)
+        }
+
+    /** (remotes, buttons) totals, for the refresh changelog baseline. */
+    fun counts(): Pair<Int, Int> =
+        db.rawQuery(
+            "SELECT (SELECT COUNT(*) FROM remote), (SELECT COUNT(*) FROM button)",
+            null
+        ).use { c ->
+            c.moveToFirst(); c.getInt(0) to c.getInt(1)
         }
 }
