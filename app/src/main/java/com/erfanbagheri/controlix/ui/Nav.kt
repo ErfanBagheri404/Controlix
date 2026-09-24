@@ -62,8 +62,9 @@ private sealed interface Route {
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean = true) {
     val model = rememberDeviceModel()
     val macroModel = rememberMacroModel()
-    // Cold start only: process recreation (savedInstanceState != null) restores
-    // whatever screen was already on top, no redirect. Pad back still returns
+    // Cold start only: a cold launch restores the last-used pad; Activity
+    // recreation (rotation, savedInstanceState != null) lands on Home —
+    // route is plain remember, not saveable. Pad back still returns
     // to Home — no trap.
     var route: Route by remember {
         mutableStateOf(
