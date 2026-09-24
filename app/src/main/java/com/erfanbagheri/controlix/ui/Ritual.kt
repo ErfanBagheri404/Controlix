@@ -108,18 +108,18 @@ fun RitualScreen(
     val selectedKey = session.selected
 
     fun send(key: String) {
-        val sent = when {
+        val result = when {
             key.startsWith("power#") -> {
                 val code = candidates.getOrNull(key.substringAfter('#').toIntOrNull() ?: -1) ?: return
-                transmitter.transmitButton(code.carrierHz, code.pattern)
+                transmitter.transmitButtonResult(code.carrierHz, code.pattern)
             }
             else -> {
                 val button = followUpTests.firstOrNull { it.first.name == key }?.second ?: return
-                transmitter.transmitButton(button.carrierHz, button.pattern)
+                transmitter.transmitButtonResult(button.carrierHz, button.pattern)
             }
         }
-        transmission = SetupTransmission.afterSend(sent, transmitter.hasIrEmitter())
-        emitTrigger = if (sent) Any() else null
+        transmission = SetupTransmission.afterSend(result)
+        emitTrigger = if (result is SendResult.Sent) Any() else null
     }
 
     /** Tap: select the row and fire it immediately. */
