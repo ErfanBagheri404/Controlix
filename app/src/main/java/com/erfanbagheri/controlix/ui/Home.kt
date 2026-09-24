@@ -151,10 +151,10 @@ fun DeviceActionSheet(
             SheetAction(
                 if (dev.pinned) "Unpin" else "Pin",
                 if (dev.pinned) "remove the star" else "mark with a star",
-            ) { model.togglePin(dev.remoteId); onDismiss(); toast.show(if (dev.pinned) "${dev.name} unpinned" else "${dev.name} pinned") }
+            ) { model.togglePin(dev.key); onDismiss(); toast.show(if (dev.pinned) "${dev.name} unpinned" else "${dev.name} pinned") }
             SheetAction("Share", "show QR code") { onDismiss(); onShare(dev) }
             SheetAction("Delete", null, destructive = true) {
-                model.remove(dev.remoteId)
+                model.remove(dev.key)
                 onDismiss()
                 toast.show("${dev.name} removed", "Undo") { model.save(dev) }
             }
