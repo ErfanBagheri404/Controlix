@@ -58,6 +58,7 @@ private sealed interface Route {
     data object Sweep : Route
     data object SelfTest : Route
     data object Macros : Route
+    data object DbHealth : Route
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,6 +103,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                     onMacros = { scope.launch { drawerState.close() }; route = Route.Macros },
                     onSweep = { scope.launch { drawerState.close() }; route = Route.Sweep },
                     onSelfTest = { scope.launch { drawerState.close() }; route = Route.SelfTest },
+                    onDbHealth = { scope.launch { drawerState.close() }; route = Route.DbHealth },
                 )
             },
         ) {
@@ -242,6 +244,10 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         model = macroModel,
                         onBack = { route = Route.Home },
                     )
+                    is Route.DbHealth -> DbHealthScreen(
+                        repo = repo,
+                        onBack = { route = Route.Home },
+                    )
                 }
             }
         }
@@ -274,6 +280,7 @@ private fun MenuDrawer(
     onMacros: () -> Unit,
     onSweep: () -> Unit,
     onSelfTest: () -> Unit,
+    onDbHealth: () -> Unit,
 ) {
     ModalDrawerSheet(
         drawerContainerColor = MaterialTheme.colorScheme.background,
@@ -288,6 +295,7 @@ private fun MenuDrawer(
             DrawerRow(ActionIcon.Macros, "Macros", onMacros)
             DrawerRow(ActionIcon.Sweep, "Power-off sweep", onSweep)
             DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)
+            DrawerRow(ActionIcon.Gauge, "Database health", onDbHealth)
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Settings")

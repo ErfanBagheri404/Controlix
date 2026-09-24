@@ -295,4 +295,78 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
         db.rawQuery("SELECT COUNT(*) FROM button", null).use { c ->
             c.moveToFirst(); c.getInt(0)
         }
+
+    // ── Database health (read-only; never mutates, deletes or hides rows) ──
+
+    data class Totals(val remotes: Int, val buttons: Int, val brands: Int)
+    data class SourceCount(val name: String, val remotes: Int, val buttons: Int)
+    data class EmptyRemote(val id: Int, val fileName: String, val source: String, val sourcePath: String?)
+    data class UnusableButton(val name: String, val remoteFileName: String)
+
+    fun totals(): Totals =
+        db.rawQuery(
+            "SELECT (SELECT COUNT(*) FROM remote), (SELECT COUNT(*) FROM button), (SELECT COUNT(*) FROM brand)",
+            null,
+        ).use { c ->
+            c.moveToFirst(); Totals(c.getInt(0), c.getInt(1), c.getInt(2))
+        }
+
+    fun sourceCounts(): List<SourceCount> =
+        db.rawQuery(
+            """SELECT r.source, COUNT(DISTINCT r.id), COUNT(b.id)
+               FROM remote r LEFT JOIN button b ON b.remote_id = r.id
+               GROUP BY r.source ORDER BY COUNT(b.id) DESC""",
+            null,
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) add(SourceCount(c.getString(0), c.getInt(1), c.getInt(2)))
+            }
+        }
+
+    fun emptyRemotes(): List<EmptyRemote> =
+        db.rawQuery(
+            """SELECT r.id, r.file_name, r.source, r.source_path FROM remote r
+               WHERE NOT EXISTS (SELECT 1 FROM button b WHERE b.remote_id = r.id)
+               ORDER BY r.file_name""",
+            null,
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) add(EmptyRemote(c.getInt(0), c.getString(1), c.getString(2), c.getString(3)))
+            }
+        }
+
+    /** Buttons whose stored pattern expands to nothing — they can never transmit. */
+    fun unusableButtons(): List<UnusableButton> =
+        db.rawQuery(
+            """SELECT b.name, r.file_name, b.pattern FROM button b
+               JOIN remote r ON r.id = b.remote_id""",
+            null,
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    if (expandPattern(c.getBlob(2) ?: ByteArray(0)) == null) {
+                        add(UnusableButton(c.getString(0), c.getString(1)))
+                    }
+                }
+            }
+        }
+
+    /** Every distinct button label -> how many buttons carry it. */
+    fun buttonNameCounts(): Map<String, Int> =
+        db.rawQuery("SELECT name, COUNT(*) FROM button GROUP BY name", null).use { c ->
+            buildMap {
+                while (c.moveToNext()) put(c.getString(0), c.getInt(1))
+            }
+        }
+
+    /** (protocol, or null for raw) -> button count, biggest first. */
+    fun protocolCounts(): List<Pair<String?, Int>> =
+        db.rawQuery(
+            "SELECT protocol, COUNT(*) FROM button GROUP BY protocol ORDER BY COUNT(*) DESC",
+            null,
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) add(c.getString(0) to c.getInt(1))
+            }
+        }
 }
