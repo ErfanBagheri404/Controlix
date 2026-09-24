@@ -9,6 +9,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -302,8 +305,37 @@ private fun MenuDrawer(
             Spacer(Modifier.height(24.dp))
             SectionHead("Feedback")
             DrawerToggle("Haptics", Feedback.hapticsOn, Feedback::setHaptics)
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead("Rocker repeat")
+            DrawerToggle("Hold VOL/CH to repeat", Feedback.rockerRepeatOn, Feedback::setRockerRepeat)
+            if (Feedback.rockerRepeatOn) {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    listOf(120 to "Fast", 180 to "Standard", 300 to "Slow").forEach { (ms, label) ->
+                        DrawerChoice(label, Feedback.rockerRepeatIntervalMs == ms) {
+                            Feedback.setRockerRepeatInterval(ms)
+                        }
+                    }
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun DrawerChoice(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        label,
+        style = MaterialTheme.typography.labelMedium,
+        color = if (selected) com.erfanbagheri.controlix.ui.theme.Accent else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .border(1.dp, if (selected) com.erfanbagheri.controlix.ui.theme.Accent else MaterialTheme.colorScheme.outline, RoundedCornerShape(20.dp))
+            .pressable(onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    )
 }
 
 @Composable
