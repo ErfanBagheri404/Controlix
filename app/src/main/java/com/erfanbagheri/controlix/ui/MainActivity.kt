@@ -23,7 +23,12 @@ class MainActivity : ComponentActivity() {
                     .onFailure { it.printStackTrace() }
                     .getOrNull()
             }
-            androidx.compose.runtime.LaunchedEffect(Unit) { Feedback.init(ctx); ThemeState.init(ctx) }
+            androidx.compose.runtime.LaunchedEffect(Unit) {
+                Feedback.init(ctx); ThemeState.init(ctx); OrientationState.init(ctx)
+            }
+            androidx.compose.runtime.LaunchedEffect(OrientationState.mode) {
+                (ctx as? Activity)?.requestedOrientation = Orientation.resolve(OrientationState.mode)
+            }
             ControlixTheme {
                 ControlixNav(ir = ir, repo = repo)
             }

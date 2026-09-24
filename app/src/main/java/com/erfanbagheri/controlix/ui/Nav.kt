@@ -1,5 +1,6 @@
 package com.erfanbagheri.controlix.ui
 
+import android.app.Activity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -268,6 +269,7 @@ private fun MenuDrawer(
             SectionHead("Appearance")
             DrawerToggle("Dark mode", ThemeState.isDark, ThemeState::toggleDark)
             DrawerToggle("Animations", Feedback.animationsOn, Feedback::setAnimations)
+            OrientationChoice()
 
             Spacer(Modifier.height(24.dp))
             SectionHead("Feedback")
@@ -285,6 +287,46 @@ private fun DrawerRow(icon: ActionIcon, label: String, onClick: () -> Unit) {
         ActionIconView(icon, 22.dp, MaterialTheme.colorScheme.onSurface)
         Spacer(Modifier.width(16.dp))
         Text(label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+/**
+ * Screen-orientation choice. Flat rows, hairline separators, no stock toggle:
+ * three labelled options cycle on tap; the current one is the accent.
+ */
+@Composable
+private fun OrientationChoice() {
+    val view = LocalView.current
+    val activity = view.context as? Activity
+    Text(
+        "Orientation",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 2.dp, top = 18.dp, bottom = 4.dp),
+    )
+    Orientation.Mode.entries.forEach { option ->
+        val selected = OrientationState.mode == option
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .pressable {
+                    Feedback.tap(view)
+                    activity?.requestedOrientation = OrientationState.set(option)
+                }
+                .padding(vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                Orientation.label(option),
+                style = MaterialTheme.typography.titleMedium,
+                color = if (selected) com.erfanbagheri.controlix.ui.theme.Accent
+                else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            if (selected) {
+                ActionIconView(ActionIcon.Check, 20.dp, com.erfanbagheri.controlix.ui.theme.Accent)
+            }
+        }
     }
 }
 

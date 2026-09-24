@@ -3,6 +3,7 @@ package com.erfanbagheri.controlix.ui
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -122,75 +123,24 @@ fun PadScreen(
     Column(
         Modifier.fillMaxSize().applyTopInset().applyBottomInset().padding(horizontal = 24.dp),
     ) {
-        // ── Header: back · bordered name pill · overflow ─────────────────
         Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            ActionIconView(
-                ActionIcon.Back, 26.dp, MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.pressable(onBack).padding(9.dp),
-            )
-            Spacer(Modifier.weight(1f))
-            Row(
-                Modifier
-                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(24.dp))
-                    .pressable { switcherOpen = true }
-                    .padding(horizontal = 14.dp, vertical = 9.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
-                    EmitPulse(emitKey, Modifier.size(20.dp))
-                    androidx.compose.foundation.Canvas(Modifier.size(8.dp)) { drawCircle(Accent) }
-                }
-                Text(deviceName ?: "Remote", style = MaterialTheme.typography.titleMedium)
-            }
-            Spacer(Modifier.weight(1f))
-            ActionIconView(
-                ActionIcon.Dots, 26.dp, MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.pressable { sheetOpen = true }.padding(9.dp),
-            )
-        }
-
+        PadHeader(deviceName ?: "Remote", emitKey,
+            onSwitch = { switcherOpen = true },
+            onSheet = { sheetOpen = true },
+            onBack = onBack)
         Spacer(Modifier.height(20.dp))
 
-        // ── Region 1: chevron pad — swapped out for the full key set ─────
-        ContentSwap(expanded, Modifier.fillMaxWidth().weight(1f)) { open ->
-            if (open) {
-                ExpandedKeys(::fire, Modifier.fillMaxSize())
+        // Landscape gets two panes side by side; portrait stays stacked.
+        BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
+            if (Orientation.useLandscapeLayout(maxWidth.value, maxHeight.value)) {
+                LandscapePad(::fire, expanded, { expanded = !expanded }, Modifier.fillMaxSize())
             } else {
-                ChevronPad(::fire, Modifier.fillMaxSize())
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // ── Region 2: controls section — VOL / keys / CH ─────────────────
-        Row(Modifier.fillMaxWidth().height(CONTROL_BLOCK), verticalAlignment = Alignment.CenterVertically) {
-            // No capsule: the keys sit directly on the screen surface.
-            RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL",
-                onUp = { fire("volume_up") }, onDown = { fire("volume_down") })
-
-            Spacer(Modifier.width(14.dp))
-
-            Column(
-                Modifier.weight(1f).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PadBtn(ActionIcon.Home, Modifier.weight(1f).fillMaxHeight()) { fire("home") }
-                    PadBtn(ActionIcon.Back, Modifier.weight(1f).fillMaxHeight()) { fire("back") }
+                Column(Modifier.fillMaxSize()) {
+                    PadBodyStacked(::fire, expanded, { expanded = !expanded }, Modifier.fillMaxWidth().weight(1f))
+                    Spacer(Modifier.height(16.dp))
+                    PadControlsRow(::fire, { expanded = !expanded }, Modifier.fillMaxWidth().height(CONTROL_BLOCK))
                 }
-                Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight()) { fire("mute") }
-                    PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight()) { fire("play_pause") }
-                }
-                PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp)) { expanded = !expanded }
             }
-
-            Spacer(Modifier.width(14.dp))
-
-            RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH",
-                onUp = { fire("channel_up") }, onDown = { fire("channel_down") })
         }
 
         if (lastSent != null) {
@@ -217,6 +167,110 @@ fun PadScreen(
             onShare = { sheetOpen = false; onShare(it) },
             onDismiss = { sheetOpen = false },
         )
+    }
+}
+
+/** Header: back · bordered name pill (device switcher) · overflow (action sheet). */
+@Composable
+private fun PadHeader(
+    name: String,
+    emitKey: Any?,
+    onSwitch: () -> Unit,
+    onSheet: () -> Unit,
+    onBack: () -> Unit,
+) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        ActionIconView(
+            ActionIcon.Back, 26.dp, MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.pressable(onBack).padding(9.dp),
+        )
+        Spacer(Modifier.weight(1f))
+        Row(
+            Modifier
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(24.dp))
+                .pressable(onSwitch)
+                .padding(horizontal = 14.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
+                EmitPulse(emitKey, Modifier.size(20.dp))
+                androidx.compose.foundation.Canvas(Modifier.size(8.dp)) { drawCircle(Accent) }
+            }
+            Text(name, style = MaterialTheme.typography.titleMedium)
+        }
+        Spacer(Modifier.weight(1f))
+        ActionIconView(
+            ActionIcon.Dots, 26.dp, MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.pressable(onSheet).padding(9.dp),
+        )
+    }
+}
+
+/** Region 1: chevron pad — swapped out for the full key set. */
+@Composable
+private fun PadBodyStacked(
+    fire: (String) -> Unit,
+    expanded: Boolean,
+    onToggleExpand: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ContentSwap(expanded, modifier) { open ->
+        if (open) {
+            ExpandedKeys(fire, Modifier.fillMaxSize())
+        } else {
+            ChevronPad(fire, Modifier.fillMaxSize())
+        }
+    }
+}
+
+/** Region 2: VOL / keys / CH. No capsule — keys sit on the screen surface. */
+@Composable
+private fun PadControlsRow(
+    fire: (String) -> Unit,
+    onToggleExpand: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL",
+            onUp = { fire("volume_up") }, onDown = { fire("volume_down") })
+
+        Spacer(Modifier.width(14.dp))
+
+        Column(
+            Modifier.weight(1f).fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                PadBtn(ActionIcon.Home, Modifier.weight(1f).fillMaxHeight()) { fire("home") }
+                PadBtn(ActionIcon.Back, Modifier.weight(1f).fillMaxHeight()) { fire("back") }
+            }
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight()) { fire("mute") }
+                PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight()) { fire("play_pause") }
+            }
+            PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp)) { onToggleExpand() }
+        }
+
+        Spacer(Modifier.width(14.dp))
+
+        RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH",
+            onUp = { fire("channel_up") }, onDown = { fire("channel_down") })
+    }
+}
+
+/** Landscape: d-pad pane left, vol/ch + keys pane right — gamepad grip. */
+@Composable
+private fun LandscapePad(
+    fire: (String) -> Unit,
+    expanded: Boolean,
+    onToggleExpand: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        PadBodyStacked(fire, expanded, onToggleExpand, Modifier.weight(1f).fillMaxHeight())
+        Spacer(Modifier.width(16.dp))
+        PadControlsRow(fire, onToggleExpand, Modifier.weight(1f).height(CONTROL_BLOCK))
     }
 }
 
