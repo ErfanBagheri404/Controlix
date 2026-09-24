@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.EffectiveButtons
@@ -71,6 +72,7 @@ fun PadScreen(
     var pendingBorrow by remember(remoteId) { mutableStateOf<PendingBorrow?>(null) }
     var provenanceKey by remember(remoteId) { mutableStateOf<String?>(null) }
     val (borrowMemory, updateBorrowMemory) = rememberBorrowedCodeMemory()
+    val view = LocalView.current
 
     val buttons = remember(remoteId) {
         runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
@@ -110,6 +112,11 @@ fun PadScreen(
         ?: SavedDevice(remoteId, deviceName ?: "Remote", "", "", 0)
 
     fun fire(name: String) {
+        // One tick per activation at the key's own weight — here in the single
+        // choke point every IR key passes through, so the tick lands whether
+        // or not this remote carries the code. The pad keys carry a no-op
+        // pressable so they can't double-tick.
+        Feedback.press(view, name)
         // Effective list first: standard keys (incl. digits/d-pad) may be
         // borrowed from brand siblings. Semantic key == the action name the
         // pad passes for CHECKS entries; raw-name lookup covers the rest.
@@ -210,7 +217,8 @@ fun PadScreen(
                     PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["mute"] != null) { fire("mute") }
                     PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["play_pause"] != null) { fire("play_pause") }
                 }
-                PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp)) { expanded = !expanded }
+                PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp),
+                    feedback = Feedback::tap) { expanded = !expanded }
             }
 
             Spacer(Modifier.width(14.dp))
@@ -346,7 +354,7 @@ private fun KeyTile(
         Box(
             Modifier.fillMaxSize().bgTile(20.dp).then(
                 if (onProvenance != null) Modifier.combinedPressable(onClick = onClick, onLongClick = onProvenance)
-                else Modifier.pressable(onClick)
+                else Modifier.pressable(feedback = {}, onClick = onClick)
             ),
             contentAlignment = Alignment.Center,
         ) {
@@ -374,17 +382,30 @@ private fun RockerColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Box(Modifier.size(56.dp)) {
-            PadBtn(up, Modifier.size(56.dp), borrowed = upBorrowed,
-                onProvenance = upOnProvenance) { onUp() }
-            if (upBorrowed) Box(Modifier.align(Alignment.TopEnd)) { BorrowedBadge() }
-        }
+        RockerKey(up, borrowed = upBorrowed) { onUp() }
         Text(label, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
-        Box(Modifier.size(56.dp)) {
-            PadBtn(down, Modifier.size(56.dp), borrowed = downBorrowed,
-                onProvenance = downOnProvenance) { onDown() }
-            if (downBorrowed) Box(Modifier.align(Alignment.TopEnd)) { BorrowedBadge() }
+        RockerKey(down, borrowed = downBorrowed) { onDown() }
+    }
+}
+
+/** Rocker key: immediate send, then hold-to-repeat per issue #11 settings. */
+@Composable
+private fun RockerKey(
+    icon: ActionIcon,
+    borrowed: Boolean = false,
+    onFire: () -> Unit,
+) {
+    Box(Modifier.size(56.dp)) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .bgTile(20.dp, MaterialTheme.colorScheme.surfaceVariant)
+                .rockerPressable(repeatEnabled = Feedback.rockerRepeatOn, onFire = onFire),
+            contentAlignment = Alignment.Center,
+        ) {
+            ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
         }
+        if (borrowed) Box(Modifier.align(Alignment.TopEnd)) { BorrowedBadge() }
     }
 }
 
@@ -393,6 +414,7 @@ private fun PadBtn(
     icon: ActionIcon,
     modifier: Modifier = Modifier,
     accent: Boolean = false,
+    feedback: (android.view.View?) -> Unit = {},
     borrowed: Boolean = false,
     onProvenance: (() -> Unit)? = null,
     onClick: () -> Unit,
@@ -404,7 +426,7 @@ private fun PadBtn(
                 .bgTile(20.dp, if (accent) Accent else MaterialTheme.colorScheme.surfaceVariant)
                 .then(
                     if (onProvenance != null) Modifier.combinedPressable(onClick = onClick, onLongClick = onProvenance)
-                    else Modifier.pressable(onClick)
+                    else Modifier.pressable(feedback = feedback, onClick = onClick)
                 ),
             contentAlignment = Alignment.Center,
         ) {
