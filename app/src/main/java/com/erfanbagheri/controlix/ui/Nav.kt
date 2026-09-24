@@ -35,10 +35,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
+import com.erfanbagheri.controlix.quicksettings.TileStore
 import com.erfanbagheri.controlix.ui.theme.ThemeState
 import kotlinx.coroutines.launch
 
@@ -61,6 +63,7 @@ private sealed interface Route {
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
     val model = rememberDeviceModel()
     val macroModel = rememberMacroModel()
+    val ctx = LocalContext.current
     var route: Route by remember { mutableStateOf(Route.Home) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -171,6 +174,8 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?) {
 
                     is Route.Pad -> {
                         val saved = model.devices.firstOrNull { it.remoteId == r.remoteId }
+                        // The tile fires this remote's power code.
+                        LaunchedEffect(r.remoteId) { TileStore(ctx).rememberRemoteId(r.remoteId) }
                         PadScreen(
                             deviceName = saved?.name,
                             onRename = { model.rename(r.remoteId, it) },
