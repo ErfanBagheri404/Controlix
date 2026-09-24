@@ -33,6 +33,20 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
             )
         }
 
+            /**
+         * Cheap SQL label hints per function key; the exact decision always
+         * runs through [RemoteSearch.covers]/[ButtonNames]. A key with no
+         * hint scans every label under the category.
+         */
+        private val FUNCTION_HINTS: Map<String, List<String>> = mapOf(
+            "power" to listOf("%power%", "%on/off%", "%standby%", "%on_off%"),
+            "volume" to listOf("%vol%"),
+            "channel" to listOf("%ch%", "%channel%"),
+            "mute" to listOf("%mute%"),
+            "play_pause" to listOf("%play%"),
+            "source" to listOf("%input%", "%source%"),
+        )
+
         private fun le32(b: ByteArray, off: Int): Int =
             (b[off].toInt() and 0xFF) or
                 ((b[off + 1].toInt() and 0xFF) shl 8) or
@@ -153,6 +167,120 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
                 }
             }
         }
+    }
+
+    /**
+     * Brand ids under [categorySlug] that have at least one remote whose OWN
+     * buttons cover every function key in [functions] (power/volume/channel/
+     * play_pause/...). [RemoteSearch.covers] + [ButtonNames] decide, so the
+     * messy community vocabulary stays in one place.
+     *
+     * ponytail: one join scan of the category's button labels per distinct
+     * function set (cache at the call site). Own-buttons only — stricter
+     * than the runtime sibling-borrow layer. Upgrade path: a persisted
+     * remote_id/function-key table if the scan ever shows on device.
+     */
+    fun brandIdsWithFunctions(categorySlug: String, functions: Set<String>): Set<Int> {
+        if (functions.isEmpty()) return emptySet()
+        // SQL may only PRE-FILTER WHICH REMOTES: the functions usually live on
+        // different buttons, so the hints go into EXISTS, not the row filter —
+        // every label of a qualifying remote is still returned for the exact
+        // [RemoteSearch.covers] pass. One unhinted function disables it.
+        var hints = ArrayList<String>()
+        var hinted = true
+        for (key in functions) {
+            val h = FUNCTION_HINTS[key]
+            if (h.isNullOrEmpty()) hinted = false else hints.addAll(h)
+        }
+        if (!hinted) hints = ArrayList()
+        val prefilter = if (hints.isEmpty()) "" else {
+            " AND EXISTS (SELECT 1 FROM button b2 WHERE b2.remote_id = r.id AND (" +
+                hints.indices.joinToString(" OR ") { "lower(b2.name) LIKE ?" } + "))"
+        }
+        return db.rawQuery(
+            """SELECT r.id, b.id, bt.name
+               FROM button bt
+               JOIN remote r ON r.id = bt.remote_id
+               JOIN brand b ON b.id = r.brand_id
+               JOIN category cat ON cat.id = b.category_id
+               WHERE cat.slug = ?$prefilter""",
+            (listOf(categorySlug) + hints).toTypedArray()
+        ).use { c ->
+            val names = HashMap<Int, MutableList<String>>()
+            val brandOf = HashMap<Int, Int>()
+            while (c.moveToNext()) {
+                val remoteId = c.getInt(0)
+                brandOf[remoteId] = c.getInt(1)
+                names.getOrPut(remoteId) { ArrayList() } += c.getString(2)
+            }
+            names.filter { RemoteSearch.covers(it.value, functions) }
+                .keys
+                .mapNotNull { brandOf[it] }
+                .toSet()
+        }
+    }
+
+    /**
+     * Best fuzzy score per brand from its remotes' model strings
+     * (model_name, else file_name). SQL LIKE broad-filters on the
+     * normalized tokens; [RemoteSearch.score] ranks the rows.
+     */
+    fun modelScores(categorySlug: String, nameQuery: String): Map<Int, Int> {
+        val tokens = RemoteSearch.parse(nameQuery).nameTokens
+        if (tokens.isEmpty()) return emptyMap()
+        val likes = tokens.joinToString(" OR ") { "lower(COALESCE(r.model_name, r.file_name)) LIKE ?" }
+        val args = arrayOf(categorySlug) + tokens.map { "%${RemoteSearch.normalize(it)}%" }
+        val sql = """SELECT b.id, r.model_name, r.file_name
+               FROM remote r
+               JOIN brand b ON b.id = r.brand_id
+               JOIN category cat ON cat.id = b.category_id
+               WHERE cat.slug = ?"""
+        fun scan(bindArgs: Array<String>, where: String): Map<Int, Int> =
+            db.rawQuery(sql + where, bindArgs).use { c ->
+                val best = HashMap<Int, Int>()
+                while (c.moveToNext()) {
+                    val brandId = c.getInt(0)
+                    val strings = listOfNotNull(c.getString(1), c.getString(2))
+                    val perToken = tokens.map { t -> strings.maxOf { RemoteSearch.score(it, t) } }
+                    // All name tokens must hit somewhere under the brand.
+                    if (perToken.any { it == 0 }) continue
+                    val s = perToken.sum()
+                    if (s > 0) best[brandId] = maxOf(best[brandId] ?: 0, s)
+                }
+                best
+            }
+        val like = scan(args, " AND ($likes)")
+        // Typo/acronym hits cannot survive SQL LIKE, so an empty result falls
+        // back to scanning the category's model strings in Kotlin.
+        return if (like.isEmpty()) scan(arrayOf(categorySlug), "") else like
+    }
+
+    /**
+     * Rank the brands of [categorySlug] for a raw user [query]: function
+     * words ('vol', 'ch', 'play') keep only brands owning a remote with that
+     * button coverage; the remaining tokens score brand + model strings
+     * through [RemoteSearch]. Ties fall back to the brand name, so order is
+     * stable for identical scores.
+     */
+    fun searchBrands(categorySlug: String, query: String): List<Brand> {
+        val parsed = RemoteSearch.parse(query)
+        val covered = if (parsed.functions.isEmpty()) emptySet()
+            else brandIdsWithFunctions(categorySlug, parsed.functions)
+        val nameScores = modelScores(categorySlug, query)
+        val seen = HashSet<String>()
+        return brands(categorySlug)
+            // Case-dedupe, same as the picker: merged DB has Samsung/SAMSUNG.
+            .filter { seen.add(it.name.lowercase()) }
+            .filter { parsed.functions.isEmpty() || covered.contains(it.id) }
+            .map { b ->
+                b to maxOf(
+                    RemoteSearch.combinedScore(listOf(b.name), parsed.nameTokens),
+                    nameScores[b.id] ?: 0,
+                )
+            }
+            .filter { it.second > 0 || parsed.nameTokens.isEmpty() }
+            .sortedWith(compareByDescending<Pair<Brand, Int>> { it.second }.thenBy { it.first.name })
+            .map { it.first }
     }
 
     fun buttons(remoteId: Int): List<Button> =
