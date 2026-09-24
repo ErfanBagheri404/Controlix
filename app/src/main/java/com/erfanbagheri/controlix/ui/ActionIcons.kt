@@ -69,4 +69,5 @@ fun actionVector(icon: ActionIcon) = when (icon) {
     ActionIcon.ChevronRight -> Lucide.ChevronRight
     ActionIcon.Info -> Lucide.Info
     ActionIcon.Database -> Lucide.Disc
+    ActionIcon.Gauge -> Lucide.Gauge
 }

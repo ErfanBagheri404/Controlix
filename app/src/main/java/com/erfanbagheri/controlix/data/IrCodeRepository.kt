@@ -39,6 +39,20 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
             )
         }
 
+            /**
+         * Cheap SQL label hints per function key; the exact decision always
+         * runs through [RemoteSearch.covers]/[ButtonNames]. A key with no
+         * hint scans every label under the category.
+         */
+        private val FUNCTION_HINTS: Map<String, List<String>> = mapOf(
+            "power" to listOf("%power%", "%on/off%", "%standby%", "%on_off%"),
+            "volume" to listOf("%vol%"),
+            "channel" to listOf("%ch%", "%channel%"),
+            "mute" to listOf("%mute%"),
+            "play_pause" to listOf("%play%"),
+            "source" to listOf("%input%", "%source%"),
+        )
+
         private fun le32(b: ByteArray, off: Int): Int =
             (b[off].toInt() and 0xFF) or
                 ((b[off + 1].toInt() and 0xFF) shl 8) or
@@ -159,6 +173,120 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
                 }
             }
         }
+    }
+
+    /**
+     * Brand ids under [categorySlug] that have at least one remote whose OWN
+     * buttons cover every function key in [functions] (power/volume/channel/
+     * play_pause/...). [RemoteSearch.covers] + [ButtonNames] decide, so the
+     * messy community vocabulary stays in one place.
+     *
+     * ponytail: one join scan of the category's button labels per distinct
+     * function set (cache at the call site). Own-buttons only — stricter
+     * than the runtime sibling-borrow layer. Upgrade path: a persisted
+     * remote_id/function-key table if the scan ever shows on device.
+     */
+    fun brandIdsWithFunctions(categorySlug: String, functions: Set<String>): Set<Int> {
+        if (functions.isEmpty()) return emptySet()
+        // SQL may only PRE-FILTER WHICH REMOTES: the functions usually live on
+        // different buttons, so the hints go into EXISTS, not the row filter —
+        // every label of a qualifying remote is still returned for the exact
+        // [RemoteSearch.covers] pass. One unhinted function disables it.
+        var hints = ArrayList<String>()
+        var hinted = true
+        for (key in functions) {
+            val h = FUNCTION_HINTS[key]
+            if (h.isNullOrEmpty()) hinted = false else hints.addAll(h)
+        }
+        if (!hinted) hints = ArrayList()
+        val prefilter = if (hints.isEmpty()) "" else {
+            " AND EXISTS (SELECT 1 FROM button b2 WHERE b2.remote_id = r.id AND (" +
+                hints.indices.joinToString(" OR ") { "lower(b2.name) LIKE ?" } + "))"
+        }
+        return db.rawQuery(
+            """SELECT r.id, b.id, bt.name
+               FROM button bt
+               JOIN remote r ON r.id = bt.remote_id
+               JOIN brand b ON b.id = r.brand_id
+               JOIN category cat ON cat.id = b.category_id
+               WHERE cat.slug = ?$prefilter""",
+            (listOf(categorySlug) + hints).toTypedArray()
+        ).use { c ->
+            val names = HashMap<Int, MutableList<String>>()
+            val brandOf = HashMap<Int, Int>()
+            while (c.moveToNext()) {
+                val remoteId = c.getInt(0)
+                brandOf[remoteId] = c.getInt(1)
+                names.getOrPut(remoteId) { ArrayList() } += c.getString(2)
+            }
+            names.filter { RemoteSearch.covers(it.value, functions) }
+                .keys
+                .mapNotNull { brandOf[it] }
+                .toSet()
+        }
+    }
+
+    /**
+     * Best fuzzy score per brand from its remotes' model strings
+     * (model_name, else file_name). SQL LIKE broad-filters on the
+     * normalized tokens; [RemoteSearch.score] ranks the rows.
+     */
+    fun modelScores(categorySlug: String, nameQuery: String): Map<Int, Int> {
+        val tokens = RemoteSearch.parse(nameQuery).nameTokens
+        if (tokens.isEmpty()) return emptyMap()
+        val likes = tokens.joinToString(" OR ") { "lower(COALESCE(r.model_name, r.file_name)) LIKE ?" }
+        val args = arrayOf(categorySlug) + tokens.map { "%${RemoteSearch.normalize(it)}%" }
+        val sql = """SELECT b.id, r.model_name, r.file_name
+               FROM remote r
+               JOIN brand b ON b.id = r.brand_id
+               JOIN category cat ON cat.id = b.category_id
+               WHERE cat.slug = ?"""
+        fun scan(bindArgs: Array<String>, where: String): Map<Int, Int> =
+            db.rawQuery(sql + where, bindArgs).use { c ->
+                val best = HashMap<Int, Int>()
+                while (c.moveToNext()) {
+                    val brandId = c.getInt(0)
+                    val strings = listOfNotNull(c.getString(1), c.getString(2))
+                    val perToken = tokens.map { t -> strings.maxOf { RemoteSearch.score(it, t) } }
+                    // All name tokens must hit somewhere under the brand.
+                    if (perToken.any { it == 0 }) continue
+                    val s = perToken.sum()
+                    if (s > 0) best[brandId] = maxOf(best[brandId] ?: 0, s)
+                }
+                best
+            }
+        val like = scan(args, " AND ($likes)")
+        // Typo/acronym hits cannot survive SQL LIKE, so an empty result falls
+        // back to scanning the category's model strings in Kotlin.
+        return if (like.isEmpty()) scan(arrayOf(categorySlug), "") else like
+    }
+
+    /**
+     * Rank the brands of [categorySlug] for a raw user [query]: function
+     * words ('vol', 'ch', 'play') keep only brands owning a remote with that
+     * button coverage; the remaining tokens score brand + model strings
+     * through [RemoteSearch]. Ties fall back to the brand name, so order is
+     * stable for identical scores.
+     */
+    fun searchBrands(categorySlug: String, query: String): List<Brand> {
+        val parsed = RemoteSearch.parse(query)
+        val covered = if (parsed.functions.isEmpty()) emptySet()
+            else brandIdsWithFunctions(categorySlug, parsed.functions)
+        val nameScores = modelScores(categorySlug, query)
+        val seen = HashSet<String>()
+        return brands(categorySlug)
+            // Case-dedupe, same as the picker: merged DB has Samsung/SAMSUNG.
+            .filter { seen.add(it.name.lowercase()) }
+            .filter { parsed.functions.isEmpty() || covered.contains(it.id) }
+            .map { b ->
+                b to maxOf(
+                    RemoteSearch.combinedScore(listOf(b.name), parsed.nameTokens),
+                    nameScores[b.id] ?: 0,
+                )
+            }
+            .filter { it.second > 0 || parsed.nameTokens.isEmpty() }
+            .sortedWith(compareByDescending<Pair<Brand, Int>> { it.second }.thenBy { it.first.name })
+            .map { it.first }
     }
 
     fun buttons(remoteId: Int): List<Button> =
@@ -309,5 +437,103 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
             null
         ).use { c ->
             c.moveToFirst(); c.getInt(0) to c.getInt(1)
+        }
+
+    /**
+     * The full remote table as stable-identity rows, for issue #21 key
+     * resolution. One query, used by DeviceStore to turn saved
+     * (category, brand, fileName) keys into current ids.
+     */
+    fun remoteIndex(): RemoteIndex {
+        val rows = db.rawQuery(
+            """
+            SELECT r.id, cat.slug, br.name, r.file_name,
+                   (SELECT COUNT(*) FROM button b WHERE b.remote_id = r.id)
+            FROM remote r
+            JOIN brand br ON br.id = r.brand_id
+            JOIN category cat ON cat.id = br.category_id
+            """.trimIndent(),
+            null
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    add(RemoteRow(c.getInt(0), c.getString(1), c.getString(2), c.getString(3), c.getInt(4)))
+                }
+            }
+        }
+        return RemoteIndex.of(rows)
+    }
+    // ── Database health (read-only; never mutates, deletes or hides rows) ──
+
+    data class Totals(val remotes: Int, val buttons: Int, val brands: Int)
+    data class SourceCount(val name: String, val remotes: Int, val buttons: Int)
+    data class EmptyRemote(val id: Int, val fileName: String, val source: String, val sourcePath: String?)
+    data class UnusableButton(val name: String, val remoteFileName: String)
+
+    fun totals(): Totals =
+        db.rawQuery(
+            "SELECT (SELECT COUNT(*) FROM remote), (SELECT COUNT(*) FROM button), (SELECT COUNT(*) FROM brand)",
+            null,
+        ).use { c ->
+            c.moveToFirst(); Totals(c.getInt(0), c.getInt(1), c.getInt(2))
+        }
+
+    fun sourceCounts(): List<SourceCount> =
+        db.rawQuery(
+            """SELECT r.source, COUNT(DISTINCT r.id), COUNT(b.id)
+               FROM remote r LEFT JOIN button b ON b.remote_id = r.id
+               GROUP BY r.source ORDER BY COUNT(b.id) DESC""",
+            null,
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) add(SourceCount(c.getString(0), c.getInt(1), c.getInt(2)))
+            }
+        }
+
+    fun emptyRemotes(): List<EmptyRemote> =
+        db.rawQuery(
+            """SELECT r.id, r.file_name, r.source, r.source_path FROM remote r
+               WHERE NOT EXISTS (SELECT 1 FROM button b WHERE b.remote_id = r.id)
+               ORDER BY r.file_name""",
+            null,
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) add(EmptyRemote(c.getInt(0), c.getString(1), c.getString(2), c.getString(3)))
+            }
+        }
+
+    /** Buttons whose stored pattern expands to nothing — they can never transmit. */
+    fun unusableButtons(): List<UnusableButton> =
+        db.rawQuery(
+            """SELECT b.name, r.file_name, b.pattern FROM button b
+               JOIN remote r ON r.id = b.remote_id""",
+            null,
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    if (expandPattern(c.getBlob(2) ?: ByteArray(0)) == null) {
+                        add(UnusableButton(c.getString(0), c.getString(1)))
+                    }
+                }
+            }
+        }
+
+    /** Every distinct button label -> how many buttons carry it. */
+    fun buttonNameCounts(): Map<String, Int> =
+        db.rawQuery("SELECT name, COUNT(*) FROM button GROUP BY name", null).use { c ->
+            buildMap {
+                while (c.moveToNext()) put(c.getString(0), c.getInt(1))
+            }
+        }
+
+    /** (protocol, or null for raw) -> button count, biggest first. */
+    fun protocolCounts(): List<Pair<String?, Int>> =
+        db.rawQuery(
+            "SELECT protocol, COUNT(*) FROM button GROUP BY protocol ORDER BY COUNT(*) DESC",
+            null,
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) add(c.getString(0) to c.getInt(1))
+            }
         }
 }
