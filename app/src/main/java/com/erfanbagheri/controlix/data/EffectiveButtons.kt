@@ -5,9 +5,9 @@ package com.erfanbagheri.controlix.data
  * remote is missing. Consumers ask this instead of [IrCodeRepository.buttons]
  * so a remote never reports "no channel up" while the DB holds one.
  *
- * ponytail: sibling codes come from other remotes of the same brand, so a
- * wrong sibling can still be sent. Upgrade path: confirm with the user and
- * cache the accepted sibling code per remote.
+ * Rejected sibling patterns are skipped on later sessions; accepted ones are
+ * preferred. The memory layer is optional so setup callers keep their
+ * transient best-first ranking.
  */
 object EffectiveButtons {
 
@@ -39,6 +39,9 @@ object EffectiveButtons {
     /**
      * @param lockedButtons the remote's own buttons
      * @param siblings      every button of the brand (any remote)
+     * @param memory        persisted accept/reject feedback; when given,
+     *                      rejected sibling patterns are skipped and an
+     *                      accepted one is preferred on later sessions
      * @return own buttons plus the best sibling code for each missing key,
      *         each marked with the remote it came from.
      */
@@ -46,6 +49,7 @@ object EffectiveButtons {
         lockedRemoteId: Int,
         lockedButtons: List<IrCodeRepository.Button>,
         siblings: List<IrCodeRepository.Button>,
+        memory: BorrowedCodeMemory? = null,
     ): List<Resolved> {
         val out = ArrayList<Resolved>(lockedButtons.size)
         val lockedNames = lockedButtons.map { it.name }
@@ -58,17 +62,19 @@ object EffectiveButtons {
         }.toMap()
         for ((key, b) in ownByKey) out += Resolved(key, b.name, b.carrierHz, b.pattern, b.remoteId, 1, borrowed = false)
 
+        val ownCandidates = siblings.map {
+            SiblingButtonPicker.Candidate(it.remoteId, it.name, it.pattern, it.carrierHz, it.protocol)
+        }
         for ((key, pred) in CHECKS) {
             if (ownByKey.containsKey(key)) continue
-            val best = SiblingButtonPicker.best(
+            val ranked = SiblingButtonPicker.pick(
                 lockedRemoteId = lockedRemoteId,
                 lockedButtons = lockedNames,
-                candidates = siblings.map {
-                    SiblingButtonPicker.Candidate(it.remoteId, it.name, it.pattern, it.carrierHz, it.protocol)
-                },
+                candidates = ownCandidates,
                 predicate = pred,
                 lockedProtocol = lockedProtocol,
-            ) ?: continue
+            )
+            val best = memory?.select(lockedRemoteId, key, ranked) ?: ranked.firstOrNull() ?: continue
             out += Resolved(key, best.name, best.carrierHz, best.pattern, best.remoteId, best.votes, borrowed = true)
         }
 

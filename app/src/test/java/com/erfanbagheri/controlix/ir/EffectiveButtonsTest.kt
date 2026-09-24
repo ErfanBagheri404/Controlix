@@ -1,7 +1,9 @@
 package com.erfanbagheri.controlix.ir
 
+import com.erfanbagheri.controlix.data.BorrowedCodeMemory
 import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.SiblingButtonPicker
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -58,5 +60,37 @@ class EffectiveButtonsTest {
         val resolved = EffectiveButtons.resolve(10, locked, locked)
         assertEquals(1, resolved.count { it.key == "power" })
         assertEquals(1, resolved.count { it.key == "volume_up" })
+    }
+
+    @Test
+    fun `rejected borrow chooses a different sibling candidate`() {
+        val first = btn(11, "VOL_UP", 1, 2, 3, 4)
+        val second = btn(12, "Vol+", 5, 6, 7, 8)
+        val ranked = listOf(
+            SiblingButtonPicker.Picked(11, "VOL_UP", first.pattern, 1, first.carrierHz),
+            SiblingButtonPicker.Picked(12, "Vol+", second.pattern, 1, second.carrierHz),
+        )
+        val memory = BorrowedCodeMemory().reject(10, "volume_up", ranked.first())
+
+        val resolved = EffectiveButtons.resolve(10, emptyList(), listOf(first, second), memory)
+
+        assertEquals(12, resolved.first { it.key == "volume_up" }.remoteId)
+        assertTrue(resolved.first { it.key == "volume_up" }.borrowed)
+    }
+
+    @Test
+    fun `accepted borrow becomes the preferred candidate`() {
+        val first = btn(11, "VOL_UP", 1, 2, 3, 4)
+        val second = btn(12, "Vol+", 5, 6, 7, 8)
+        val ranked = listOf(
+            SiblingButtonPicker.Picked(11, "VOL_UP", first.pattern, 1, first.carrierHz),
+            SiblingButtonPicker.Picked(12, "Vol+", second.pattern, 1, second.carrierHz),
+        )
+        val memory = BorrowedCodeMemory().accept(10, "volume_up", ranked.last())
+
+        val resolved = EffectiveButtons.resolve(10, emptyList(), listOf(first, second), memory)
+
+        assertEquals(12, resolved.first { it.key == "volume_up" }.remoteId)
+        assertFalse(memory.needsConfirmation(10, "volume_up", ranked.last()))
     }
 }
