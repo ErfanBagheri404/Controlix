@@ -35,6 +35,20 @@ class HoldRepeatTiming(
         return initialDelayMs + n * intervalMs
     }
 
+    /**
+     * The smallest deadline strictly after [afterMs] (pass the deadline just
+     * fired), or null once stopped. Exact arithmetic over the absolute
+     * schedule — callers sleep until it instead of polling.
+     */
+    fun nextAfter(afterMs: Long): Long? {
+        if (stopped) return null
+        val base = maxOf(afterMs + 1, initialDelayMs)
+        val n = (base - initialDelayMs).ceilDiv(intervalMs)
+        return initialDelayMs + n * intervalMs
+    }
+
+    private fun Long.ceilDiv(d: Long): Long = (this + d - 1) / d
+
     fun stop() { stopped = true }
 
     companion object {
@@ -79,23 +93,7 @@ fun Modifier.rockerPressable(
                 var lastFired = -1L
                 var released = false
                 while (!released) {
-                    val nextDue = if (repeatEnabled) {
-                        val elapsed = System.currentTimeMillis() - pressTime
-                        var t = timing.latestEventAt(elapsed)
-                        if (t != null && t == lastFired) {
-                            t = null
-                        }
-                        if (t == null) {
-                            var probe = elapsed + 1
-                            while (t == null && probe - elapsed < 5_000) {
-                                t = timing.latestEventAt(probe)
-                                if (t == null) probe++
-                            }
-                        }
-                        t
-                    } else {
-                        null
-                    }
+                    val nextDue = if (repeatEnabled) timing.nextAfter(lastFired) else null
 
                     val event = if (nextDue == null) {
                         awaitPointerEvent(PointerEventPass.Initial)

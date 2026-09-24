@@ -37,13 +37,26 @@ class RepeatTimingTest {
     }
 
     @Test
+    fun `nextAfter returns strictly future schedule entries`() {
+        val timing = HoldRepeatTiming()
+
+        assertEquals(400L, timing.nextAfter(-1))
+        assertEquals(580L, timing.nextAfter(400))
+        assertEquals(760L, timing.nextAfter(580))
+        // A past/future value never pins the next deadline to an elapsed one.
+        assertEquals(2020L, timing.nextAfter(2019))
+    }
+
+    @Test
     fun `release cancels every future repeat`() {
         val timing = HoldRepeatTiming()
         assertEquals(400L, timing.latestEventAt(400))
+        assertEquals(580L, timing.nextAfter(400))
 
         timing.stop()
 
         assertNull(timing.latestEventAt(580))
+        assertNull(timing.nextAfter(400))
         assertNull(timing.latestEventAt(5_000))
     }
 
