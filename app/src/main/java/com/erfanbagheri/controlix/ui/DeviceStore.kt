@@ -7,14 +7,29 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.erfanbagheri.controlix.data.DeviceKey
+import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.PersistedDevice
+import com.erfanbagheri.controlix.data.RemoteIdentity
+import com.erfanbagheri.controlix.data.RemoteIndex
 
 /**
  * Saved devices, persisted in SharedPreferences.
- * Fields separated by '|', devices by ';'. The pinned/enabled/room
- * fields are appended without breaking older parsers that never look at them.
+ *
+ * Issue #21: the persisted identity is (categorySlug, brandName, fileName),
+ * not `remote.id`. Remote ids are SQLite rowids and are reassigned on every
+ * DB rebuild, so a saved numeric id can open the wrong remote. Lines are
+ * '|'-separated, devices ';'-separated.
  *
  * v0 fields: id|name|brand|catSlug|buttonCount
  * v1 fields: id|name|brand|catSlug|buttonCount|pinned(0/1)|enabled(0/1)|roomSlug
+ * v2 fields: name|catSlug|brand|fileName|buttonCount|pinned(0/1)|enabled(0/1)|roomSlug
+ *
+ * v1 and v2 are told apart by the leading field: a number means v1. v1
+ * lines migrate through [RemoteIdentity.migrateLegacy], which re-resolves
+ * the id against the current DB and refuses anything that would bind a
+ * device to a different brand. A refused line is kept on disk as
+ * [SavedDevice.needsRebind] rather than deleted — it can never transmit.
  */
 data class SavedDevice(
     val remoteId: Int,
@@ -22,10 +37,39 @@ data class SavedDevice(
     val brand: String,
     val categorySlug: String,
     val buttonCount: Int,
+    val fileName: String = "",
     val pinned: Boolean = false,
     val enabled: Boolean = true,
     val roomSlug: String = "",
-)
+    /** v1 line that could not be migrated to a key: shown, never transmitted. */
+    val needsRebind: Boolean = false,
+) {
+    /** The stable identity that survives a DB rebuild. */
+    val key: DeviceKey get() = DeviceKey(categorySlug, brand, fileName)
+
+    internal fun toPersisted() = PersistedDevice(
+        key = key,
+        name = name,
+        buttonCount = buttonCount,
+        pinned = pinned,
+        enabled = enabled,
+        roomSlug = roomSlug,
+    )
+
+    internal companion object {
+        fun from(p: PersistedDevice, resolved: com.erfanbagheri.controlix.data.ResolvedRemote?) = SavedDevice(
+            remoteId = resolved?.remoteId ?: -1,
+            name = p.name,
+            brand = p.key.brandName,
+            categorySlug = p.key.categorySlug,
+            buttonCount = resolved?.buttonCount ?: p.buttonCount,
+            fileName = p.key.fileName,
+            pinned = p.pinned,
+            enabled = p.enabled,
+            roomSlug = p.roomSlug,
+        )
+    }
+}
 
 enum class Room(val slug: String, val display: String) {
     LivingRoom("living_room", "Living Room"),
@@ -45,78 +89,138 @@ enum class Room(val slug: String, val display: String) {
 class DeviceStore(context: Context) {
     private val prefs = context.getSharedPreferences("devices", Context.MODE_PRIVATE)
 
-    fun load(): List<SavedDevice> =
-        (prefs.getString("list", "") ?: "")
+    /**
+     * Saved devices with their [SavedDevice.remoteId] resolved against the
+     * current DB. Without an index, or when the DB no longer carries a
+     * remote, the id is -1 and the device shows as unresolved.
+     */
+    fun load(index: RemoteIndex? = null): List<SavedDevice> {
+        val lines = (prefs.getString("list", "") ?: "")
             .split(';')
             .filter { it.isNotBlank() }
-            .mapNotNull { runCatching { parse(it) }.getOrNull() }
+        return lines.mapNotNull { line ->
+            val persisted = RemoteIdentity.parse(line)
+            if (persisted != null) {
+                SavedDevice.from(persisted, index?.let { RemoteIdentity.resolve(persisted.key, it) })
+            } else {
+                legacyDevice(line, index)
+            }
+        }
+    }
 
-    private fun parse(s: String): SavedDevice {
-        val f = s.split('|')
-        val cat = f.getOrNull(3) ?: ""
-        val count = f.getOrNull(4)?.toIntOrNull() ?: f.getOrNull(5)?.toIntOrNull() ?: 0
+    /**
+     * A v1 line. With an index it migrates to a key; without one, or when
+     * migration is ambiguous, it surfaces as an unresolved device so the UI
+     * can ask instead of guessing.
+     */
+    private fun legacyDevice(line: String, index: RemoteIndex?): SavedDevice? {
+        val f = line.split('|')
+        if (f.size < 4) return null
+        val storedId = f[0].toIntOrNull() ?: return null
+        val name = f.getOrNull(1) ?: ""
+        val brand = f.getOrNull(2) ?: ""
+        val catSlug = f.getOrNull(3) ?: ""
+
+        val migrated = index?.let { RemoteIdentity.migrateLegacy(line, it) }
+        if (migrated != null) return SavedDevice.from(migrated, RemoteIdentity.resolve(migrated.key, index))
+
         return SavedDevice(
-            remoteId = f[0].toInt(),
-            name = f.getOrNull(1) ?: "",
-            brand = f.getOrNull(2) ?: "",
-            categorySlug = cat,
-            buttonCount = count,
+            remoteId = -1,
+            name = name,
+            brand = brand,
+            categorySlug = catSlug,
+            buttonCount = f.getOrNull(4)?.toIntOrNull() ?: 0,
+            fileName = "",
             pinned = f.getOrNull(5) == "1",
             enabled = (f.getOrNull(6) ?: "1") != "0",
             roomSlug = f.getOrNull(7) ?: "",
+            needsRebind = true,
         )
     }
 
-    private fun serialize(d: SavedDevice): String =
-        listOfNotNull(
-            d.remoteId.toString(),
-            d.name,
-            d.brand,
-            d.categorySlug,
-            d.buttonCount.toString(),
-            if (d.pinned) "1" else "0",
-            if (d.enabled) "1" else "0",
-            d.roomSlug,
-        ).joinToString("|")
-
-    fun save(dev: SavedDevice) {
-        val list = load().filterNot { it.remoteId == dev.remoteId } + dev
-        prefs.edit().putString("list", list.joinToString(";") { serialize(it) }).apply()
+    /**
+     * Rewrite every migratable v1 line to the v2 key form. Call once after
+     * the DB is open; lines that cannot be resolved keep their v1 text and
+     * stay flagged for the user.
+     */
+    fun migrateLegacy(index: RemoteIndex) {
+        val lines = (prefs.getString("list", "") ?: "").split(';').filter { it.isNotBlank() }
+        if (lines.none { RemoteIdentity.looksLegacy(it) }) return
+        val kept = lines.mapNotNull { line ->
+            if (!RemoteIdentity.looksLegacy(line)) {
+                RemoteIdentity.parse(line)?.let { RemoteIdentity.serialize(it) }
+            } else {
+                RemoteIdentity.migrateLegacy(line, index)?.let { RemoteIdentity.serialize(it) } ?: line
+            }
+        }
+        prefs.edit().putString("list", kept.joinToString(";")).apply()
     }
 
     // ponytail: favorites/scenes key off (remoteId, key) and are deliberately NOT purged here —
     // they resolve at fire time and render disabled once the device or key is gone.
-    fun remove(remoteId: Int) {
-        prefs.edit().putString("list", load().filterNot { it.remoteId == remoteId }.joinToString(";") { serialize(it) }).apply()
+    fun save(dev: SavedDevice, index: RemoteIndex? = null) {
+        val list = load(index).filterNot { it.key == dev.key } + dev
+        write(list)
     }
 
-    fun rename(remoteId: Int, newName: String) {
-        val list = load().map { if (it.remoteId == remoteId) it.copy(name = clean(newName)) else it }
-        prefs.edit().putString("list", list.joinToString(";") { serialize(it) }).apply()
+    fun remove(key: DeviceKey) = write(load().filterNot { it.key == key })
+
+    fun rename(key: DeviceKey, newName: String) =
+        write(load().map { if (it.key == key) it.copy(name = clean(newName)) else it })
+
+    fun togglePin(key: DeviceKey) { val d = load().find { it.key == key } ?: return; save(d.copy(pinned = !d.pinned)) }
+    fun toggleEnabled(key: DeviceKey) { val d = load().find { it.key == key } ?: return; save(d.copy(enabled = !d.enabled)) }
+    fun setRoom(key: DeviceKey, slug: String) { val d = load().find { it.key == key } ?: return; save(d.copy(roomSlug = slug)) }
+
+    private fun write(list: List<SavedDevice>) {
+        prefs.edit().putString("list", list.joinToString(";") { RemoteIdentity.serialize(it.toPersisted()) }).apply()
     }
 
-    fun update(dev: SavedDevice) = save(dev)
-    fun togglePin(remoteId: Int) { val d = load().find { it.remoteId == remoteId } ?: return; save(d.copy(pinned = !d.pinned)) }
-    fun toggleEnabled(remoteId: Int) { val d = load().find { it.remoteId == remoteId } ?: return; save(d.copy(enabled = !d.enabled)) }
-    fun setRoom(remoteId: Int, slug: String) { val d = load().find { it.remoteId == remoteId } ?: return; save(d.copy(roomSlug = slug)) }
     private fun clean(s: String): String = s.replace('|', '/').replace(';', ',')
 }
 
-class DeviceModel(private val store: DeviceStore) {
-    var devices: List<SavedDevice> by mutableStateOf(store.load())
+class DeviceModel(private val store: DeviceStore, private val index: RemoteIndex? = null) {
+    var devices: List<SavedDevice> by mutableStateOf(store.load(index))
         private set
 
-    fun save(dev: SavedDevice) { store.save(dev); devices = store.load() }
-    fun reload() { devices = store.load() }
-    fun remove(remoteId: Int) { store.remove(remoteId); devices = store.load() }
-    fun rename(remoteId: Int, newName: String) { store.rename(remoteId, newName); devices = store.load() }
-    fun togglePin(remoteId: Int) { store.togglePin(remoteId); devices = store.load() }
-    fun toggleEnabled(remoteId: Int) { store.toggleEnabled(remoteId); devices = store.load() }
-    fun setRoom(remoteId: Int, slug: String) { store.setRoom(remoteId, slug); devices = store.load() }
+    fun save(dev: SavedDevice) { store.save(dev, index); devices = store.load(index) }
+
+    /**
+     * Save by volatile id: the current DB row supplies the stable key, so the
+     * device survives the next rebuild. A row the index cannot see is refused
+     * rather than stored as an unopenable device.
+     */
+    fun saveById(remoteId: Int, name: String, brand: String, categorySlug: String, buttonCount: Int) {
+        val idx = index ?: return
+        val row = RemoteIdentity.row(remoteId, idx) ?: return
+        store.save(
+            SavedDevice.from(PersistedDevice(row.key, clean(name), buttonCount), RemoteIdentity.resolve(row.key, idx)),
+            idx,
+        )
+        devices = store.load(index)
+    }
+
+    fun reload() { devices = store.load(index) }
+    fun remove(key: DeviceKey) { store.remove(key); devices = store.load(index) }
+    fun rename(key: DeviceKey, newName: String) { store.rename(key, newName); devices = store.load(index) }
+    fun togglePin(key: DeviceKey) { store.togglePin(key); devices = store.load(index) }
+    fun toggleEnabled(key: DeviceKey) { store.toggleEnabled(key); devices = store.load(index) }
+    fun setRoom(key: DeviceKey, slug: String) { store.setRoom(key, slug); devices = store.load(index) }
+
+    private fun clean(s: String): String = s.replace('|', '/').replace(';', ',')
 }
 
 @Composable
-fun rememberDeviceModel(context: Context = LocalContext.current): DeviceModel {
-    val model = remember { DeviceModel(DeviceStore(context)) }
+fun rememberDeviceModel(
+    repo: com.erfanbagheri.controlix.data.IrCodeRepository? = null,
+    context: Context = LocalContext.current,
+): DeviceModel {
+    val model = remember(repo) {
+        val index = runCatching { repo?.remoteIndex() }.getOrNull()
+        val store = DeviceStore(context)
+        // One-time: rewrite v1 lines to stable keys now that the DB is open.
+        if (index != null) runCatching { store.migrateLegacy(index) }
+        DeviceModel(store, index)
+    }
     return model
 }
