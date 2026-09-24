@@ -2,6 +2,7 @@ package com.erfanbagheri.controlix.ir
 
 import android.content.Context
 import android.hardware.ConsumerIrManager
+import com.erfanbagheri.controlix.ui.SendResult
 
 /**
  * Thin wrapper around ConsumerIrManager. The only Android API surface
@@ -45,13 +46,20 @@ class IrTransmitter(context: Context) {
         sink().send(carrierHz, pattern)
 
     fun transmit(carrierHz: Int, pattern: IntArray): Boolean =
-        sendDetailed(carrierHz, pattern) == IrSendResult.Sent
+        transmitResult(carrierHz, pattern) is SendResult.Sent
 
+    /**
+     * Typed outcome for callers that must distinguish "this device cannot
+     * send" from "this one code was rejected". A chosen-but-unreachable sink
+     * ([IrSendResult.Unsupported]) is genuinely NoHardware; everything else
+     * is a per-code failure the user may retry.
+     */
+    fun transmitResult(carrierHz: Int, pattern: IntArray): SendResult =
+        sendDetailed(carrierHz, pattern).toSendResult()
+
+    /** Transmit a single button pattern, normalized. */
     fun transmitButtonDetailed(carrierHz: Int, raw: IntArray): IrSendResult {
-        var p = raw
-        if (p.size > 2 && p[0] > 100_000) p = p.copyOfRange(1, p.size)
-        if (p.size % 2 == 1) p = p + intArrayOf(0)
-        if (p.size < 4) return IrSendResult.Failed("pattern too short")
+        val p = normalizeButtonPattern(raw) ?: return IrSendResult.Failed("pattern too short")
         return sink().send(carrierHz, p)
     }
 
@@ -62,7 +70,14 @@ class IrTransmitter(context: Context) {
      * pattern to on/off pairs.
      */
     fun transmitButton(carrierHz: Int, raw: IntArray): Boolean =
-        transmitButtonDetailed(carrierHz, raw) == IrSendResult.Sent
+        transmitButtonResult(carrierHz, raw) is SendResult.Sent
+
+    /** Typed variant of [transmitButton]; [transmitButton] delegates here. */
+    fun transmitButtonResult(carrierHz: Int, raw: IntArray): SendResult {
+        val rawSink = normalizeButtonPattern(raw)
+            ?: return SendResult.Failed("pattern too short (${raw.size} durations)")
+        return transmitResult(carrierHz, rawSink)
+    }
 
     /** Transmits a Pronto Hex code once. */
     fun transmitPronto(hex: String): Boolean {
@@ -90,6 +105,24 @@ class IrTransmitter(context: Context) {
             "IR emitter present. Carriers: ${freqs.ifEmpty { "unreported" }}"
         }
     }
+}
+
+/**
+ * Flipper raw quirks: drops a leading silence gap (> 100 ms, which is how
+ * Flipper recordings mark "time since last event") and pads an odd pattern
+ * to on/off pairs. Null when the result cannot be transmitted at all.
+ */
+private fun normalizeButtonPattern(raw: IntArray): IntArray? {
+    var p = raw
+    if (p.size > 2 && p[0] > 100_000) p = p.copyOfRange(1, p.size)
+    if (p.size % 2 == 1) p = p + intArrayOf(0)
+    return if (p.size < 4) null else p
+}
+
+private fun IrSendResult.toSendResult(): SendResult = when (this) {
+    IrSendResult.Sent -> SendResult.Sent
+    is IrSendResult.Failed -> SendResult.Failed(reason)
+    is IrSendResult.Unsupported -> SendResult.NoHardware
 }
 
 /** One transmission attempt: carrier frequency + on/off pattern in microseconds. */
