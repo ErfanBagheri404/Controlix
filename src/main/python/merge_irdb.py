@@ -162,6 +162,29 @@ PROTO_MAP = {
 }
 
 
+IRD_COLUMNS = ['functionname', 'protocol', 'device', 'subdevice', 'function']
+
+
+def read_irdb_csv(path):
+    """Rows of an irdb CSV, whether or not the file carries a header line.
+
+    Most irdb CSVs start with a `functionname,protocol,device,subdevice,function`
+    header, but a sizeable minority are headerless — feeding those to
+    csv.DictReader silently promotes the first data row to the header, so
+    every lookup of 'protocol'/'function' misses and the whole remote ends up
+    with zero buttons. Sniff the first row: a header only if cell 0 is the
+    literal 'functionname'.
+    """
+    with open(path, encoding='utf-8', errors='ignore') as f:
+        text = f.read()
+    if not text.strip():
+        return []
+    first = text.split('\n', 1)[0]
+    if first.split(',')[0].strip().strip('"').lower() == 'functionname':
+        return list(csv.DictReader(text.splitlines()))
+    return list(csv.DictReader(text.splitlines(), fieldnames=IRD_COLUMNS))
+
+
 def sibling_or_synth_name(csv_path, function, protocol, device, subdevice):
     """Label for a row whose functionname cell is blank.
 
@@ -177,7 +200,7 @@ def sibling_or_synth_name(csv_path, function, protocol, device, subdevice):
         if sib == csv_path:
             continue
         try:
-            rows = list(csv.DictReader(open(sib, encoding='utf-8', errors='ignore')))
+            rows = read_irdb_csv(sib)
         except OSError:
             continue
         for row in rows:
@@ -385,8 +408,7 @@ def main():
 
         # Read CSV
         try:
-            with open(csv_path, encoding='utf-8', errors='ignore') as f:
-                rows = list(csv.DictReader(f))
+            rows = read_irdb_csv(csv_path)
         except Exception:
             skipped_empty += 1
             continue

@@ -32,7 +32,7 @@ IRDB = pathlib.Path('E:/Dev/upstream/irdb/codes')
 FLIPPER = pathlib.Path('E:/Dev/upstream/Flipper-IRDB')
 
 sys.path.insert(0, str(ROOT / 'src/main/python'))
-from merge_irdb import irdb_to_blob, sibling_or_synth_name  # noqa: E402
+from merge_irdb import irdb_to_blob, read_irdb_csv, sibling_or_synth_name  # noqa: E402
 from convert_irdb import (parse_ir_file, parse_models_from_header, encode_raw,  # noqa: E402
                           encode_parsed)
 
@@ -125,8 +125,7 @@ def main():
         csv_path = IRDB / rel.replace('\\', '/')
         if not csv_path.exists():
             continue
-        with csv_path.open(encoding='utf-8', errors='ignore') as f:
-            rows = list(csv.DictReader(f))
+        rows = read_irdb_csv(csv_path)
         model = db.execute('SELECT model_name FROM remote WHERE id=?', (rid,)).fetchone()[0]
         added = 0
         for row in rows:
