@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.CopiedButton
@@ -74,6 +75,7 @@ fun PadScreen(
     var copiedOpen by remember { mutableStateOf(false) }
     // Local copies pasted onto this remote, from CopiedButtonStore.
     var localCopies by remember(remoteId) { mutableStateOf(copied.local(remoteId)) }
+    val view = LocalView.current
 
     val buttons = remember(remoteId) {
         runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
@@ -112,6 +114,11 @@ fun PadScreen(
     }
 
     fun fire(name: String) {
+        // One tick per activation at the key's own weight — here in the single
+        // choke point every IR key passes through, so the tick lands whether
+        // or not this remote carries the code. The pad keys carry a no-op
+        // pressable so they can't double-tick.
+        Feedback.press(view, name)
         val code = codeFor(name)
         if (code == null) {
             toast.show("This remote has no ${name.replace('_', ' ')} code.")
@@ -347,9 +354,24 @@ private fun RockerColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        PadBtn(up, Modifier.size(56.dp), onLongClick = onLongUp) { onUp() }
+        RockerKey(up, onLongUp) { onUp() }
         Text(label, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
-        PadBtn(down, Modifier.size(56.dp), onLongClick = onLongDown) { onDown() }
+        RockerKey(down, onLongDown) { onDown() }
+    }
+}
+
+/** Rocker key: immediate send, hold-to-repeat, long-press copy when supplied. */
+@Composable
+private fun RockerKey(icon: ActionIcon, onLongClick: (() -> Unit)? = null, onFire: () -> Unit) {
+    Box(
+        Modifier
+            .size(56.dp)
+            .bgTile(20.dp, MaterialTheme.colorScheme.surfaceVariant)
+            .rockerPressable(repeatEnabled = Feedback.rockerRepeatOn, onFire = onFire)
+            .combinedPressable(onClick = {}, onLongClick = onLongClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
     }
 }
 
