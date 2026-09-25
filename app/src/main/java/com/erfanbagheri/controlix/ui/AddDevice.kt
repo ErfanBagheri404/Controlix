@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +32,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Setup flow. Step 1: category tiles (2 columns, Material vectors).
@@ -79,6 +82,8 @@ fun AddDeviceScreen(
                     Spacer(Modifier.height(8.dp))
                     BrandGrid(
                         brands = remember(repo, cat.slug) { repo.brands(cat.slug) },
+                        catSlug = cat.slug,
+                        repo = repo,
                         onPick = { onPick(it.id, it.name, cat.slug, cat.name) },
                     )
                 }
@@ -137,6 +142,8 @@ private fun CategoryGrid(
 @Composable
 private fun BrandGrid(
     brands: List<IrCodeRepository.Brand>,
+    catSlug: String,
+    repo: IrCodeRepository,
     onPick: (IrCodeRepository.Brand) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
@@ -145,13 +152,22 @@ private fun BrandGrid(
         val seen = HashSet<String>()
         brands.filter { seen.add(it.name.lowercase()) }
     }
-    val shown = remember(query, all) {
-        if (query.isBlank()) all else all.filter { it.name.contains(query.trim(), ignoreCase = true) }
+    // ponytail: no standalone remote-search screen exists; the brand picker
+    // is the app's only model/remote search, so fuzzy + coverage live here.
+    // Rows stay flat tiles + haptics; no new eye-candy.
+    var hits by remember(catSlug) { mutableStateOf<List<IrCodeRepository.Brand>>(emptyList()) }
+    LaunchedEffect(catSlug, query) {
+        hits = if (query.isBlank()) emptyList()
+        // DB scans touch thousands of rows: keep them off composition.
+        else withContext(Dispatchers.IO) { repo.searchBrands(catSlug, query) }
+    }
+    val shown = remember(query, all, hits) {
+        if (query.isBlank()) all else hits
     }
     OutlinedTextField(
         value = query,
         onValueChange = { query = it },
-        placeholder = { Text("Search brands") },
+        placeholder = { Text("Search brands or models — 'ue55', 'samsung vol ch'") },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
