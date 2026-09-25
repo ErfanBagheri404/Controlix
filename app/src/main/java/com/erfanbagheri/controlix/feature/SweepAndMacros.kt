@@ -5,33 +5,56 @@ import com.erfanbagheri.controlix.ir.IrTransmitter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import com.erfanbagheri.controlix.ui.SendResult
 
 /**
  * Power-off sweep (TVKILL-style, but offline and data-driven).
  * Iterates every TV power button in the bundled database and transmits it.
  * Any TV in range that recognizes one of the ~3,900 real power codes shuts off.
  * 120 ms gap keeps the full sweep under 8 minutes.
+ *
+ * Power-only by design: only remotes WITH a power button are queued;
+ * the rest are skipped (see IrCodeRepository.tvRemotesWithoutPowerCount).
+ * Per-device results stream live; cancel stops within one gap (< 300 ms).
  */
 class PowerOffSweep(
     private val repo: IrCodeRepository,
     private val transmitter: IrTransmitter
 ) {
-    data class Progress(val sent: Int, val total: Int, val currentBrand: String)
+    data class DeviceResult(val brand: String, val result: SendResult)
+    data class Progress(
+        val sent: Int,
+        val total: Int,
+        val currentBrand: String,
+        val failed: Int = 0,
+        val elapsedMs: Long = 0,
+        val recent: List<DeviceResult> = emptyList(),
+    )
 
     private val _progress = MutableStateFlow<Progress?>(null)
     val progress: StateFlow<Progress?> = _progress
+
+    /** The exact pre-flight queue; run() walks this same list, so the count
+     * shown on screen before any transmit is the count that will transmit. */
+    private val queue: List<IrCodeRepository.PowerButton> by lazy { repo.allTvPowerButtons() }
+    val totalDevices: Int get() = queue.size
 
     @Volatile var cancelled = false
         private set
 
     suspend fun run(gapMs: Long = 120) {
         cancelled = false
-        val buttons = repo.allTvPowerButtons()
+        val buttons = queue
+        val log = ArrayDeque<DeviceResult>()
+        var failed = 0
         _progress.value = Progress(0, buttons.size, "")
         buttons.forEachIndexed { i, btn ->
             if (cancelled) return
-            transmitter.transmitButton(btn.carrierHz, btn.pattern)
-            _progress.value = Progress(i + 1, buttons.size, btn.brandName)
+            val res = transmitter.transmitButtonResult(btn.carrierHz, btn.pattern)
+            if (res !is SendResult.Sent) failed++
+            log.addLast(DeviceResult(btn.brandName, res))
+            while (log.size > 12) log.removeFirst()
+            _progress.value = Progress(i + 1, buttons.size, btn.brandName, failed, 0L, log.toList())
             delay(gapMs)
         }
         _progress.value = null

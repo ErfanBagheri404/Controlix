@@ -106,4 +106,65 @@ object ButtonNames {
 
     /** The label is specifically this digit ('KEY_5' yes, 'KEY_6' no). */
     fun digit(n: String, d: Char): Boolean = digit(n) && norm(n).last() == d
+
+    // ── AC ─────────────────────────────────────────────────────────────
+    // Stateful remotes carry one pattern per (mode, temperature) state:
+    // "Cool_23", "Auto_25_slow". Some carry only a bare mode key ("Cool",
+    // "FAN ONLY"), a power key ("Off"), fan-speed keys ("FAN HIGH",
+    // "FanSlower") and swing. Anything the remote does not carry must stay
+    // unsent — the pad says so instead of approximating a code.
+    // ponytail: Fahrenheit labels ("68f", "68_degrees", "Cool_68") and
+    // temp-first labels ("TEMP_23", "16c") are not matched, and a bare
+    // "POWER" toggle is never treated as an off key — guessing either would
+    // transmit the wrong state. Upgrade path: per-brand unit metadata.
+
+    private val acModes = listOf("cool", "heat", "dry", "fan", "auto")
+
+    /** True off key: bare "Off" or a power+off compound — never plain "Power". */
+    fun powerOff(n: String): Boolean {
+        val x = norm(n)
+        return x == "off" || x == "acoff" || x.contains("poweroff") ||
+            (x.contains("power") && x.contains("off"))
+    }
+
+    /** Exact (mode, Celsius temp) state, e.g. acCombo("Cool_23", "Cool", 23). */
+    fun acCombo(n: String, modeLabel: String, tempC: Int): Boolean =
+        acComboTemp(n, modeLabel) == tempC
+
+    /** A bare mode key ("Cool", "FAN ONLY") — no state, no temperature. */
+    fun acModeStandalone(n: String, modeLabel: String): Boolean {
+        val x = norm(n)
+        val mode = modeLabel.lowercase()
+        if (x == mode) return true
+        return mode == "fan" && x == "fanonly"
+    }
+
+    /** This label names the mode at all: a state or a bare mode key. */
+    fun acMode(n: String, modeLabel: String): Boolean {
+        val x = norm(n)
+        return acComboTemp(x, modeLabel) != null || acModeStandalone(x, modeLabel)
+    }
+
+    /** Celsius state temperature carried by a combo label, else null. */
+    fun acComboTemp(n: String, modeLabel: String): Int? {
+        val x = norm(n)
+        val mode = modeLabel.lowercase()
+        if (!x.startsWith(mode)) return null
+        val digits = x.removePrefix(mode).takeWhile { it.isDigit() }
+        if (digits.length != 2) return null
+        val t = digits.toInt()
+        return if (t in 10..32) t else null
+    }
+
+    /** A fan-speed / fan-step key ("FAN HIGH", "FanSlower", "Speed2"). */
+    fun acFanSpeed(n: String): Boolean {
+        val x = norm(n)
+        if (x == "fan" || x == "fanonly") return false // mode keys, not speeds
+        if (acModes.any { acComboTemp(x, it) != null }) return false
+        return x.startsWith("fan") || x.startsWith("speed") ||
+            x.contains("fanspeed") || x.contains("airspeed")
+    }
+
+    /** A swing / louver key. */
+    fun acSwing(n: String): Boolean = norm(n).contains("swing")
 }

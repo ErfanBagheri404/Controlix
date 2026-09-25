@@ -2,6 +2,7 @@ package com.erfanbagheri.controlix.ir
 
 import android.content.Context
 import android.hardware.ConsumerIrManager
+import com.erfanbagheri.controlix.ui.SendResult
 
 /**
  * Thin wrapper around ConsumerIrManager. The only Android API surface
@@ -19,21 +20,21 @@ class IrTransmitter(context: Context) {
         manager?.carrierFrequencies ?: arrayOf()
 
     fun transmit(carrierHz: Int, pattern: IntArray): Boolean =
-        transmitResult(carrierHz, pattern) is com.erfanbagheri.controlix.ui.SendResult.Sent
+        transmitResult(carrierHz, pattern) is SendResult.Sent
 
     /**
      * Typed outcome: keeps the real reason a code was rejected instead of
      * collapsing every failure into false. `NoHardware` is the only case
      * the ritual treats as blocking; `Failed` is per-code and recoverable.
      */
-    fun transmitResult(carrierHz: Int, pattern: IntArray): com.erfanbagheri.controlix.ui.SendResult {
-        val m = manager ?: return com.erfanbagheri.controlix.ui.SendResult.NoHardware
-        if (!hasIrEmitter()) return com.erfanbagheri.controlix.ui.SendResult.NoHardware
+    fun transmitResult(carrierHz: Int, pattern: IntArray): SendResult {
+        val m = manager ?: return SendResult.NoHardware
+        if (!hasIrEmitter()) return SendResult.NoHardware
         return try {
             m.transmit(carrierHz, pattern)
-            com.erfanbagheri.controlix.ui.SendResult.Sent
+            SendResult.Sent
         } catch (e: Exception) {
-            com.erfanbagheri.controlix.ui.SendResult.Failed(e.message ?: e.javaClass.simpleName)
+            SendResult.Failed(e.message ?: e.javaClass.simpleName)
         }
     }
 
@@ -44,14 +45,14 @@ class IrTransmitter(context: Context) {
      * pattern to on/off pairs.
      */
     fun transmitButton(carrierHz: Int, raw: IntArray): Boolean =
-        transmitButtonResult(carrierHz, raw) is com.erfanbagheri.controlix.ui.SendResult.Sent
+        transmitButtonResult(carrierHz, raw) is SendResult.Sent
 
     /** Typed variant of [transmitButton]; [transmitButton] delegates here. */
-    fun transmitButtonResult(carrierHz: Int, raw: IntArray): com.erfanbagheri.controlix.ui.SendResult {
+    fun transmitButtonResult(carrierHz: Int, raw: IntArray): SendResult {
         var p = raw
         if (p.size > 2 && p[0] > 100_000) p = p.copyOfRange(1, p.size)
         if (p.size % 2 == 1) p = p + intArrayOf(0)
-        if (p.size < 4) return com.erfanbagheri.controlix.ui.SendResult.Failed("pattern too short (${p.size} durations)")
+        if (p.size < 4) return SendResult.Failed("pattern too short (${p.size} durations)")
         return transmitResult(carrierHz, p)
     }
 
