@@ -38,12 +38,9 @@ class IrTransmitter(context: Context) {
         )
     ) {
         TransmitterChoice.Internal -> internalSink
-        TransmitterChoice.UsbDongle -> UnsupportedIrSink("No supported USB IR dongle attached")
-        TransmitterChoice.BleBlaster -> UnsupportedIrSink("No BLE IR blaster connected")
+        TransmitterChoice.UsbDongle -> UnsupportedIrSink()
+        TransmitterChoice.BleBlaster -> UnsupportedIrSink()
     }
-
-    fun sendDetailed(carrierHz: Int, pattern: IntArray): IrSendResult =
-        sink().send(carrierHz, pattern)
 
     fun transmit(carrierHz: Int, pattern: IntArray): Boolean =
         transmitResult(carrierHz, pattern) is SendResult.Sent
@@ -51,17 +48,11 @@ class IrTransmitter(context: Context) {
     /**
      * Typed outcome for callers that must distinguish "this device cannot
      * send" from "this one code was rejected". A chosen-but-unreachable sink
-     * ([IrSendResult.Unsupported]) is genuinely NoHardware; everything else
-     * is a per-code failure the user may retry.
+     * (no hardware for the selected transmitter) maps to [SendResult.NoHardware];
+     * everything else is a per-code failure the user may retry.
      */
     fun transmitResult(carrierHz: Int, pattern: IntArray): SendResult =
-        sendDetailed(carrierHz, pattern).toSendResult()
-
-    /** Transmit a single button pattern, normalized. */
-    fun transmitButtonDetailed(carrierHz: Int, raw: IntArray): IrSendResult {
-        val p = normalizeButtonPattern(raw) ?: return IrSendResult.Failed("pattern too short")
-        return sink().send(carrierHz, p)
-    }
+        sink().send(carrierHz, pattern)
 
     /**
      * Transmit a button pattern from the database. Normalizes Flipper raw
@@ -74,9 +65,9 @@ class IrTransmitter(context: Context) {
 
     /** Typed variant of [transmitButton]; [transmitButton] delegates here. */
     fun transmitButtonResult(carrierHz: Int, raw: IntArray): SendResult {
-        val rawSink = normalizeButtonPattern(raw)
+        val p = normalizeButtonPattern(raw)
             ?: return SendResult.Failed("pattern too short (${raw.size} durations)")
-        return transmitResult(carrierHz, rawSink)
+        return transmitResult(carrierHz, p)
     }
 
     /** Transmits a Pronto Hex code once. */
@@ -119,39 +110,25 @@ private fun normalizeButtonPattern(raw: IntArray): IntArray? {
     return if (p.size < 4) null else p
 }
 
-private fun IrSendResult.toSendResult(): SendResult = when (this) {
-    IrSendResult.Sent -> SendResult.Sent
-    is IrSendResult.Failed -> SendResult.Failed(reason)
-    is IrSendResult.Unsupported -> SendResult.NoHardware
-}
-
 /** One transmission attempt: carrier frequency + on/off pattern in microseconds. */
 interface IrSink {
-    fun send(carrierHz: Int, pattern: IntArray): IrSendResult
-}
-
-sealed interface IrSendResult {
-    data object Sent : IrSendResult
-    /** Sink present but the send did not go out. */
-    data class Failed(val reason: String) : IrSendResult
-    /** Sink selected but its hardware/protocol is not reachable. */
-    data class Unsupported(val reason: String) : IrSendResult
+    fun send(carrierHz: Int, pattern: IntArray): SendResult
 }
 
 internal class ConsumerIrSink(private val manager: ConsumerIrManager?) : IrSink {
-    override fun send(carrierHz: Int, pattern: IntArray): IrSendResult {
-        val m = manager ?: return IrSendResult.Failed("Consumer IR service unavailable")
-        if (!m.hasIrEmitter()) return IrSendResult.Failed("No IR emitter on this device")
+    override fun send(carrierHz: Int, pattern: IntArray): SendResult {
+        val m = manager ?: return SendResult.NoHardware
+        if (!m.hasIrEmitter()) return SendResult.NoHardware
         return try {
             m.transmit(carrierHz, pattern)
-            IrSendResult.Sent
-        } catch (_: Exception) {
-            IrSendResult.Failed("Consumer IR transmit threw")
+            SendResult.Sent
+        } catch (e: Exception) {
+            SendResult.Failed(e.message ?: e.javaClass.simpleName)
         }
     }
 }
 
-internal class UnsupportedIrSink(private val reason: String) : IrSink {
-    override fun send(carrierHz: Int, pattern: IntArray): IrSendResult =
-        IrSendResult.Unsupported(reason)
+internal class UnsupportedIrSink : IrSink {
+    override fun send(carrierHz: Int, pattern: IntArray): SendResult =
+        SendResult.NoHardware
 }

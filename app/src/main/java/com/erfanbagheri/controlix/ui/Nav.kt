@@ -1,6 +1,8 @@
 package com.erfanbagheri.controlix.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -39,7 +41,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
@@ -48,6 +52,7 @@ import com.erfanbagheri.controlix.ir.TransmitterSelection
 import com.erfanbagheri.controlix.ir.display
 import com.erfanbagheri.controlix.ui.theme.ThemeState
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 /** Every screen. Sealed route list, no nav library — app is 4 levels deep max. */
 private sealed interface Route {
@@ -69,6 +74,7 @@ private sealed interface Route {
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean = true) {
     val model = rememberDeviceModel(repo)
     val macroModel = rememberMacroModel()
+    val copiedModel = rememberCopiedButtonModel()
     // Cold start only: a cold launch restores the last-used pad; Activity
     // recreation (rotation, savedInstanceState != null) lands on Home —
     // route is plain remember, not saveable. Pad back still returns
@@ -86,6 +92,48 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
     val scope = rememberCoroutineScope()
     val view = LocalView.current
     val toast = rememberToastState()
+    val context = LocalContext.current
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val json = BackupCodec.encode(model.devices, macroModel.macros)
+        runCatching {
+            val output = context.contentResolver.openOutputStream(uri, "wt")
+                ?: error("Backup stream unavailable")
+            output.use { it.write(json.toByteArray(Charsets.UTF_8)) }
+        }.onSuccess { toast.show("Backup exported") }
+            .onFailure { toast.show("Couldn't write the backup file") }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val json = runCatching {
+            context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+        }.getOrNull()
+        if (json == null) {
+            toast.show("Couldn't read that file")
+            return@rememberLauncherForActivityResult
+        }
+        when (val result = BackupCodec.decode(json)) {
+            is BackupDecodeResult.Error -> toast.show(result.message)
+            is BackupDecodeResult.Success -> {
+                val backup = result.backup
+                toast.show(
+                    "Replace with ${backup.devices.size} devices, ${backup.macros.size} macros?",
+                    actionLabel = "Import",
+                ) {
+                    model.replaceAll(backup.devices)
+                    macroModel.save(backup.macros)
+                    toast.show("Backup restored")
+                }
+            }
+        }
+    }
+
 
     fun openPad(remoteId: Int) {
         ResumeState.recordLastRemote(remoteId)
@@ -102,10 +150,23 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
             drawerState = drawerState,
             drawerContent = {
                 MenuDrawer(
+                    acDevices = model.devices.filter { it.isAc() },
+                    onOpenAc = { dev -> scope.launch { drawerState.close() }; route = Route.Pad(dev.remoteId) },
                     hasDevices = model.devices.isNotEmpty(),
                     onMacros = { scope.launch { drawerState.close() }; route = Route.Macros },
                     onSweep = { scope.launch { drawerState.close() }; route = Route.Sweep },
                     onSelfTest = { scope.launch { drawerState.close() }; route = Route.SelfTest },
+                    onExport = {
+                        scope.launch { drawerState.close() }
+                        val stamp = LocalDate.now().toString().replace("-", "")
+                        exportLauncher.launch("controlix-backup-$stamp.json")
+                    },
+                    onImport = {
+                        scope.launch { drawerState.close() }
+                        importLauncher.launch(
+                            arrayOf("application/json", "application/octet-stream", "text/plain"),
+                        )
+                    },
                     onDbHealth = { scope.launch { drawerState.close() }; route = Route.DbHealth },
                 )
             },
@@ -197,7 +258,18 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         // System back from a cold-start-restored pad returns Home, never traps.
                         BackHandler { route = Route.Home }
                         val saved = model.devices.firstOrNull { it.remoteId == r.remoteId }
-                        PadScreen(
+                        // AC remotes are stateful: their pad is a separate climate
+                        // layout. Every other category keeps the normal TV pad.
+                        if (saved?.isAc() == true) {
+                            AcPadScreen(
+                                deviceName = saved.name,
+                                remoteId = r.remoteId,
+                                repo = repo,
+                                transmitter = ir,
+                                toast = toast,
+                                onBack = { route = Route.Home },
+                            )
+                        } else PadScreen(
                             deviceName = saved?.name,
                             onRename = { newName -> saved?.let { model.rename(it.key, newName) } },
                             remoteId = r.remoteId,
@@ -205,6 +277,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             transmitter = ir,
                             devices = model.devices,
                             model = model,
+                            copied = copiedModel,
                             toast = toast,
                             onSwitchDevice = { openPad(it.remoteId) },
                             onEdit = { route = Route.Edit(it.remoteId) },
@@ -276,10 +349,14 @@ private fun MissingDb() {
 }
 @Composable
 private fun MenuDrawer(
+    acDevices: List<SavedDevice>,
+    onOpenAc: (SavedDevice) -> Unit,
     hasDevices: Boolean,
     onMacros: () -> Unit,
     onSweep: () -> Unit,
     onSelfTest: () -> Unit,
+    onExport: () -> Unit,
+    onImport: () -> Unit,
     onDbHealth: () -> Unit,
 ) {
     ModalDrawerSheet(
@@ -291,9 +368,32 @@ private fun MenuDrawer(
             Text("Menu", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(32.dp))
 
+            // AC-category remotes jump straight to the climate pad.
+            if (acDevices.isNotEmpty()) {
+                SectionHead("Air conditioning")
+                acDevices.forEach { dev ->
+                    Row(
+                        Modifier.fillMaxWidth().pressable { onOpenAc(dev) }.padding(vertical = 18.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        LucideIcon(
+                            LucideCategoryIcons.forCategory(dev.categorySlug), 22.dp,
+                            MaterialTheme.colorScheme.onSurface,
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            dev.name, style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface, maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(32.dp))
+            }
+
             SectionHead("Tools")
             DrawerRow(ActionIcon.Macros, "Macros", onMacros)
-            DrawerRow(ActionIcon.Sweep, "Power-off sweep", onSweep)
+            DrawerRow(ActionIcon.Sweep, "TV-B-Gone", onSweep)
             DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)
             DrawerRow(ActionIcon.Gauge, "Database health", onDbHealth)
 
@@ -308,6 +408,11 @@ private fun MenuDrawer(
             Spacer(Modifier.height(32.dp))
             SectionHead("Transmitter")
             TransmitterPickerRow()
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead("Backup")
+            DrawerRow(ActionIcon.Share, "Export backup", onExport)
+            DrawerRow(ActionIcon.Down, "Import backup", onImport)
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Appearance")
