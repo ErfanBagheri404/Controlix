@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,6 +43,8 @@ import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.CopiedButton
 import com.erfanbagheri.controlix.data.CopiedButtons
 import com.erfanbagheri.controlix.data.EffectiveButtons
+import com.erfanbagheri.controlix.data.FreeLayout
+import com.erfanbagheri.controlix.data.FreeLayout.Slot
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.ManualKeys
 import com.erfanbagheri.controlix.data.MediaLayout
@@ -163,6 +166,8 @@ fun PadScreen(
     // not-matched signal (issue #17).
     val manual = summary.extraCount > 0 && (!saved.matched || summary.onPad == 0)
 
+    val freeLayout = remember(saved.key) { DeviceStore(context).freeLayout(saved.key) }
+
     /**
      * The code a pad key would send. A pasted local copy wins, then the
      * effective (borrowed-or-own) code, then the raw name lookup fire() used.
@@ -230,7 +235,6 @@ fun PadScreen(
     Column(
         Modifier.fillMaxSize().applyTopInset().applyBottomInset().padding(horizontal = 24.dp),
     ) {
-        // ── Header: back · bordered name pill · overflow ─────────────────
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             ActionIconView(
@@ -273,68 +277,28 @@ fun PadScreen(
             // Media pad replaces both default regions; keyboard mode lives inside it.
             MediaPad(media, ::fire, Modifier.fillMaxWidth().weight(1f))
         } else {
-            // ── Region 1: chevron pad — swapped out for the full key set ─────
-            ContentSwap(expanded, Modifier.fillMaxWidth().weight(1f)) { open ->
-                if (open) {
-                    // Unmatched remote: its own labels. Otherwise the key set,
-                    // borrow-aware so codes missing here come from siblings.
-                    if (manual) {
-                        ManualKeyList(summary, ::fire, ::copyKey, Modifier.fillMaxSize(), manualOpen) {
-                            manualOpen = !manualOpen
-                        }
-                    } else {
-                        ExpandedKeys(::fire, borrowedKeys, ::showProvenance, ::copyKey, Modifier.fillMaxSize())
-                    }
+            PadHeader(deviceName ?: "Remote", emitKey,
+                onSwitch = { switcherOpen = true },
+                onSheet = { sheetOpen = true },
+                onBack = onBack)
+            Spacer(Modifier.height(20.dp))
+
+            // Landscape gets two panes side by side; portrait stays stacked.
+            BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
+                if (Orientation.useLandscapeLayout(maxWidth.value, maxHeight.value)) {
+                    LandscapePad(::fire, ::copyKey, expanded, { expanded = !expanded }, Modifier.fillMaxSize(),
+                        manual, summary, manualOpen, { manualOpen = !manualOpen }, freeLayout,
+                        borrowedKeys, ::showProvenance)
                 } else {
-                    ChevronPad(::fire, borrowedKeys, ::showProvenance, ::copyKey, Modifier.fillMaxSize())
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // ── Region 2: controls section — VOL / keys / CH ─────────────────
-            Row(Modifier.fillMaxWidth().height(CONTROL_BLOCK), verticalAlignment = Alignment.CenterVertically) {
-                // No capsule: the keys sit directly on the screen surface.
-                RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL",
-                    borrowedKeys["volume_up"] != null, borrowedKeys["volume_down"] != null,
-                    onUp = { fire("volume_up") }, onDown = { fire("volume_down") },
-                    onLongUp = { copyKey("volume_up") }, onLongDown = { copyKey("volume_down") },
-                    upOnProvenance = { showProvenance("volume_up") },
-                    downOnProvenance = { showProvenance("volume_down") })
-
-                Spacer(Modifier.width(14.dp))
-
-                Column(
-                    Modifier.weight(1f).fillMaxHeight(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        PadBtn(ActionIcon.Home, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["home"] != null,
-                            onLongClick = { copyKey("home") },
-                            onProvenance = { showProvenance("home") }) { fire("home") }
-                        PadBtn(ActionIcon.Back, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["back"] != null,
-                            onLongClick = { copyKey("back") },
-                            onProvenance = { showProvenance("back") }) { fire("back") }
+                    Column(Modifier.fillMaxSize()) {
+                        PadBodyStacked(::fire, ::copyKey, expanded, { expanded = !expanded }, Modifier.fillMaxWidth().weight(1f),
+                            manual, summary, manualOpen, { manualOpen = !manualOpen }, freeLayout,
+                            borrowedKeys, ::showProvenance)
+                        Spacer(Modifier.height(16.dp))
+                        PadControlsRow(::fire, ::copyKey, { expanded = !expanded }, Modifier.fillMaxWidth().height(CONTROL_BLOCK),
+                            borrowedKeys, ::showProvenance)
                     }
-                    Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["mute"] != null,
-                            onLongClick = { copyKey("mute") },
-                            onProvenance = { showProvenance("mute") }) { fire("mute") }
-                        PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["play_pause"] != null,
-                            onLongClick = { copyKey("play_pause") },
-                            onProvenance = { showProvenance("play_pause") }) { fire("play_pause") }
-                    }
-                    PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp)) { expanded = !expanded }
                 }
-
-                Spacer(Modifier.width(14.dp))
-
-                RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH",
-                    borrowedKeys["channel_up"] != null, borrowedKeys["channel_down"] != null,
-                    onUp = { fire("channel_up") }, onDown = { fire("channel_down") },
-                    onLongUp = { copyKey("channel_up") }, onLongDown = { copyKey("channel_down") },
-                    upOnProvenance = { showProvenance("channel_up") },
-                    downOnProvenance = { showProvenance("channel_down") })
             }
         }
 
@@ -424,6 +388,74 @@ fun PadScreen(
     }
 }
 
+/** Header: back · bordered name pill (device switcher) · overflow (action sheet). */
+@Composable
+private fun PadHeader(
+    name: String,
+    emitKey: Any?,
+    onSwitch: () -> Unit,
+    onSheet: () -> Unit,
+    onBack: () -> Unit,
+) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        ActionIconView(
+            ActionIcon.Back, 26.dp, MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.pressable(onBack).padding(9.dp),
+        )
+        Spacer(Modifier.weight(1f))
+        Row(
+            Modifier
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(24.dp))
+                .pressable(onSwitch)
+                .padding(horizontal = 14.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
+                EmitPulse(emitKey, Modifier.size(20.dp))
+                androidx.compose.foundation.Canvas(Modifier.size(8.dp)) { drawCircle(Accent) }
+            }
+            Text(name, style = MaterialTheme.typography.titleMedium)
+        }
+        Spacer(Modifier.weight(1f))
+        ActionIconView(
+            ActionIcon.Dots, 26.dp, MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.pressable(onSheet).padding(9.dp),
+        )
+    }
+}
+
+/** Region 1: chevron pad — swapped out for the full key set. */
+@Composable
+private fun PadBodyStacked(
+    fire: (String) -> Unit,
+    copy: (String) -> Unit,
+    expanded: Boolean,
+    onToggleExpand: () -> Unit,
+    modifier: Modifier = Modifier,
+    manual: Boolean = false,
+    summary: ManualKeys.Summary? = null,
+    manualOpen: Boolean = true,
+    onToggleManualOpen: () -> Unit = {},
+    freeLayout: FreeLayout = FreeLayout.default(),
+    borrowedKeys: Map<String, EffectiveButtons.Resolved> = emptyMap(),
+    onProvenance: ((String) -> Unit)? = null,
+) {
+    ContentSwap(expanded, modifier) { open ->
+        if (open) {
+            if (manual && summary != null) {
+                ManualKeyList(summary, fire, copy, Modifier.fillMaxSize(), manualOpen, onToggleManualOpen)
+            } else if (freeLayout == FreeLayout.default()) {
+                ExpandedKeys(fire, borrowedKeys, onProvenance, copy, Modifier.fillMaxSize())
+            } else {
+                FreeGrid(freeLayout, fire, copy, Modifier.fillMaxSize())
+            }
+        } else {
+            ChevronPad(fire, borrowedKeys, onProvenance, copy, Modifier.fillMaxSize())
+        }
+    }
+}
+
 /**
  * Favorites are added here, not by long-pressing a key: long-press copies the
  * code (issue #10), so both features can't own one gesture. The dots sheet is
@@ -479,6 +511,86 @@ private fun FavoriteKeysSheet(
             }
             Spacer(Modifier.height(32.dp))
         }
+    }
+}
+
+/** Region 2: VOL / keys / CH. No capsule — keys sit on the screen surface. */
+@Composable
+private fun PadControlsRow(
+    fire: (String) -> Unit,
+    copy: (String) -> Unit,
+    onToggleExpand: () -> Unit,
+    modifier: Modifier = Modifier,
+    borrowedKeys: Map<String, EffectiveButtons.Resolved> = emptyMap(),
+    onProvenance: ((String) -> Unit)? = null,
+) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL",
+            borrowedKeys["volume_up"] != null, borrowedKeys["volume_down"] != null,
+            onUp = { fire("volume_up") }, onDown = { fire("volume_down") },
+            onLongUp = { copy("volume_up") }, onLongDown = { copy("volume_down") },
+            upOnProvenance = onProvenance?.let { p -> { p("volume_up") } },
+            downOnProvenance = onProvenance?.let { p -> { p("volume_down") } })
+
+        Spacer(Modifier.width(14.dp))
+
+        Column(
+            Modifier.weight(1f).fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                PadBtn(ActionIcon.Home, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["home"] != null,
+                    onLongClick = { copy("home") },
+                    onProvenance = onProvenance?.let { p -> { p("home") } }) { fire("home") }
+                PadBtn(ActionIcon.Back, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["back"] != null,
+                    onLongClick = { copy("back") },
+                    onProvenance = onProvenance?.let { p -> { p("back") } }) { fire("back") }
+            }
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["mute"] != null,
+                    onLongClick = { copy("mute") },
+                    onProvenance = onProvenance?.let { p -> { p("mute") } }) { fire("mute") }
+                PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["play_pause"] != null,
+                    onLongClick = { copy("play_pause") },
+                    onProvenance = onProvenance?.let { p -> { p("play_pause") } }) { fire("play_pause") }
+            }
+            PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp),
+                onLongClick = { onToggleExpand() }) { onToggleExpand() }
+        }
+
+        Spacer(Modifier.width(14.dp))
+
+        RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH",
+            borrowedKeys["channel_up"] != null, borrowedKeys["channel_down"] != null,
+            onUp = { fire("channel_up") }, onDown = { fire("channel_down") },
+            onLongUp = { copy("channel_up") }, onLongDown = { copy("channel_down") },
+            upOnProvenance = onProvenance?.let { p -> { p("channel_up") } },
+            downOnProvenance = onProvenance?.let { p -> { p("channel_down") } })
+    }
+}
+
+/** Landscape: d-pad pane left, vol/ch + keys pane right — gamepad grip. */
+@Composable
+private fun LandscapePad(
+    fire: (String) -> Unit,
+    copy: (String) -> Unit,
+    expanded: Boolean,
+    onToggleExpand: () -> Unit,
+    modifier: Modifier = Modifier,
+    manual: Boolean = false,
+    summary: ManualKeys.Summary? = null,
+    manualOpen: Boolean = true,
+    onToggleManualOpen: () -> Unit = {},
+    freeLayout: FreeLayout = FreeLayout.default(),
+    borrowedKeys: Map<String, EffectiveButtons.Resolved> = emptyMap(),
+    onProvenance: ((String) -> Unit)? = null,
+) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        PadBodyStacked(fire, copy, expanded, onToggleExpand, Modifier.weight(1f).fillMaxHeight(),
+            manual, summary, manualOpen, onToggleManualOpen, freeLayout, borrowedKeys, onProvenance)
+        Spacer(Modifier.width(16.dp))
+        PadControlsRow(fire, copy, onToggleExpand, Modifier.weight(1f).height(CONTROL_BLOCK),
+            borrowedKeys, onProvenance)
     }
 }
 
@@ -552,6 +664,26 @@ private fun ExpandedKeys(
             PadBtn(ActionIcon.Info, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["info"] != null,
                 onLongClick = { copy("info") },
                 onProvenance = onProvenance?.let { p -> { p("info") } }) { fire("info") }
+        }
+    }
+}
+
+
+/** Stored free layout: column count honoured, blanks keep their grid cell. */
+// ponytail: next step is the editor UI — column picker + move controls.
+@Composable
+private fun FreeGrid(layout: FreeLayout, fire: (String) -> Unit, copy: (String) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        layout.slots.chunked(layout.columns).forEach { row ->
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { slot ->
+                    when (slot) {
+                        is Slot.Key -> KeyTile(slot.name, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy(slot.name) }) { fire(slot.name) }
+                        Slot.Blank -> Spacer(Modifier.weight(1f).fillMaxHeight())
+                    }
+                }
+                repeat(layout.columns - row.size) { Spacer(Modifier.weight(1f).fillMaxHeight()) }
+            }
         }
     }
 }
