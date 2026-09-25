@@ -12,11 +12,17 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -37,9 +43,11 @@ import com.erfanbagheri.controlix.data.CopiedButton
 import com.erfanbagheri.controlix.data.CopiedButtons
 import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.ManualKeys
 import com.erfanbagheri.controlix.data.MediaLayout
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
+import com.erfanbagheri.controlix.ui.theme.Gold
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
 
 /**
@@ -65,6 +73,7 @@ fun PadScreen(
     devices: List<SavedDevice>,
     model: DeviceModel,
     copied: CopiedButtonModel,
+    favoritesModel: FavoritesModel,
     toast: ToastState,
     onSwitchDevice: (SavedDevice) -> Unit,
     onEdit: (SavedDevice) -> Unit,
@@ -76,15 +85,16 @@ fun PadScreen(
     var switcherOpen by remember { mutableStateOf(false) }
     var sheetOpen by remember { mutableStateOf(false) }
     var expanded by remember(remoteId) { mutableStateOf(false) }
-
     var pendingBorrow by remember(remoteId) { mutableStateOf<PendingBorrow?>(null) }
     var provenanceKey by remember(remoteId) { mutableStateOf<String?>(null) }
     val (borrowMemory, updateBorrowMemory) = rememberBorrowedCodeMemory()
-
+    // Issue #17: manual list open by default — expand → label is then 2 taps.
+    var manualOpen by remember(remoteId) { mutableStateOf(true) }
     // Media pad (issue #15): composed only from this remote's own buttons.
     var mediaMode by remember(remoteId) { mutableStateOf(false) }
 
     var copiedOpen by remember { mutableStateOf(false) }
+    var favoritesOpen by remember { mutableStateOf(false) }
     // Local copies pasted onto this remote, from CopiedButtonStore.
     var localCopies by remember(remoteId) { mutableStateOf(copied.local(remoteId)) }
     val view = LocalView.current
@@ -104,8 +114,6 @@ fun PadScreen(
                 ?.copy(remoteId = e.remoteId)
         }
     }
-    // Borrowed codes: the brand's siblings often carry channel/volume codes
-    // this remote lacks. Used when the remote's own buttons fall short.
     // Borrowed codes: the brand's siblings often carry channel/volume codes
     // this remote lacks. Used when the remote's own buttons fall short.
     // Custom remotes resolve against their own set only — the recipe is
@@ -147,6 +155,13 @@ fun PadScreen(
     // Always resolvable so the header menu opens even if the list is stale.
     val saved = devices.firstOrNull { it.remoteId == remoteId }
         ?: SavedDevice(remoteId, deviceName ?: "Remote", "", "", 0)
+    // Own buttons only: distinct non-standard labels + "N on pad" counts.
+    val summary = remember(remoteId, buttons) { ManualKeys.summarize(buttons) }
+    // ponytail: saved.matched exists but no writer sets it false yet (raw
+    // remote-id / search picks still default true) — ceiling: until the add
+    // flow flags it, "covers zero standard keys" is the only honest
+    // not-matched signal (issue #17).
+    val manual = summary.extraCount > 0 && (!saved.matched || summary.onPad == 0)
 
     /**
      * The code a pad key would send. A pasted local copy wins, then the
@@ -163,7 +178,11 @@ fun PadScreen(
                 ?: buttons.firstOrNull { it.name.contains("source", true) }
             else -> null
         }
-        val btn = p ?: buttons.firstOrNull { it.name.equals(name, true) }
+        // Exact name first: ManualKeys keeps case-variants ('ASPECT' vs 'Aspect')
+        // as distinct codes — case-insensitive lookup could fire the other row's
+        // pattern (issue #17).
+        val btn = buttons.firstOrNull { it.name == name }
+            ?: p ?: buttons.firstOrNull { it.name.equals(name, true) }
             ?: buttons.firstOrNull { it.name.contains(name, true) }
         return btn?.let { CopiedButton(it.name, it.carrierHz, it.pattern) }
     }
@@ -197,6 +216,15 @@ fun PadScreen(
         }
         copied.copyToClipboard(code)
         toast.show("Copied ${code.name}. Long-press … on another remote to paste it.")
+    }
+
+    fun toggleFavorite(key: String) {
+        val wasFavorite = favoritesModel.favorites.any { it.remoteId == remoteId && it.key == key }
+        favoritesModel.toggleFavorite(remoteId, key)
+        toast.show(
+            if (wasFavorite) "${key.replace('_', ' ')} removed from favorites"
+            else "${key.replace('_', ' ')} added to favorites"
+        )
     }
 
     Column(
@@ -248,7 +276,15 @@ fun PadScreen(
             // ── Region 1: chevron pad — swapped out for the full key set ─────
             ContentSwap(expanded, Modifier.fillMaxWidth().weight(1f)) { open ->
                 if (open) {
-                    ExpandedKeys(::fire, borrowedKeys, ::showProvenance, ::copyKey, Modifier.fillMaxSize())
+                    // Unmatched remote: its own labels. Otherwise the key set,
+                    // borrow-aware so codes missing here come from siblings.
+                    if (manual) {
+                        ManualKeyList(summary, ::fire, ::copyKey, Modifier.fillMaxSize(), manualOpen) {
+                            manualOpen = !manualOpen
+                        }
+                    } else {
+                        ExpandedKeys(::fire, borrowedKeys, ::showProvenance, ::copyKey, Modifier.fillMaxSize())
+                    }
                 } else {
                     ChevronPad(::fire, borrowedKeys, ::showProvenance, ::copyKey, Modifier.fillMaxSize())
                 }
@@ -349,6 +385,16 @@ fun PadScreen(
             else {
                 { sheetOpen = false; copiedOpen = true }
             },
+            onFavorites = { sheetOpen = false; favoritesOpen = true },
+        )
+    }
+
+    if (favoritesOpen) {
+        FavoriteKeysSheet(
+            keys = effective.map { it.key }.distinct().sorted(),
+            favoriteKeys = favoritesModel.favorites.filter { it.remoteId == remoteId }.map { it.key }.toSet(),
+            onToggle = ::toggleFavorite,
+            onDismiss = { favoritesOpen = false },
         )
     }
 
@@ -375,6 +421,64 @@ fun PadScreen(
             },
             onDismiss = { copiedOpen = false },
         )
+    }
+}
+
+/**
+ * Favorites are added here, not by long-pressing a key: long-press copies the
+ * code (issue #10), so both features can't own one gesture. The dots sheet is
+ * the only place a key is chosen by name rather than by tap.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FavoriteKeysSheet(
+    keys: List<String>,
+    favoriteKeys: Set<String>,
+    onToggle: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
+        Column(Modifier.padding(horizontal = 24.dp)) {
+            Text("Favorites", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (favoriteKeys.isEmpty()) "Tap a key to add it to the home row."
+                else "${favoriteKeys.size} on the home row. Tap to remove.",
+                style = MaterialTheme.typography.labelSmall,
+                color = PaperFaint,
+            )
+            Spacer(Modifier.height(12.dp))
+            LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                items(keys) { key ->
+                    val on = key in favoriteKeys
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .combinedPressable(onClick = { onToggle(key) })
+                            .padding(vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        ActionIconView(
+                            if (on) ActionIcon.Star else ActionIcon.Add,
+                            18.dp,
+                            if (on) Gold else PaperFaint,
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            key.replace('_', ' ').replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (on) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                }
+            }
+            Spacer(Modifier.height(32.dp))
+        }
     }
 }
 
@@ -453,17 +557,78 @@ private fun ExpandedKeys(
 }
 
 /**
- * Dedicated MCE/RC6 media pad. Flat rows, hairline separators, haptics-only
- * feedback; no stock toggles, no rounded cards.
- *
- * Keyboard mode is a compact on-screen grid: each tap maps to one of the
- * remote's own digit/navigation keys in sequence and transmits its resolved
- * real pattern.
- *
- * ponytail: this navigates media UIs; it does not inject Android key events
- * or type text into other apps. Upgrade path: an explicit system-wide
- * accessibility/IME service if text entry is ever requested.
+ * Issue #17, manual mode: flat "N on pad · M more" header toggling the
+ * remote's own non-standard labels — each row fires its own pattern through
+ * [fire]. Replaces the fixed grid; the expand "…" key stays the only way in.
  */
+@Composable
+private fun ManualKeyList(
+    summary: ManualKeys.Summary,
+    fire: (String) -> Unit,
+    copy: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    open: Boolean,
+    onToggle: () -> Unit,
+) {
+    Column(modifier) {
+        Row(
+            Modifier.fillMaxWidth().pressable(onClick = onToggle).padding(vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "${summary.onPad} on pad · ${summary.extraCount} more",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            ActionIconView(
+                if (open) ActionIcon.ChevronUp else ActionIcon.ChevronDown,
+                18.dp,
+                MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        if (open) {
+            LazyColumn(Modifier.weight(1f)) {
+                items(summary.extras, key = { it.label }) { entry ->
+                    Row(
+                        Modifier.fillMaxWidth().combinedPressable(
+                            onClick = { fire(entry.label) },
+                            onLongClick = { copy(entry.label) },
+                        ).padding(vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(entry.label, style = MaterialTheme.typography.bodyLarge)
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                }
+            }
+        }
+    }
+}
+
+/** Keyboard mode: flat key grid, each tap fires that remote key's real pattern. */
+@Composable
+private fun KeyboardGrid(
+    rows: List<List<String>>,
+    fire: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        rows.forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { key ->
+                    KeyTile(
+                        label = key,
+                        modifier = Modifier.weight(1f).height(46.dp),
+                    ) { fire(key) }
+                }
+                // Nav strips can carry 4 keys — never negative-fill.
+                repeat((3 - row.size).coerceAtLeast(0)) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
 @Composable
 private fun MediaPad(
     layout: MediaLayout.Layout,
@@ -578,29 +743,6 @@ private fun MediaLayoutBody(
                     // Nav strips can carry 4 keys — never negative-fill.
                     repeat((3 - row.size).coerceAtLeast(0)) { Spacer(Modifier.weight(1f)) }
                 }
-            }
-        }
-    }
-}
-
-/** Keyboard mode: flat key grid, each tap fires that remote key's real pattern. */
-@Composable
-private fun KeyboardGrid(
-    rows: List<List<String>>,
-    fire: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        rows.forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { key ->
-                    KeyTile(
-                        label = key,
-                        modifier = Modifier.weight(1f).height(46.dp),
-                    ) { fire(key) }
-                }
-                // Nav strips can carry 4 keys — never negative-fill.
-                repeat((3 - row.size).coerceAtLeast(0)) { Spacer(Modifier.weight(1f)) }
             }
         }
     }

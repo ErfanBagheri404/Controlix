@@ -23,7 +23,11 @@ import com.erfanbagheri.controlix.data.RemoteIndex
  *
  * v0 fields: id|name|brand|catSlug|buttonCount
  * v1 fields: id|name|brand|catSlug|buttonCount|pinned(0/1)|enabled(0/1)|roomSlug
- * v2 fields: name|catSlug|brand|fileName|buttonCount|pinned(0/1)|enabled(0/1)|roomSlug
+ * v2 fields: name|catSlug|brand|fileName|buttonCount|pinned(0/1)|enabled(0/1)|roomSlug|matched(0/1)
+ *
+ * `matched` (issue #17) is false when the setup ritual never confirmed the
+ * remote (raw remote-id / search pick); the pad then offers the manual key
+ * list. It defaults true so pre-flag devices keep working.
  *
  * v1 and v2 are told apart by the leading field: a number means v1. v1
  * lines migrate through [RemoteIdentity.migrateLegacy], which re-resolves
@@ -41,6 +45,8 @@ data class SavedDevice(
     val pinned: Boolean = false,
     val enabled: Boolean = true,
     val roomSlug: String = "",
+    /** false when the setup ritual never confirmed the remote (issue #17). */
+    val matched: Boolean = true,
     /** v1 line that could not be migrated to a key: shown, never transmitted. */
     val needsRebind: Boolean = false,
 ) {
@@ -54,6 +60,7 @@ data class SavedDevice(
         pinned = pinned,
         enabled = enabled,
         roomSlug = roomSlug,
+        matched = matched,
     )
 
     internal companion object {
@@ -67,6 +74,7 @@ data class SavedDevice(
             pinned = p.pinned,
             enabled = p.enabled,
             roomSlug = p.roomSlug,
+            matched = p.matched,
         )
     }
 }
@@ -137,6 +145,7 @@ class DeviceStore(context: Context) {
             pinned = f.getOrNull(5) == "1",
             enabled = (f.getOrNull(6) ?: "1") != "0",
             roomSlug = f.getOrNull(7) ?: "",
+            matched = (f.getOrNull(8) ?: "1") != "0",
             needsRebind = true,
         )
     }
@@ -159,6 +168,8 @@ class DeviceStore(context: Context) {
         prefs.edit().putString("list", kept.joinToString(";")).apply()
     }
 
+    // ponytail: favorites/scenes key off (remoteId, key) and are deliberately NOT purged here —
+    // they resolve at fire time and render disabled once the device or key is gone.
     fun save(dev: SavedDevice, index: RemoteIndex? = null) {
         val list = load(index).filterNot { it.key == dev.key } + dev
         write(list)
@@ -191,13 +202,24 @@ class DeviceModel(private val store: DeviceStore, private val index: RemoteIndex
     /**
      * Save by volatile id: the current DB row supplies the stable key, so the
      * device survives the next rebuild. A row the index cannot see is refused
-     * rather than stored as an unopenable device.
+     * rather than stored as an unopenable device. [matched] is false for a
+     * raw remote-id / search pick, which no model ever confirmed (#17).
      */
-    fun saveById(remoteId: Int, name: String, brand: String, categorySlug: String, buttonCount: Int) {
+    fun saveById(
+        remoteId: Int,
+        name: String,
+        brand: String,
+        categorySlug: String,
+        buttonCount: Int,
+        matched: Boolean = true,
+    ) {
         val idx = index ?: return
         val row = RemoteIdentity.row(remoteId, idx) ?: return
         store.save(
-            SavedDevice.from(PersistedDevice(row.key, clean(name), buttonCount), RemoteIdentity.resolve(row.key, idx)),
+            SavedDevice.from(
+                PersistedDevice(row.key, clean(name), buttonCount, matched = matched),
+                RemoteIdentity.resolve(row.key, idx),
+            ),
             idx,
         )
         devices = store.load(index)

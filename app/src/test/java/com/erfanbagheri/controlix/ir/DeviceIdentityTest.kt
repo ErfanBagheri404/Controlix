@@ -97,6 +97,7 @@ class DeviceIdentityTest {
         assertEquals("tvs", f[2])
         assertEquals("Samsung", f[3])
         assertEquals("Samsung_AA59-00443A.ir", f[4])
+        assertEquals("1", f[9])
         assertTrue(RemoteIdentity.parse(line)?.pinned == true)
     }
 
@@ -115,6 +116,19 @@ class DeviceIdentityTest {
         val d = PersistedDevice(samsungKey, "Living Room", 34, pinned = true, enabled = false, roomSlug = "study")
         val parsed = RemoteIdentity.parse(RemoteIdentity.serialize(d))
         assertEquals(d, parsed)
+    }
+
+    @Test
+    fun `an unmatched ritual persists and round trips`() {
+        val d = PersistedDevice(samsungKey, "Raw", 34, matched = false)
+        val parsed = RemoteIdentity.parse(RemoteIdentity.serialize(d))
+        assertEquals(false, parsed?.matched)
+    }
+
+    @Test
+    fun `a v2 line without the matched flag defaults true`() {
+        val line = "v2|Living Room|tvs|Samsung|Samsung_AA59-00443A.ir|34|0|1|"
+        assertEquals(true, RemoteIdentity.parse(line)?.matched)
     }
 
     @Test

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Share-sheet attachments only: the JSON bundle is written to app cache and
+     handed to ACTION_SEND as a content:// URI. Nothing is served or uploaded. -->
+<paths>
+    <cache-path name="contributions" path="contributions/" />
+</paths>

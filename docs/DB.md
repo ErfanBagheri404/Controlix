@@ -173,6 +173,41 @@ identical patterns, and packing to blobs, expect roughly 8-15 MB. That is
 acceptable to bundle, and the refresh path exists for anyone who wants the
 newest codes without an app update.
 
+## Contributing codes back
+
+"Missing a code?" (drawer, or the ritual's missing-button link) opens a flat
+form — brand, category, remote name, button, carrier Hz, microsecond pattern,
+source note — with live typed validation. A valid form is bundled as JSON and
+handed to the system share sheet (`ACTION_SEND`, `.json` attachment, prefilled
+body). That is the whole pipeline: no background network, no repo API, no token
+— the app's main flavor requests no `INTERNET` permission at all. A maintainer
+merges accepted bundles into the next DB build.
+
+Consumer-IR phones only transmit, so Controlix cannot learn a code. The source
+note must name a real, redistributable origin (your own remote, a public irdb
+dump). The app refuses to package a submission whose provenance is blank,
+unknown, or proprietary — Mi Remote data is proprietary and never redistributed
+(see "Legal note"). A refusal names the reason in the rejection message itself.
+
+Maintainer JSON shape (`format: controlix-contribution-v1`):
+
+```json
+{
+  "format": "controlix-contribution-v1",
+  "brand": "Sony",
+  "category": "tvs",
+  "remoteName": "RM-ED009",
+  "provenance": "Public irdb dump; retested on the owner's own remote",
+  "appVersion": "0.1.0",
+  "buttons": [
+    { "buttonName": "Power", "carrierHz": 38000, "pattern": "900 451 560 451 ..." }
+  ]
+}
+```
+
+Validation bounds follow the bundled DB: carrier 20k–60k Hz (observed
+31,886–58,382), even element count ≥ 4, durations 10µs–60s.
+
 ## Legal note
 
 Only permissively licensed sources go in this database. Flipper-IRDB and irdb

@@ -42,6 +42,8 @@ data class PersistedDevice(
     val pinned: Boolean = false,
     val enabled: Boolean = true,
     val roomSlug: String = "",
+    /** false when the setup ritual never confirmed the remote (issue #17). */
+    val matched: Boolean = true,
 )
 
 /** Resolution result: the current id for a key, valid for this launch only. */
@@ -88,7 +90,7 @@ object RemoteIdentity {
     // ---- stored line formats ----
     //
     // v1: remoteId|name|brand|catSlug|buttonCount|pinned|enabled|roomSlug
-    // v2: v2|name|catSlug|brand|fileName|buttonCount|pinned|enabled|roomSlug
+    // v2: v2|name|catSlug|brand|fileName|buttonCount|pinned|enabled|roomSlug|matched
     //
     // The `v2|` prefix is load-bearing: v1 detection by "leading field is a
     // number" would misread a user who named their device "7". Anything
@@ -107,6 +109,7 @@ object RemoteIdentity {
         if (d.pinned) "1" else "0",
         if (d.enabled) "1" else "0",
         clean(d.roomSlug),
+        if (d.matched) "1" else "0",
     ).joinToString("|")
 
     /**
@@ -127,6 +130,7 @@ object RemoteIdentity {
             pinned = f[6] == "1",
             enabled = f[7] != "0",
             roomSlug = f[8],
+            matched = (f.getOrNull(9) ?: "1") != "0",
         )
     }
 
