@@ -80,12 +80,17 @@ fun RitualScreen(
     brandId: Int,
     brandName: String,
     categoryName: String,
+    categorySlug: String,
     onDone: (remoteId: Int, candidateCount: Int) -> Unit,
     onBack: () -> Unit,
+    onMissingCode: (buttonName: String) -> Unit,
 ) {
     val candidates = remember(brandId) { repo.powerCodes(brandId) }
     if (candidates.isEmpty()) {
-        EmptyRitual(brandName, categoryName, onBack)
+        EmptyRitual(
+            brandName, categoryName, onBack,
+            onMissingCode = { onMissingCode("Power") },
+        )
         return
     }
 
@@ -259,6 +264,16 @@ fun RitualScreen(
                         RowHairline()
                     }
                 }
+                item(key = "report") {
+                    Spacer(Modifier.height(12.dp))
+                    // Flat link, not a chip: the ritual stays the funnel, this is the escape hatch.
+                    Text(
+                        "Missing this button? Report it",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.pressable { onMissingCode(currentTest.title) }.padding(vertical = 8.dp),
+                    )
+                }
                 item(key = "tail") { Spacer(Modifier.height(16.dp)) }
             }
         }
@@ -310,7 +325,12 @@ private fun RowHairline() {
 }
 
 @Composable
-private fun EmptyRitual(brandName: String, categoryName: String, onBack: () -> Unit) {
+private fun EmptyRitual(
+    brandName: String,
+    categoryName: String,
+    onBack: () -> Unit,
+    onMissingCode: () -> Unit,
+) {
     Column(
         Modifier.fillMaxSize().navigationBarsPadding().padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -323,6 +343,13 @@ private fun EmptyRitual(brandName: String, categoryName: String, onBack: () -> U
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(24.dp))
+        Text(
+            "Missing a code? Report it",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.pressable(onMissingCode).padding(vertical = 12.dp),
+        )
+        Spacer(Modifier.height(8.dp))
         BackRow(onBack)
     }
 }

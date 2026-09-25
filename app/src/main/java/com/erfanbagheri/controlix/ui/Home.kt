@@ -1,6 +1,7 @@
 package com.erfanbagheri.controlix.ui
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -24,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,11 +33,20 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.feature.Favorite
+import com.erfanbagheri.controlix.feature.FavoriteModel
+import com.erfanbagheri.controlix.feature.RepoKeyResolver
+import com.erfanbagheri.controlix.feature.Resolution
+import com.erfanbagheri.controlix.feature.Scene
+import com.erfanbagheri.controlix.feature.SceneModel
+import com.erfanbagheri.controlix.feature.SceneRunResult
+import com.erfanbagheri.controlix.feature.SceneStep
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.Danger
 import com.erfanbagheri.controlix.ui.theme.Gold
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
+import kotlinx.coroutines.launch
 
 /** Sheet callbacks live in Nav and are passed through here. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,6 +55,7 @@ fun HomeScreen(
     model: DeviceModel,
     repo: IrCodeRepository?,
     transmitter: IrTransmitter,
+    favoritesModel: FavoritesModel,
     onOpenDevice: (SavedDevice) -> Unit,
     onAddDevice: () -> Unit,
     onToggleDrawer: () -> Unit,
@@ -53,6 +65,76 @@ fun HomeScreen(
 ) {
     var sheetDevice by remember { mutableStateOf<SavedDevice?>(null) }
     var selectedRoom by remember { mutableStateOf<String?>(null) }
+    val devices = model.devices
+    val scope = rememberCoroutineScope()
+    val resolver = remember(repo) { repo?.let(::RepoKeyResolver) }
+    val favorites = favoritesModel.favorites
+    val scenes = favoritesModel.scenes
+    // Resolve once per list change — repo queries are SQLite reads.
+    val favOk = remember(favorites, repo, devices) {
+        favorites.map { f ->
+            devices.any { it.remoteId == f.remoteId } && resolver?.let {
+                FavoriteModel.resolve(it, f) is Resolution.Found
+            } == true
+        }
+    }
+    var runningScene by remember { mutableStateOf<Scene?>(null) }
+    var cancelling by remember { mutableStateOf(false) }
+    var sceneStatus by remember { mutableStateOf<String?>(null) }
+
+    fun fireFavorite(favorite: Favorite) {
+        val r = resolver ?: return
+        when (val res = FavoriteModel.resolve(r, favorite)) {
+            is Resolution.Found ->
+                if (!transmitter.transmitButton(res.code.carrierHz, res.code.pattern)) {
+                    toast.show(
+                        if (!transmitter.hasIrEmitter()) "This device has no IR blaster."
+                        else "Couldn't send. Try again."
+                    )
+                }
+            Resolution.Unsupported ->
+                toast.show("${favorite.key.replace('_', ' ')} is no longer on this remote.")
+        }
+    }
+
+    fun runScene(scene: Scene) {
+        val r = resolver ?: return
+        if (runningScene != null) return
+        // Dry run BEFORE the first transmit: blockers are shown, nothing fires.
+        val report = SceneModel.dryRun(scene, r)
+        if (report.hasBlockers) {
+            val blocked = report.blockingSteps.mapNotNull { (it.step as? SceneStep.DeviceKey)?.key }
+            val message = when {
+                report.cycle -> "${scene.name}: scene references itself."
+                blocked.isEmpty() -> "${scene.name}: no runnable steps."
+                else -> "${scene.name} blocked: ${blocked.joinToString(", ") { it.replace('_', ' ') }} unavailable."
+            }
+            sceneStatus = message
+            toast.show(message)
+            return
+        }
+        runningScene = scene
+        cancelling = false
+        // Pre-flight result is on screen before the first transmit.
+        sceneStatus = "Running ${scene.name} · ${scene.steps.size} steps ready"
+        scope.launch {
+            val result = SceneModel.run(
+                scene,
+                r,
+                transmit = { code -> !cancelling && transmitter.transmitButton(code.carrierHz, code.pattern) },
+                onProgress = { sent, total -> if (sent > 0) sceneStatus = "$sent/$total · ${scene.name}" },
+                delay = { kotlinx.coroutines.delay(it) },
+            )
+            sceneStatus = when (result) {
+                is SceneRunResult.Complete -> "${scene.name}: ${result.sent} sent"
+                is SceneRunResult.Failed ->
+                    if (cancelling) "Stopped at step ${result.stoppedAt + 1}."
+                    else "${scene.name}: ${result.reason}"
+            }
+            runningScene = null
+            cancelling = false
+        }
+    }
 
     Column(Modifier.fillMaxSize().applyTopInset()) {
         Spacer(Modifier.height(14.dp))
@@ -70,10 +152,29 @@ fun HomeScreen(
             }
         }
 
-        val devices = model.devices
         if (devices.isEmpty()) {
             EmptyDeck(onAddDevice)
         } else {
+            FavoritesStrip(favorites, favOk, ::fireFavorite) { favorite ->
+                favoritesModel.toggleFavorite(favorite.remoteId, favorite.key)
+                toast.show("${favorite.key.replace('_', ' ')} removed from favorites")
+            }
+            // ponytail: favorites are added by long-pressing a pad key and removed
+            // here by long-press. Add a drag-to-reorder editor only when users ask
+            // for ordering beyond "the order you favorited them in".
+            if (scenes.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                ScenesStrip(scenes, runningScene, ::runScene) { cancelling = true }
+            }
+            sceneStatus?.let {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (runningScene != null) Accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                )
+            }
             Spacer(Modifier.height(20.dp))
             val rooms = devices.map { Room.fromSlug(it.roomSlug) }.distinct()
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
@@ -136,6 +237,7 @@ fun DeviceActionSheet(
     onShare: (SavedDevice) -> Unit,
     onDismiss: () -> Unit,
     onCopiedKeys: (() -> Unit)? = null,
+    onFavorites: (() -> Unit)? = null,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -150,6 +252,9 @@ fun DeviceActionSheet(
             Spacer(Modifier.height(20.dp))
             if (onCopiedKeys != null) {
                 SheetAction("Copied keys", "paste a copied code") { onDismiss(); onCopiedKeys() }
+            if (onFavorites != null) {
+                SheetAction("Favorites", "pin keys to the home row") { onDismiss(); onFavorites() }
+            }
             }
             SheetAction("Edit", "name, room, shortcut") { onDismiss(); onEdit(dev) }
             SheetAction(
@@ -245,6 +350,116 @@ private fun DeviceTile(
                 contentAlignment = Alignment.Center,
             ) {
                 ActionIconView(ActionIcon.Star, 15.dp, Gold, strokeWidth = 3.dp)
+            }
+        }
+    }
+}
+
+/**
+ * Favorites: flat row of square key tiles separated by hairlines, same visual
+ * language as the pad's KeyTile. A favorite whose key vanished from the
+ * database stays visible but dimmed; tapping it explains why, nothing fires
+ * silently. Long-press removes it from favorites.
+ */
+@Composable
+private fun FavoritesStrip(
+    favorites: List<Favorite>,
+    resolved: List<Boolean>,
+    onFire: (Favorite) -> Unit,
+    onRemove: (Favorite) -> Unit,
+) {
+    if (favorites.isEmpty()) return
+    Column {
+        SectionHead("Favorites", Modifier.padding(start = 24.dp, top = 8.dp))
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            favorites.forEachIndexed { index, favorite ->
+                val ok = resolved.getOrElse(index) { false }
+                val label = favorite.key.replace('_', ' ')
+                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                Box(
+                    Modifier
+                        .width(76.dp)
+                        .height(76.dp)
+                        .combinedPressable(
+                            onClick = { onFire(favorite) },
+                            onLongClick = { onRemove(favorite) },
+                        )
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (ok) 1f else 0.45f))
+                        .padding(6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (ok) MaterialTheme.colorScheme.onSurface else PaperFaint,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (!ok) {
+                            Text(
+                                "removed from remote",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = PaperFaint,
+                            )
+                        }
+                    }
+                }
+                if (index < favorites.lastIndex) {
+                    Box(
+                        Modifier.width(1.dp).height(76.dp)
+                            .background(MaterialTheme.colorScheme.outline)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Scenes: flat row of one-tap scene buttons. Tapping runs a scene; while one is
+ * running its tile becomes a cancel button so a stuck sequence can be stopped.
+ */
+@Composable
+private fun ScenesStrip(
+    scenes: List<Scene>,
+    running: Scene?,
+    onRun: (Scene) -> Unit,
+    onCancel: () -> Unit,
+) {
+    Column {
+        SectionHead("Scenes", Modifier.padding(start = 24.dp, top = 4.dp))
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            scenes.forEachIndexed { index, scene ->
+                val isRunning = running != null && running.id == scene.id
+                Text(
+                    if (isRunning) "Cancel ${scene.name}" else scene.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = if (isRunning) Danger else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .pressable(enabled = running == null || isRunning) {
+                            if (isRunning) onCancel() else onRun(scene)
+                        }
+                        .background(
+                            if (isRunning) Danger.copy(alpha = 0.12f)
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                        .padding(horizontal = 18.dp, vertical = 14.dp),
+                )
+                if (index < scenes.lastIndex) {
+                    Box(
+                        Modifier.width(1.dp).height(40.dp)
+                            .background(MaterialTheme.colorScheme.outline)
+                    )
+                }
             }
         }
     }

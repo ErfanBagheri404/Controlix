@@ -37,6 +37,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Share-sheet attachments only: the JSON bundle is written to app
+             cache and handed to ACTION_SEND as a content:// URI. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/controlix_file_paths" />
+        </provider>
         <service
             android:name=".quicksettings.ControlixTileService"
             android:exported="true"

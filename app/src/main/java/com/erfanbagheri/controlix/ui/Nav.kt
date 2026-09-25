@@ -49,8 +49,12 @@ import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.DbChangelog
 import com.erfanbagheri.controlix.data.DbRefresh
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.feature.sceneFromMacro
 import com.erfanbagheri.controlix.data.RefreshState
 import com.erfanbagheri.controlix.ir.IrTransmitter
+import com.erfanbagheri.controlix.ir.TransmitterChoice
+import com.erfanbagheri.controlix.ir.TransmitterSelection
+import com.erfanbagheri.controlix.ir.display
 import com.erfanbagheri.controlix.quicksettings.TileStore
 import com.erfanbagheri.controlix.ui.theme.ThemeState
 import kotlinx.coroutines.Dispatchers
@@ -59,6 +63,13 @@ import java.time.LocalDate
 
 /** Every screen. Sealed route list, no nav library — app is 4 levels deep max. */
 private sealed interface Route {
+    data class MissingCode(
+        val brand: String = "",
+        val category: String = "",
+        val remote: String = "",
+        val button: String = "",
+    ) : Route
+
     data object Home : Route
     data object AddDevice : Route
     data object Scan : Route
@@ -78,6 +89,7 @@ private sealed interface Route {
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean = true) {
     val model = rememberDeviceModel(repo)
     val macroModel = rememberMacroModel()
+    val favoritesModel = rememberFavoritesModel()
     val ctx = LocalContext.current
     val copiedModel = rememberCopiedButtonModel()
     // Cold start only: a cold launch restores the last-used pad; Activity
@@ -199,6 +211,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             arrayOf("application/json", "application/octet-stream", "text/plain"),
                         )
                     },
+                    onMissingCode = { scope.launch { drawerState.close() }; route = Route.MissingCode() },
                     onDbHealth = { scope.launch { drawerState.close() }; route = Route.DbHealth },
                 )
             },
@@ -225,6 +238,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         model = model,
                         repo = repo,
                         transmitter = ir,
+                        favoritesModel = favoritesModel,
                         onOpenDevice = { openPad(it.remoteId) },
                         onAddDevice = { route = Route.AddDevice },
                         onToggleDrawer = { Feedback.tap(view); scope.launch { drawerState.open() } },
@@ -257,6 +271,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                                         brand = java.net.URLDecoder.decode(brand, "UTF-8"),
                                         categorySlug = slug,
                                         buttonCount = repo.buttons(rid).size,
+                                        matched = false, // raw remote-id pick — no model matched
                                     )
                                     openPad(rid)
                                 } else route = Route.AddDevice
@@ -272,6 +287,15 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         brandId = r.brandId,
                         brandName = r.brandName,
                         categoryName = r.catName,
+                        categorySlug = r.catSlug,
+                        onMissingCode = { button ->
+                            route = Route.MissingCode(
+                                brand = r.brandName,
+                                category = r.catSlug,
+                                remote = "",
+                                button = button,
+                            )
+                        },
                         onDone = { remoteId, _ ->
                             model.saveById(
                                 remoteId = remoteId,
@@ -283,6 +307,14 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             openPad(remoteId)
                             toast.show("${r.brandName} added")
                         },
+                        onBack = { route = Route.Home },
+                    )
+
+                    is Route.MissingCode -> MissingCodeScreen(
+                        initialBrand = r.brand,
+                        initialCategory = r.category,
+                        initialRemote = r.remote,
+                        initialButton = r.button,
                         onBack = { route = Route.Home },
                     )
 
@@ -311,6 +343,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             transmitter = ir,
                             devices = model.devices,
                             model = model,
+                            favoritesModel = favoritesModel,
                             copied = copiedModel,
                             toast = toast,
                             onSwitchDevice = { openPad(it.remoteId) },
@@ -368,6 +401,10 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
 
         ToastHost(toast, Modifier.align(Alignment.BottomCenter).applyBottomInset())
         LaunchedEffect(route) { if (route is Route.Home) model.reload() }
+        // Scenes mirror the macro store — one projection, no second editor.
+        LaunchedEffect(macroModel.macros) {
+            favoritesModel.replaceScenes(macroModel.macros.map { sceneFromMacro(it, it.id) })
+        }
     }
 }
 
@@ -402,6 +439,7 @@ private fun MenuDrawer(
     dbState: String?,
     onExport: () -> Unit,
     onImport: () -> Unit,
+    onMissingCode: () -> Unit,
     onDbHealth: () -> Unit,
 ) {
     ModalDrawerSheet(
@@ -467,9 +505,16 @@ private fun MenuDrawer(
             )
 
             Spacer(Modifier.height(32.dp))
+            SectionHead("Transmitter")
+            TransmitterPickerRow()
+
+            Spacer(Modifier.height(32.dp))
             SectionHead("Backup")
             DrawerRow(ActionIcon.Share, "Export backup", onExport)
             DrawerRow(ActionIcon.Down, "Import backup", onImport)
+
+            SectionHead("Contribute")
+            DrawerRow(ActionIcon.Info, "Missing a code?", onMissingCode)
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Appearance")
@@ -584,5 +629,38 @@ private fun DrawerToggle(label: String, checked: Boolean, onChange: (Boolean) ->
                 uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
             ),
         )
+    }
+}
+
+/**
+ * Transmitter picker: flat row, tap cycles Internal > USB dongle > BLE
+ * blaster, persisted in SharedPreferences (TransmitterSelection).
+ */
+@Composable
+private fun TransmitterPickerRow() {
+    val choice = TransmitterSelection.choice
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .pressable {
+                val entries = TransmitterChoice.entries
+                TransmitterSelection.select(entries[(choice.ordinal + 1) % entries.size])
+            }
+            .padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "Transmitter",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            choice.display,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.width(10.dp))
+        ActionIconView(ActionIcon.ChevRight, 16.dp, MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

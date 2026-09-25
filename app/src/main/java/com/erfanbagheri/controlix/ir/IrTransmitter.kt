@@ -13,30 +13,46 @@ class IrTransmitter(context: Context) {
     private val manager: ConsumerIrManager? =
         context.getSystemService(Context.CONSUMER_IR_SERVICE) as? ConsumerIrManager
 
+    private val internalSink = ConsumerIrSink(manager)
+
+    init {
+        TransmitterSelection.load(context)
+    }
+
     fun hasIrEmitter(): Boolean = manager?.hasIrEmitter() ?: false
 
     /** Supported carrier frequency ranges, for diagnostics and DB filtering. */
     fun carrierFrequencies(): Array<out ConsumerIrManager.CarrierFrequencyRange> =
         manager?.carrierFrequencies ?: arrayOf()
 
+    /**
+     * Preference first, then whatever is actually attached. External sinks
+     * report Unsupported until their hardware is enumerated — never a fake send.
+     */
+    private fun sink(): IrSink = when (
+        chooseSink(
+            hasInternal = hasIrEmitter(),
+            usbAttached = false, // no USB sink enumerated yet — step 4
+            bleConnected = false,
+            pref = TransmitterSelection.choice,
+        )
+    ) {
+        TransmitterChoice.Internal -> internalSink
+        TransmitterChoice.UsbDongle -> UnsupportedIrSink()
+        TransmitterChoice.BleBlaster -> UnsupportedIrSink()
+    }
+
     fun transmit(carrierHz: Int, pattern: IntArray): Boolean =
         transmitResult(carrierHz, pattern) is SendResult.Sent
 
     /**
-     * Typed outcome: keeps the real reason a code was rejected instead of
-     * collapsing every failure into false. `NoHardware` is the only case
-     * the ritual treats as blocking; `Failed` is per-code and recoverable.
+     * Typed outcome for callers that must distinguish "this device cannot
+     * send" from "this one code was rejected". A chosen-but-unreachable sink
+     * (no hardware for the selected transmitter) maps to [SendResult.NoHardware];
+     * everything else is a per-code failure the user may retry.
      */
-    fun transmitResult(carrierHz: Int, pattern: IntArray): SendResult {
-        val m = manager ?: return SendResult.NoHardware
-        if (!hasIrEmitter()) return SendResult.NoHardware
-        return try {
-            m.transmit(carrierHz, pattern)
-            SendResult.Sent
-        } catch (e: Exception) {
-            SendResult.Failed(e.message ?: e.javaClass.simpleName)
-        }
-    }
+    fun transmitResult(carrierHz: Int, pattern: IntArray): SendResult =
+        sink().send(carrierHz, pattern)
 
     /**
      * Transmit a button pattern from the database. Normalizes Flipper raw
@@ -49,10 +65,8 @@ class IrTransmitter(context: Context) {
 
     /** Typed variant of [transmitButton]; [transmitButton] delegates here. */
     fun transmitButtonResult(carrierHz: Int, raw: IntArray): SendResult {
-        var p = raw
-        if (p.size > 2 && p[0] > 100_000) p = p.copyOfRange(1, p.size)
-        if (p.size % 2 == 1) p = p + intArrayOf(0)
-        if (p.size < 4) return SendResult.Failed("pattern too short (${p.size} durations)")
+        val p = normalizeButtonPattern(raw)
+            ?: return SendResult.Failed("pattern too short (${raw.size} durations)")
         return transmitResult(carrierHz, p)
     }
 
@@ -82,4 +96,39 @@ class IrTransmitter(context: Context) {
             "IR emitter present. Carriers: ${freqs.ifEmpty { "unreported" }}"
         }
     }
+}
+
+/**
+ * Flipper raw quirks: drops a leading silence gap (> 100 ms, which is how
+ * Flipper recordings mark "time since last event") and pads an odd pattern
+ * to on/off pairs. Null when the result cannot be transmitted at all.
+ */
+private fun normalizeButtonPattern(raw: IntArray): IntArray? {
+    var p = raw
+    if (p.size > 2 && p[0] > 100_000) p = p.copyOfRange(1, p.size)
+    if (p.size % 2 == 1) p = p + intArrayOf(0)
+    return if (p.size < 4) null else p
+}
+
+/** One transmission attempt: carrier frequency + on/off pattern in microseconds. */
+interface IrSink {
+    fun send(carrierHz: Int, pattern: IntArray): SendResult
+}
+
+internal class ConsumerIrSink(private val manager: ConsumerIrManager?) : IrSink {
+    override fun send(carrierHz: Int, pattern: IntArray): SendResult {
+        val m = manager ?: return SendResult.NoHardware
+        if (!m.hasIrEmitter()) return SendResult.NoHardware
+        return try {
+            m.transmit(carrierHz, pattern)
+            SendResult.Sent
+        } catch (e: Exception) {
+            SendResult.Failed(e.message ?: e.javaClass.simpleName)
+        }
+    }
+}
+
+internal class UnsupportedIrSink : IrSink {
+    override fun send(carrierHz: Int, pattern: IntArray): SendResult =
+        SendResult.NoHardware
 }
