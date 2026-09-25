@@ -45,9 +45,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.erfanbagheri.controlix.data.DbChangelog
+import com.erfanbagheri.controlix.data.DbRefresh
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.RefreshState
 import com.erfanbagheri.controlix.ir.IrTransmitter
+import com.erfanbagheri.controlix.quicksettings.TileStore
 import com.erfanbagheri.controlix.ui.theme.ThemeState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -63,6 +68,7 @@ private sealed interface Route {
     data object Sweep : Route
     data object SelfTest : Route
     data object Macros : Route
+    data object Builder : Route
     data object DbHealth : Route
 }
 
@@ -71,6 +77,7 @@ private sealed interface Route {
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean = true) {
     val model = rememberDeviceModel(repo)
     val macroModel = rememberMacroModel()
+    val ctx = LocalContext.current
     val copiedModel = rememberCopiedButtonModel()
     // Cold start only: a cold launch restores the last-used pad; Activity
     // recreation (rotation, savedInstanceState != null) lands on Home —
@@ -132,6 +139,18 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
     }
 
 
+    // Database refresh (issue #12): pure plan in data/, thin IO shell here.
+    var refreshState by remember { mutableStateOf<RefreshState>(RefreshState.Idle) }
+    val dbCounts = remember(repo) { repo?.counts() ?: (0 to 0) }
+    val onUpdateDb = {
+        if (refreshState == RefreshState.Idle || refreshState is RefreshState.Failed ||
+            refreshState is RefreshState.RolledBack || refreshState is RefreshState.Done
+        ) {
+            scope.launch(Dispatchers.IO) {
+                DbRefresh.run(context.getDatabasePath("bundled_codes.db")) { refreshState = it }
+            }
+        }
+    }
     fun openPad(remoteId: Int) {
         ResumeState.recordLastRemote(remoteId)
         route = Route.Pad(remoteId)
@@ -147,12 +166,27 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
             drawerState = drawerState,
             drawerContent = {
                 MenuDrawer(
+                    onBuild = { scope.launch { drawerState.close() }; route = Route.Builder },
                     acDevices = model.devices.filter { it.isAc() },
                     onOpenAc = { dev -> scope.launch { drawerState.close() }; route = Route.Pad(dev.remoteId) },
                     hasDevices = model.devices.isNotEmpty(),
                     onMacros = { scope.launch { drawerState.close() }; route = Route.Macros },
                     onSweep = { scope.launch { drawerState.close() }; route = Route.Sweep },
                     onSelfTest = { scope.launch { drawerState.close() }; route = Route.SelfTest },
+                    onUpdateDb = onUpdateDb,
+                    dbChangelog = (refreshState as? RefreshState.Checked)?.let {
+                        DbChangelog.format(dbCounts.first, dbCounts.second, it.manifest.remoteCount, it.manifest.buttonCount)
+                    },
+                    dbState = when (val s = refreshState) {
+                        RefreshState.Idle -> null
+                        is RefreshState.Checked -> "Update available"
+                        is RefreshState.Downloading -> "Downloading…"
+                        is RefreshState.Verified -> "Verifying…"
+                        is RefreshState.Applying -> "Applying…"
+                        is RefreshState.Done -> "Database updated — restart to load it"
+                        is RefreshState.RolledBack -> "Rolled back: ${s.reason} — old database kept"
+                        is RefreshState.Failed -> s.reason
+                    },
                     onExport = {
                         scope.launch { drawerState.close() }
                         val stamp = LocalDate.now().toString().replace("-", "")
@@ -256,6 +290,8 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         // System back from a cold-start-restored pad returns Home, never traps.
                         BackHandler { route = Route.Home }
                         val saved = model.devices.firstOrNull { it.remoteId == r.remoteId }
+                        // The tile fires this remote's power code.
+                        LaunchedEffect(r.remoteId) { TileStore(ctx).rememberRemoteId(r.remoteId) }
                         // AC remotes are stateful: their pad is a separate climate
                         // layout. Every other category keeps the normal TV pad.
                         if (saved?.isAc() == true) {
@@ -308,6 +344,13 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
 
                     is Route.Sweep -> SweepScreen(repo, ir) { route = Route.Home }
                     is Route.SelfTest -> SelfTestScreen(ir) { route = Route.Home }
+                    is Route.Builder -> BuilderScreen(
+                        repo = repo,
+                        model = model,
+                        toast = toast,
+                        onSaved = { route = Route.Pad(it) },
+                        onBack = { route = Route.Home },
+                    )
                     is Route.Macros -> MacrosScreen(
                         repo = repo,
                         transmitter = ir,
@@ -347,12 +390,16 @@ private fun MissingDb() {
 }
 @Composable
 private fun MenuDrawer(
+    onBuild: () -> Unit,
     acDevices: List<SavedDevice>,
     onOpenAc: (SavedDevice) -> Unit,
     hasDevices: Boolean,
     onMacros: () -> Unit,
     onSweep: () -> Unit,
     onSelfTest: () -> Unit,
+    onUpdateDb: () -> Unit,
+    dbChangelog: String?,
+    dbState: String?,
     onExport: () -> Unit,
     onImport: () -> Unit,
     onDbHealth: () -> Unit,
@@ -390,9 +437,25 @@ private fun MenuDrawer(
             }
 
             SectionHead("Tools")
+            DrawerRow(ActionIcon.Add, "Build remote", onBuild)
             DrawerRow(ActionIcon.Macros, "Macros", onMacros)
             DrawerRow(ActionIcon.Sweep, "TV-B-Gone", onSweep)
             DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)
+            DrawerRow(ActionIcon.Database, "Update code database", onUpdateDb)
+            if (dbChangelog != null) {
+                Text(
+                    dbChangelog,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (dbState != null) {
+                Text(
+                    dbState,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             DrawerRow(ActionIcon.Gauge, "Database health", onDbHealth)
 
             Spacer(Modifier.height(32.dp))
