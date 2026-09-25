@@ -23,6 +23,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.feature.Macro
@@ -178,7 +179,24 @@ private fun MacroBuilder(
     var name by remember { mutableStateOf("") }
     var pickedRemote by remember { mutableStateOf(devices.first().remoteId) }
     var steps by remember { mutableStateOf<List<MacroStep>>(emptyList()) }
-    val buttons = remember(pickedRemote) { runCatching { repo.buttons(pickedRemote) }.getOrElse { emptyList() } }
+    val context = LocalContext.current
+    // Custom remotes (negative ids) expose recipe references, not DB rows.
+    val recipe = remember(pickedRemote) {
+        if (pickedRemote >= 0) null else BuilderStore(context).load(pickedRemote)
+    }
+    // Each choice pairs the button shown with the step that fires it: for a
+    // custom remote that is the original (remoteId, sourceName) reference.
+    val choices = remember(pickedRemote, recipe) {
+        if (recipe != null) {
+            recipe.buttons.mapNotNull { e ->
+                runCatching { repo.buttonByName(e.remoteId, e.sourceName) }.getOrNull()
+                    ?.let { b -> b.copy(remoteId = e.remoteId) to MacroStep(e.remoteId, e.sourceName) }
+            }
+        } else {
+            runCatching { repo.buttons(pickedRemote) }.getOrElse { emptyList() }
+                .map { it to MacroStep(pickedRemote, it.name) }
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
         Text(
@@ -223,15 +241,17 @@ private fun MacroBuilder(
         }
 
         LazyColumn(Modifier.weight(1f)) {
-            items(buttons.take(60), key = { "b${it.name}" }) { btn ->
+            items(choices.take(60), key = { "b${it.first.remoteId}/${it.first.name}" }) { choice ->
+                val btn = choice.first
+                val step = choice.second
                 Row(
-                    Modifier.fillMaxWidth().pressable { steps = steps + MacroStep(pickedRemote, btn.name) }.padding(vertical = 10.dp),
+                    Modifier.fillMaxWidth().pressable { steps = steps + step }.padding(vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     ActionIconView(ActionIcon.Add, 16.dp, MaterialTheme.colorScheme.outline)
                     Spacer(Modifier.width(12.dp))
                     Text(btn.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                    if (steps.any { it.remoteId == pickedRemote && it.buttonName == btn.name }) {
+                    if (steps.any { it.remoteId == step.remoteId && it.buttonName == step.buttonName }) {
                         Text(
                             "✓",
                             style = MaterialTheme.typography.labelLarge,
