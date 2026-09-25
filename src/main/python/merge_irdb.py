@@ -159,6 +159,15 @@ PROTO_MAP = {
     'F12':       (1, 38000, 0xFF, 0xFF),
     'Zenith':    (1, 38000, 0xFF, 0xFF),
     '48-NEC1':   (3, 38000, 0x1FFF, 0xFF),        # Nec42
+    # === Batch 1: MakeHex IRP transcriptions ===
+    'Denon-K':      (19, 37000, 0xFF, 0xFFF),    # D:4 S:4 F:12 C:8
+    'Jerrold':      (20, 38000, 0x00, 0x1F),     # F:5, no address
+    'G.I.4DTV':     (21, 37700, 0xFF, 0xFF),     # B=D*64+F
+    'Lumagen':      (22, 38000, 0x0F, 0x7F),     # D:4 F:7, MSB
+    'Samsung20':    (23, 38400, 0xFFF, 0xFF),    # D:6 S:6 F:8
+    'Teac-K':       (24, 37900, 0xFFF, 0xFF),    # D:4 S:8 F:8
+    'Dishplayer':   (25, 57600, 0x3FF, 0x3F),    # S:5 D:5 F:6
+    'DishPlayer_Network': (25, 57600, 0x3FF, 0x3F),
 }
 
 
@@ -275,6 +284,20 @@ def irdb_to_blob(protocol, device_str, subdevice_str, function_str):
         addr = (device & 0xFF) | ((subdevice & 0x1F) << 8)
     elif proto_id in (17, 18):  # Sharp / Denon — 5-bit address
         addr = device & 0x1F
+    elif proto_id in (19,):  # Denon-K — D:4 low, S:4 above
+        addr = (device & 0xF) | ((subdevice & 0xF) << 4)
+    elif proto_id in (20,):  # Jerrold — function-only frame
+        addr = 0
+    elif proto_id in (21,):  # G.I.4DTV — B = D*64+F
+        addr = device & 0xFF
+    elif proto_id in (22,):  # Lumagen — 4-bit address, MSB-first
+        addr = device & 0xF
+    elif proto_id in (23,):  # Samsung20 — D:6 low, S:6 above
+        addr = (device & 0x3F) | ((subdevice & 0x3F) << 6)
+    elif proto_id in (24,):  # Teac-K — D:4 low, S:8 above
+        addr = (device & 0xF) | ((subdevice & 0xFF) << 4)
+    elif proto_id in (25,):  # DishPlayer — D:5 low, S:5 above
+        addr = (device & 0x1F) | ((subdevice & 0x1F) << 5)
     else:  # NEC1, Samsung32, etc
         addr = device & 0xFF
 

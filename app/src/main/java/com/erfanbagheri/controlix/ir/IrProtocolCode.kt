@@ -1,6 +1,13 @@
 package com.erfanbagheri.controlix.ir
 
 import com.erfanbagheri.controlix.ir.protocols.Aiwa
+import com.erfanbagheri.controlix.ir.protocols.DenonK
+import com.erfanbagheri.controlix.ir.protocols.DishPlayer
+import com.erfanbagheri.controlix.ir.protocols.Gi4dtv
+import com.erfanbagheri.controlix.ir.protocols.Jerrold
+import com.erfanbagheri.controlix.ir.protocols.Lumagen
+import com.erfanbagheri.controlix.ir.protocols.Samsung20
+import com.erfanbagheri.controlix.ir.protocols.TeacK
 import com.erfanbagheri.controlix.ir.protocols.Jvc
 import com.erfanbagheri.controlix.ir.protocols.Kaseikyo
 import com.erfanbagheri.controlix.ir.protocols.Nec
@@ -56,6 +63,14 @@ internal object IrProtocolCode {
                 SharpDenon.CARRIER_HZ to SharpDenon.encodeSharp(address and 0x1F, command and 0xFF)
             "DENON" ->
                 SharpDenon.CARRIER_HZ to SharpDenon.encodeDenon(address and 0x1F, command and 0xFF)
+            "DENONK" -> DenonK.CARRIER_HZ to DenonK.encode(address, command)
+            "JERROLD" -> Jerrold.CARRIER_HZ to Jerrold.encode(command)
+            "GI4DTV" -> Gi4dtv.CARRIER_HZ to Gi4dtv.encode(address and 0xFF, command and 0xFF)
+            "LUMAGEN" -> Lumagen.CARRIER_HZ to Lumagen.encode(address and 0xF, command and 0x7F)
+            "SAMSUNG20" -> Samsung20.CARRIER_HZ to Samsung20.encode(address and 0xFFF, command and 0xFF)
+            "TEACK" -> TeacK.CARRIER_HZ to TeacK.encode(address and 0xFFF, command and 0xFF)
+            "DISHPLAYER", "DISHPLAYERNETWORK" ->
+                DishPlayer.CARRIER_HZ to DishPlayer.encode(address and 0x3FF, command and 0x3F)
             else -> null
         }
     }
