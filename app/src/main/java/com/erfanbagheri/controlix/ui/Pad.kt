@@ -11,11 +11,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -39,6 +43,7 @@ import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.MediaLayout
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
+import com.erfanbagheri.controlix.ui.theme.Gold
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
 
 /**
@@ -64,6 +69,7 @@ fun PadScreen(
     devices: List<SavedDevice>,
     model: DeviceModel,
     copied: CopiedButtonModel,
+    favoritesModel: FavoritesModel,
     toast: ToastState,
     onSwitchDevice: (SavedDevice) -> Unit,
     onEdit: (SavedDevice) -> Unit,
@@ -78,6 +84,7 @@ fun PadScreen(
     // Media pad (issue #15): composed only from this remote's own buttons.
     var mediaMode by remember(remoteId) { mutableStateOf(false) }
     var copiedOpen by remember { mutableStateOf(false) }
+    var favoritesOpen by remember { mutableStateOf(false) }
     // Local copies pasted onto this remote, from CopiedButtonStore.
     var localCopies by remember(remoteId) { mutableStateOf(copied.local(remoteId)) }
     val view = LocalView.current
@@ -166,6 +173,15 @@ fun PadScreen(
         }
         copied.copyToClipboard(code)
         toast.show("Copied ${code.name}. Long-press … on another remote to paste it.")
+    }
+
+    fun toggleFavorite(key: String) {
+        val wasFavorite = favoritesModel.favorites.any { it.remoteId == remoteId && it.key == key }
+        favoritesModel.toggleFavorite(remoteId, key)
+        toast.show(
+            if (wasFavorite) "${key.replace('_', ' ')} removed from favorites"
+            else "${key.replace('_', ' ')} added to favorites"
+        )
     }
 
     Column(
@@ -284,6 +300,16 @@ fun PadScreen(
             else {
                 { sheetOpen = false; copiedOpen = true }
             },
+            onFavorites = { sheetOpen = false; favoritesOpen = true },
+        )
+    }
+
+    if (favoritesOpen) {
+        FavoriteKeysSheet(
+            keys = effective.map { it.key }.distinct().sorted(),
+            favoriteKeys = favoritesModel.favorites.filter { it.remoteId == remoteId }.map { it.key }.toSet(),
+            onToggle = ::toggleFavorite,
+            onDismiss = { favoritesOpen = false },
         )
     }
 
@@ -310,6 +336,64 @@ fun PadScreen(
             },
             onDismiss = { copiedOpen = false },
         )
+    }
+}
+
+/**
+ * Favorites are added here, not by long-pressing a key: long-press copies the
+ * code (issue #10), so both features can't own one gesture. The dots sheet is
+ * the only place a key is chosen by name rather than by tap.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FavoriteKeysSheet(
+    keys: List<String>,
+    favoriteKeys: Set<String>,
+    onToggle: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
+        Column(Modifier.padding(horizontal = 24.dp)) {
+            Text("Favorites", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (favoriteKeys.isEmpty()) "Tap a key to add it to the home row."
+                else "${favoriteKeys.size} on the home row. Tap to remove.",
+                style = MaterialTheme.typography.labelSmall,
+                color = PaperFaint,
+            )
+            Spacer(Modifier.height(12.dp))
+            LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                items(keys) { key ->
+                    val on = key in favoriteKeys
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .combinedPressable(onClick = { onToggle(key) })
+                            .padding(vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        ActionIconView(
+                            if (on) ActionIcon.Star else ActionIcon.Add,
+                            18.dp,
+                            if (on) Gold else PaperFaint,
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            key.replace('_', ' ').replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (on) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                }
+            }
+            Spacer(Modifier.height(32.dp))
+        }
     }
 }
 
@@ -572,6 +656,7 @@ private fun PadBtn(
     modifier: Modifier = Modifier,
     accent: Boolean = false,
     onLongClick: (() -> Unit)? = null,
+    feedback: (android.view.View?) -> Unit = {},
     onClick: () -> Unit,
 ) {
     Box(

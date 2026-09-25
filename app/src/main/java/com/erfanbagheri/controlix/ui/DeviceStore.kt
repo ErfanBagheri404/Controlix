@@ -159,6 +159,8 @@ class DeviceStore(context: Context) {
         prefs.edit().putString("list", kept.joinToString(";")).apply()
     }
 
+    // ponytail: favorites/scenes key off (remoteId, key) and are deliberately NOT purged here —
+    // they resolve at fire time and render disabled once the device or key is gone.
     fun save(dev: SavedDevice, index: RemoteIndex? = null) {
         val list = load(index).filterNot { it.key == dev.key } + dev
         write(list)

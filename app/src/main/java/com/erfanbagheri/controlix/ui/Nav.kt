@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.DbChangelog
 import com.erfanbagheri.controlix.data.DbRefresh
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.feature.sceneFromMacro
 import com.erfanbagheri.controlix.data.RefreshState
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ir.TransmitterChoice
@@ -80,6 +81,7 @@ private sealed interface Route {
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean = true) {
     val model = rememberDeviceModel(repo)
     val macroModel = rememberMacroModel()
+    val favoritesModel = rememberFavoritesModel()
     val ctx = LocalContext.current
     val copiedModel = rememberCopiedButtonModel()
     // Cold start only: a cold launch restores the last-used pad; Activity
@@ -227,6 +229,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         model = model,
                         repo = repo,
                         transmitter = ir,
+                        favoritesModel = favoritesModel,
                         onOpenDevice = { openPad(it.remoteId) },
                         onAddDevice = { route = Route.AddDevice },
                         onToggleDrawer = { Feedback.tap(view); scope.launch { drawerState.open() } },
@@ -313,6 +316,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             transmitter = ir,
                             devices = model.devices,
                             model = model,
+                            favoritesModel = favoritesModel,
                             copied = copiedModel,
                             toast = toast,
                             onSwitchDevice = { openPad(it.remoteId) },
@@ -370,6 +374,10 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
 
         ToastHost(toast, Modifier.align(Alignment.BottomCenter).applyBottomInset())
         LaunchedEffect(route) { if (route is Route.Home) model.reload() }
+        // Scenes mirror the macro store — one projection, no second editor.
+        LaunchedEffect(macroModel.macros) {
+            favoritesModel.replaceScenes(macroModel.macros.map { sceneFromMacro(it, it.id) })
+        }
     }
 }
 
