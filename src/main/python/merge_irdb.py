@@ -168,6 +168,9 @@ PROTO_MAP = {
     'Teac-K':       (24, 37900, 0xFFF, 0xFF),    # D:4 S:8 F:8
     'Dishplayer':   (25, 57600, 0x3FF, 0x3F),    # S:5 D:5 F:6
     'DishPlayer_Network': (25, 57600, 0x3FF, 0x3F),
+    'XMP':       (26, 38000, 0xFFFF, 0x3FF),   # D:8 S:8, F 0..512
+    'XMP-1':     (26, 38000, 0xFFFF, 0x3FF),
+    'XMP-2':     (26, 38000, 0xFFFF, 0x3FF),
 }
 
 
@@ -298,6 +301,8 @@ def irdb_to_blob(protocol, device_str, subdevice_str, function_str):
         addr = (device & 0xF) | ((subdevice & 0xFF) << 4)
     elif proto_id in (25,):  # DishPlayer — D:5 low, S:5 above
         addr = (device & 0x1F) | ((subdevice & 0x1F) << 5)
+    elif proto_id in (26,):  # XMP — D:8 low, S:8 above
+        addr = (device & 0xFF) | ((subdevice & 0xFF) << 8)
     else:  # NEC1, Samsung32, etc
         addr = device & 0xFF
 

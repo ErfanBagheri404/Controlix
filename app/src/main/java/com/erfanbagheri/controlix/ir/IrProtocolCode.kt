@@ -21,6 +21,7 @@ import com.erfanbagheri.controlix.ir.protocols.Rca
 import com.erfanbagheri.controlix.ir.protocols.Samsung32
 import com.erfanbagheri.controlix.ir.protocols.SharpDenon
 import com.erfanbagheri.controlix.ir.protocols.Sirc
+import com.erfanbagheri.controlix.ir.protocols.Xmp
 
 /**
  * Bridges the public file-format spelling of a protocol ("NEC", "SIRC15",
@@ -71,6 +72,8 @@ internal object IrProtocolCode {
             "TEACK" -> TeacK.CARRIER_HZ to TeacK.encode(address and 0xFFF, command and 0xFF)
             "DISHPLAYER", "DISHPLAYERNETWORK" ->
                 DishPlayer.CARRIER_HZ to DishPlayer.encode(address and 0x3FF, command and 0x3F)
+            "XMP", "XMP1", "XMP2" ->
+                Xmp.CARRIER_HZ to Xmp.encode(address and 0xFFFF, command and 0x3FF)
             else -> null
         }
     }
