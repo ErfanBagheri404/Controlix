@@ -62,6 +62,13 @@ import java.time.LocalDate
 
 /** Every screen. Sealed route list, no nav library — app is 4 levels deep max. */
 private sealed interface Route {
+    data class MissingCode(
+        val brand: String = "",
+        val category: String = "",
+        val remote: String = "",
+        val button: String = "",
+    ) : Route
+
     data object Home : Route
     data object AddDevice : Route
     data object Scan : Route
@@ -203,6 +210,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             arrayOf("application/json", "application/octet-stream", "text/plain"),
                         )
                     },
+                    onMissingCode = { scope.launch { drawerState.close() }; route = Route.MissingCode() },
                     onDbHealth = { scope.launch { drawerState.close() }; route = Route.DbHealth },
                 )
             },
@@ -277,6 +285,15 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         brandId = r.brandId,
                         brandName = r.brandName,
                         categoryName = r.catName,
+                        categorySlug = r.catSlug,
+                        onMissingCode = { button ->
+                            route = Route.MissingCode(
+                                brand = r.brandName,
+                                category = r.catSlug,
+                                remote = "",
+                                button = button,
+                            )
+                        },
                         onDone = { remoteId, _ ->
                             model.saveById(
                                 remoteId = remoteId,
@@ -288,6 +305,14 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             openPad(remoteId)
                             toast.show("${r.brandName} added")
                         },
+                        onBack = { route = Route.Home },
+                    )
+
+                    is Route.MissingCode -> MissingCodeScreen(
+                        initialBrand = r.brand,
+                        initialCategory = r.category,
+                        initialRemote = r.remote,
+                        initialButton = r.button,
                         onBack = { route = Route.Home },
                     )
 
@@ -412,6 +437,7 @@ private fun MenuDrawer(
     dbState: String?,
     onExport: () -> Unit,
     onImport: () -> Unit,
+    onMissingCode: () -> Unit,
     onDbHealth: () -> Unit,
 ) {
     ModalDrawerSheet(
@@ -484,6 +510,9 @@ private fun MenuDrawer(
             SectionHead("Backup")
             DrawerRow(ActionIcon.Share, "Export backup", onExport)
             DrawerRow(ActionIcon.Down, "Import backup", onImport)
+
+            SectionHead("Contribute")
+            DrawerRow(ActionIcon.Info, "Missing a code?", onMissingCode)
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Appearance")
