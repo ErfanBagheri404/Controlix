@@ -1,6 +1,8 @@
 package com.erfanbagheri.controlix.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -39,12 +41,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.ThemeState
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 /** Every screen. Sealed route list, no nav library — app is 4 levels deep max. */
 private sealed interface Route {
@@ -84,6 +88,48 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
     val scope = rememberCoroutineScope()
     val view = LocalView.current
     val toast = rememberToastState()
+    val context = LocalContext.current
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val json = BackupCodec.encode(model.devices, macroModel.macros)
+        runCatching {
+            val output = context.contentResolver.openOutputStream(uri, "wt")
+                ?: error("Backup stream unavailable")
+            output.use { it.write(json.toByteArray(Charsets.UTF_8)) }
+        }.onSuccess { toast.show("Backup exported") }
+            .onFailure { toast.show("Couldn't write the backup file") }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val json = runCatching {
+            context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+        }.getOrNull()
+        if (json == null) {
+            toast.show("Couldn't read that file")
+            return@rememberLauncherForActivityResult
+        }
+        when (val result = BackupCodec.decode(json)) {
+            is BackupDecodeResult.Error -> toast.show(result.message)
+            is BackupDecodeResult.Success -> {
+                val backup = result.backup
+                toast.show(
+                    "Replace with ${backup.devices.size} devices, ${backup.macros.size} macros?",
+                    actionLabel = "Import",
+                ) {
+                    model.replaceAll(backup.devices)
+                    macroModel.save(backup.macros)
+                    toast.show("Backup restored")
+                }
+            }
+        }
+    }
+
 
     fun openPad(remoteId: Int) {
         ResumeState.recordLastRemote(remoteId)
@@ -104,6 +150,17 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                     onMacros = { scope.launch { drawerState.close() }; route = Route.Macros },
                     onSweep = { scope.launch { drawerState.close() }; route = Route.Sweep },
                     onSelfTest = { scope.launch { drawerState.close() }; route = Route.SelfTest },
+                    onExport = {
+                        scope.launch { drawerState.close() }
+                        val stamp = LocalDate.now().toString().replace("-", "")
+                        exportLauncher.launch("controlix-backup-$stamp.json")
+                    },
+                    onImport = {
+                        scope.launch { drawerState.close() }
+                        importLauncher.launch(
+                            arrayOf("application/json", "application/octet-stream", "text/plain"),
+                        )
+                    },
                     onDbHealth = { scope.launch { drawerState.close() }; route = Route.DbHealth },
                 )
             },
@@ -279,6 +336,8 @@ private fun MenuDrawer(
     onMacros: () -> Unit,
     onSweep: () -> Unit,
     onSelfTest: () -> Unit,
+    onExport: () -> Unit,
+    onImport: () -> Unit,
     onDbHealth: () -> Unit,
 ) {
     ModalDrawerSheet(
@@ -303,6 +362,11 @@ private fun MenuDrawer(
                 effectiveResumeEnabled(ResumeState.explicit, hasDevices),
                 ResumeState::setEnabled,
             )
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead("Backup")
+            DrawerRow(ActionIcon.Share, "Export backup", onExport)
+            DrawerRow(ActionIcon.Down, "Import backup", onImport)
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Appearance")
