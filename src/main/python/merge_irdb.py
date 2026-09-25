@@ -176,6 +176,12 @@ PROTO_MAP = {
     'PaceMSS':   (28, 38000, 0x01, 0xFF),     # T:1 D:1 F:8; T fixed 0 (irdb has no T column)
     'GXB':       (29, 38300, 0x0F, 0xFF),     # D:4 F:8; P = 1 - popcount(F)%2 derived
     'Logitech':  (30, 38000, 0x0F, 0xFF),     # D:4 F:8, LSB-first
+    # === Batch 3 (final 5): the last five empty remotes, ids 31-35 ===
+    'Grundig16':    (31, 35700, 0x7F, 0xFF),   # D:7 F:8, T:1 fixed 0 (irdb has no T column)
+    'Grundig16-30': (32, 30300, 0x7F, 0xFF),   # same framing, 30.3 kHz carrier
+    'NRC16':        (33, 38000, 0x7F, 0xFF),   # D:7 F:8
+    'Zaptor-56':    (34, 56000, 0x7FFF, 0x7F), # D:8 low, S:7 above, F:7
+    'SharpDVD':     (35, 38000, 0xFFF, 0xFF),  # D:4 low, S:8 above, F:8
 }
 
 
@@ -308,6 +314,14 @@ def irdb_to_blob(protocol, device_str, subdevice_str, function_str):
         addr = (device & 0x1F) | ((subdevice & 0x1F) << 5)
     elif proto_id in (26,):  # XMP — D:8 low, S:8 above
         addr = (device & 0xFF) | ((subdevice & 0xFF) << 8)
+    elif proto_id in (31, 32):  # Grundig16 / Grundig16-30 — D:7 only
+        addr = device & 0x7F
+    elif proto_id in (33,):  # NRC16 — D:7 only
+        addr = device & 0x7F
+    elif proto_id in (34,):  # Zaptor-56 — D:8 low, S:7 above
+        addr = (device & 0xFF) | ((subdevice & 0x7F) << 8)
+    elif proto_id in (35,):  # SharpDVD — D:4 low, S:8 above
+        addr = (device & 0xF) | ((subdevice & 0xFF) << 4)
     elif proto_id in (27,):  # Bose — function-only frame, address unused
         addr = 0
     elif proto_id in (28,):  # PaceMSS — T:1 above D:1

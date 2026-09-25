@@ -21,6 +21,11 @@ import com.erfanbagheri.controlix.ir.protocols.Rca
 import com.erfanbagheri.controlix.ir.protocols.Samsung32
 import com.erfanbagheri.controlix.ir.protocols.SharpDenon
 import com.erfanbagheri.controlix.ir.protocols.Sirc
+import com.erfanbagheri.controlix.ir.protocols.Grundig16
+import com.erfanbagheri.controlix.ir.protocols.Grundig1630
+import com.erfanbagheri.controlix.ir.protocols.Nrc16
+import com.erfanbagheri.controlix.ir.protocols.SharpDvd
+import com.erfanbagheri.controlix.ir.protocols.Zaptor56
 import com.erfanbagheri.controlix.ir.protocols.Xmp
 import com.erfanbagheri.controlix.ir.protocols.Bose
 import com.erfanbagheri.controlix.ir.protocols.Gxb
@@ -78,6 +83,20 @@ internal object IrProtocolCode {
                 DishPlayer.CARRIER_HZ to DishPlayer.encode(address and 0x3FF, command and 0x3F)
             "XMP", "XMP1", "XMP2" ->
                 Xmp.CARRIER_HZ to Xmp.encode(address and 0xFFFF, command and 0x3FF)
+            "GRUNDIG16" ->
+                Grundig16.CARRIER_HZ to Grundig16.encode(address and 0x7F, command and 0xFF, 0)
+            "GRUNDIG1630" ->
+                Grundig1630.CARRIER_HZ to Grundig1630.encode(address and 0x7F, command and 0xFF, 0)
+            "NRC16" ->
+                Nrc16.CARRIER_HZ to Nrc16.encode(address and 0x7F, command and 0xFF)
+            "ZAPTOR56" ->
+                Zaptor56.CARRIER_HZ to Zaptor56.encode(
+                    address and 0xFF, (address shr 8) and 0x7F, command and 0x7F
+                )
+            "SHARPDVD" ->
+                SharpDvd.CARRIER_HZ to SharpDvd.encode(
+                    address and 0xF, (address shr 4) and 0xFF, command and 0xFF
+                )
             "BOSE" -> Bose.CARRIER_HZ to Bose.encode(command and 0xFF)
             "PACEMSS" -> PaceMss.CARRIER_HZ to PaceMss.encode(0, address and 0x1, command and 0xFF)
             "GXB" -> Gxb.CARRIER_HZ to Gxb.encode(address and 0xF, command and 0xFF)

@@ -1,7 +1,12 @@
 package com.erfanbagheri.controlix.ir
 
 import com.erfanbagheri.controlix.ir.protocols.Aiwa
+import com.erfanbagheri.controlix.ir.protocols.Grundig16
+import com.erfanbagheri.controlix.ir.protocols.Grundig1630
+import com.erfanbagheri.controlix.ir.protocols.Nrc16
 import com.erfanbagheri.controlix.ir.protocols.SharpDenon
+import com.erfanbagheri.controlix.ir.protocols.SharpDvd
+import com.erfanbagheri.controlix.ir.protocols.Zaptor56
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -75,5 +80,99 @@ class Batch3ProtocolTest {
         assertEquals(8 * 550, p[1])
         // stop burst is exactly one BIT_MARK
         assertEquals(550, p.last())
+    }
+
+    // === ids 31-35: the last five protocols irdb names that had no encoder ===
+    //
+    // Every vector below is IrpTransmogrifier's own output for the matching IRP
+    // spec, captured from the `irporacle` reference engine (GPL-3.0, read-only)
+    // and diffed element-for-element against the Kotlin encode(). Nothing here
+    // is hand-derived: two earlier hand-decoding attempts of these same five
+    // specs produced wrong timings both times.
+    //
+    // Regenerate with `irporacle "<IRP>" D S F [T] [E]` -- argv is positional
+    // D S F T E P C, and '-' leaves a name to the spec's own default. The last
+    // value the oracle prints is the inter-message gap, not part of the frame,
+    // so each vector here is that output minus its final element.
+
+    @Test
+    fun `grundig16 empty frame matches the oracle`() {
+        assertEquals(35700, Grundig16.CARRIER_HZ)
+        assertEquals(
+            listOf(806, 2960, 1346, 2312, 1156, 2312, 1156, 2312, 1156, 2312, 1156, 2312, 1156, 2312, 1156, 2312, 1156, 2312, 1156),
+            Grundig16.encode(0, 0).toList()
+        )
+    }
+
+    @Test
+    fun `grundig16 with data and toggle matches the oracle`() {
+        assertEquals(35700, Grundig16.CARRIER_HZ)
+        assertEquals(
+            listOf(806, 2960, 1346, 1156, 578, 1156, 578, 1734, 578, 578, 578, 1734, 578, 578, 578, 1156, 578, 1156, 578, 1734, 578, 578, 578, 1734, 578, 578, 578, 578, 578, 1734, 578, 1734, 578, 578, 578),
+            Grundig16.encode(0x5D, 0x2C, 1).toList()
+        )
+    }
+
+    @Test
+    fun `grundig16 30k carrier matches the oracle`() {
+        assertEquals(30300, Grundig1630.CARRIER_HZ)
+        assertEquals(
+            listOf(806, 2960, 1346, 1734, 578, 578, 578, 578, 578, 1734, 578, 578, 578, 1734, 578, 578, 578, 1734, 578, 578, 578, 1734, 578, 578, 578, 1734, 578, 578, 578, 1734, 578, 578, 578, 1734, 578),
+            Grundig1630.encode(0x7F, 0xFF).toList()
+        )
+    }
+
+    @Test
+    fun `nrc16 frame matches the oracle`() {
+        assertEquals(38000, Nrc16.CARRIER_HZ)
+        assertEquals(
+            listOf(500, 2500, 500, 500, 500, 500, 500, 500, 500, 1000, 500, 500, 500, 500, 500, 500, 500, 500, 1000, 1000, 1000, 1000, 500, 500, 500, 500, 500, 500, 500),
+            Nrc16.encode(0x05, 0x07).toList()
+        )
+    }
+
+    @Test
+    fun `nrc16 with every function bit set matches the oracle`() {
+        assertEquals(38000, Nrc16.CARRIER_HZ)
+        assertEquals(
+            listOf(500, 2500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 1000, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500),
+            Nrc16.encode(0x00, 0xFF).toList()
+        )
+    }
+
+    @Test
+    fun `zaptor56 motorola ip box frame matches the oracle`() {
+        assertEquals(56000, Zaptor56.CARRIER_HZ)
+        assertEquals(
+            listOf(2640, 1980, 660, 330, 330, 330, 330, 330, 660, 660, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 660, 660, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 660, 660, 330, 330, 660),
+            Zaptor56.encode(0x10, 0x00, 0x08).toList()
+        )
+    }
+
+    @Test
+    fun `zaptor56 with every field populated matches the oracle`() {
+        assertEquals(56000, Zaptor56.CARRIER_HZ)
+        assertEquals(
+            listOf(2640, 1980, 990, 330, 330, 660, 660, 660, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 660, 330, 330, 330, 330, 330, 330, 330, 330, 330, 330, 660, 660, 660, 660, 330, 330, 660, 660, 660, 330, 330, 330, 330, 330, 330, 330, 330, 660, 330, 330, 330, 330, 660, 330),
+            Zaptor56.encode(0xD0, 0x3F, 0x5A).toList()
+        )
+    }
+
+    @Test
+    fun `sharpdvd frame matches the oracle`() {
+        assertEquals(38000, SharpDvd.CARRIER_HZ)
+        assertEquals(
+            listOf(3200, 1600, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 1200, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 400, 400, 400, 400, 400, 400, 1200, 400, 400, 400, 400, 400, 400, 400, 400, 400, 1200, 400, 1200, 400, 400, 400, 400, 400, 1200, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 400, 400, 400, 400, 400, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400),
+            SharpDvd.encode(0x8, 0x30, 0x41).toList()
+        )
+    }
+
+    @Test
+    fun `sharpdvd with every field set matches the oracle`() {
+        assertEquals(38000, SharpDvd.CARRIER_HZ)
+        assertEquals(
+            listOf(3200, 1600, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 1200, 400, 400, 400, 1200, 400, 400, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 1200, 400, 400, 400, 400, 400, 400, 400, 400, 400, 1200, 400, 1200, 400, 1200, 400),
+            SharpDvd.encode(0xF, 0xFF, 0xFF).toList()
+        )
     }
 }
