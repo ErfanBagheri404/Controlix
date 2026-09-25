@@ -46,8 +46,13 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
          */
         private val FUNCTION_HINTS: Map<String, List<String>> = mapOf(
             "power" to listOf("%power%", "%on/off%", "%standby%", "%on_off%"),
+            "power_off" to listOf("%power%", "%off%"),
             "volume" to listOf("%vol%"),
+            "vol_up" to listOf("%vol%"),
+            "vol_down" to listOf("%vol%"),
             "channel" to listOf("%ch%", "%channel%"),
+            "ch_up" to listOf("%ch%", "%channel%"),
+            "ch_down" to listOf("%ch%", "%channel%"),
             "mute" to listOf("%mute%"),
             "play_pause" to listOf("%play%"),
             "source" to listOf("%input%", "%source%"),
