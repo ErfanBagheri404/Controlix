@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +31,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.erfanbagheri.controlix.data.CopiedButton
+import com.erfanbagheri.controlix.data.CopiedButtons
 import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.MediaLayout
@@ -58,6 +62,7 @@ fun PadScreen(
     transmitter: IrTransmitter,
     devices: List<SavedDevice>,
     model: DeviceModel,
+    copied: CopiedButtonModel,
     toast: ToastState,
     onSwitchDevice: (SavedDevice) -> Unit,
     onEdit: (SavedDevice) -> Unit,
@@ -71,6 +76,9 @@ fun PadScreen(
     var expanded by remember(remoteId) { mutableStateOf(false) }
     // Media pad (issue #15): composed only from this remote's own buttons.
     var mediaMode by remember(remoteId) { mutableStateOf(false) }
+    var copiedOpen by remember { mutableStateOf(false) }
+    // Local copies pasted onto this remote, from CopiedButtonStore.
+    var localCopies by remember(remoteId) { mutableStateOf(copied.local(remoteId)) }
     val view = LocalView.current
 
     val buttons = remember(remoteId) {
@@ -91,26 +99,15 @@ fun PadScreen(
     val saved = devices.firstOrNull { it.remoteId == remoteId }
         ?: SavedDevice(remoteId, deviceName ?: "Remote", "", "", 0)
 
-    fun fire(name: String) {
-        // One tick per activation at the key's own weight — here in the single
-        // choke point every IR key passes through, so the tick lands whether
-        // or not this remote carries the code. The pad keys carry a no-op
-        // pressable so they can't double-tick.
-        Feedback.press(view, name)
-        // Effective list first: standard keys (incl. digits/d-pad) may be
-        // borrowed from brand siblings. Semantic key == the action name the
-        // pad passes for CHECKS entries; raw-name lookup covers the rest.
+    /**
+     * The code a pad key would send. A pasted local copy wins, then the
+     * effective (borrowed-or-own) code, then the raw name lookup fire() used.
+     * One resolution path for both sending and copying.
+     */
+    fun codeFor(name: String): CopiedButton? {
+        CopiedButtons.localForKey(localCopies, name)?.let { return it }
         val resolved = effective.firstOrNull { it.key == name }
-        if (resolved != null) {
-            if (transmitter.transmitButton(resolved.carrierHz, resolved.pattern)) {
-                lastSent = "Sent: ${resolved.name}"
-                emitKey = Any()
-            } else {
-                lastSent = "Not sent"
-                toast.show(if (!transmitter.hasIrEmitter()) "This device has no IR blaster." else "Couldn't send. Try again.")
-            }
-            return
-        }
+        if (resolved != null) return CopiedButton(resolved.name, resolved.carrierHz, resolved.pattern)
         val p = when (name) {
             "play_pause" -> buttons.firstOrNull { it.name.contains("play", true) }
             "source" -> buttons.firstOrNull { it.name.contains("input", true) }
@@ -119,17 +116,38 @@ fun PadScreen(
         }
         val btn = p ?: buttons.firstOrNull { it.name.equals(name, true) }
             ?: buttons.firstOrNull { it.name.contains(name, true) }
-        if (btn != null) {
-            if (transmitter.transmitButton(btn.carrierHz, btn.pattern)) {
-                lastSent = "Sent: ${btn.name}"
-                emitKey = Any()
-            } else {
-                lastSent = "Not sent"
-                toast.show(if (!transmitter.hasIrEmitter()) "This device has no IR blaster." else "Couldn't send. Try again.")
-            }
-        } else {
+        return btn?.let { CopiedButton(it.name, it.carrierHz, it.pattern) }
+    }
+
+    fun fire(name: String) {
+        // One tick per activation at the key's own weight — here in the single
+        // choke point every IR key passes through, so the tick lands whether
+        // or not this remote carries the code. The pad keys carry a no-op
+        // pressable so they can't double-tick.
+        Feedback.press(view, name)
+        val code = codeFor(name)
+        if (code == null) {
             toast.show("This remote has no ${name.replace('_', ' ')} code.")
+            return
         }
+        if (transmitter.transmitButton(code.carrierHz, code.pattern)) {
+            lastSent = "Sent: ${code.name}"
+            emitKey = Any()
+        } else {
+            lastSent = "Not sent"
+            toast.show(if (!transmitter.hasIrEmitter()) "This device has no IR blaster." else "Couldn't send. Try again.")
+        }
+    }
+
+    /** Long-press a key: put its code on the clipboard for another remote. */
+    fun copyKey(name: String) {
+        val code = codeFor(name)
+        if (code == null) {
+            toast.show("This remote has no ${name.replace('_', ' ')} code to copy.")
+            return
+        }
+        copied.copyToClipboard(code)
+        toast.show("Copied ${code.name}. Long-press … on another remote to paste it.")
     }
 
     Column(
@@ -181,9 +199,9 @@ fun PadScreen(
             // ── Region 1: chevron pad — swapped out for the full key set ─────
             ContentSwap(expanded, Modifier.fillMaxWidth().weight(1f)) { open ->
                 if (open) {
-                    ExpandedKeys(::fire, Modifier.fillMaxSize())
+                    ExpandedKeys(::fire, ::copyKey, Modifier.fillMaxSize())
                 } else {
-                    ChevronPad(::fire, Modifier.fillMaxSize())
+                    ChevronPad(::fire, ::copyKey, Modifier.fillMaxSize())
                 }
             }
 
@@ -193,7 +211,8 @@ fun PadScreen(
             Row(Modifier.fillMaxWidth().height(CONTROL_BLOCK), verticalAlignment = Alignment.CenterVertically) {
                 // No capsule: the keys sit directly on the screen surface.
                 RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL",
-                    onUp = { fire("volume_up") }, onDown = { fire("volume_down") })
+                    onUp = { fire("volume_up") }, onDown = { fire("volume_down") },
+                    onLongUp = { copyKey("volume_up") }, onLongDown = { copyKey("volume_down") })
 
                 Spacer(Modifier.width(14.dp))
 
@@ -202,20 +221,21 @@ fun PadScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        PadBtn(ActionIcon.Home, Modifier.weight(1f).fillMaxHeight()) { fire("home") }
-                        PadBtn(ActionIcon.Back, Modifier.weight(1f).fillMaxHeight()) { fire("back") }
+                        PadBtn(ActionIcon.Home, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copyKey("home") }) { fire("home") }
+                        PadBtn(ActionIcon.Back, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copyKey("back") }) { fire("back") }
                     }
                     Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight()) { fire("mute") }
-                        PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight()) { fire("play_pause") }
+                        PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copyKey("mute") }) { fire("mute") }
+                        PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copyKey("play_pause") }) { fire("play_pause") }
                     }
-                    PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp), feedback = Feedback::tap) { expanded = !expanded }
+                    PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp)) { expanded = !expanded }
                 }
 
                 Spacer(Modifier.width(14.dp))
 
                 RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH",
-                    onUp = { fire("channel_up") }, onDown = { fire("channel_down") })
+                    onUp = { fire("channel_up") }, onDown = { fire("channel_down") },
+                    onLongUp = { copyKey("channel_up") }, onLongDown = { copyKey("channel_down") })
             }
         }
 
@@ -242,34 +262,63 @@ fun PadScreen(
             onEdit = { sheetOpen = false; onEdit(it) },
             onShare = { sheetOpen = false; onShare(it) },
             onDismiss = { sheetOpen = false },
+            onCopiedKeys = if (copied.clipboard == null && localCopies.isEmpty()) null
+            else {
+                { sheetOpen = false; copiedOpen = true }
+            },
+        )
+    }
+
+    if (copiedOpen) {
+        CopiedKeysSheet(
+            clipboard = copied.clipboard,
+            local = localCopies,
+            onPaste = { btn ->
+                localCopies = copied.paste(remoteId, btn)
+                copiedOpen = false
+                toast.show("Pasted ${btn.name} onto this remote.")
+            },
+            onRemove = { name ->
+                copied.remove(remoteId, name)
+                localCopies = copied.local(remoteId)
+            },
+            onSend = { btn ->
+                if (transmitter.transmitButton(btn.carrierHz, btn.pattern)) {
+                    lastSent = "Sent: ${btn.name}"
+                    emitKey = Any()
+                } else {
+                    toast.show(if (!transmitter.hasIrEmitter()) "This device has no IR blaster." else "Couldn't send. Try again.")
+                }
+            },
+            onDismiss = { copiedOpen = false },
         )
     }
 }
 
 /** Chevrons only — no keys, no OK. Small side padding so the pad breathes. */
 @Composable
-private fun ChevronPad(fire: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun ChevronPad(fire: (String) -> Unit, copy: (String) -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier.padding(horizontal = 12.dp),
         verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        PadBtn(ActionIcon.ChevronUp, Modifier.size(64.dp)) { fire("up") }
+        PadBtn(ActionIcon.ChevronUp, Modifier.size(64.dp), onLongClick = { copy("up") }) { fire("up") }
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            PadBtn(ActionIcon.ChevronLeft, Modifier.size(64.dp)) { fire("left") }
-            PadBtn(ActionIcon.ChevronRight, Modifier.size(64.dp)) { fire("right") }
+            PadBtn(ActionIcon.ChevronLeft, Modifier.size(64.dp), onLongClick = { copy("left") }) { fire("left") }
+            PadBtn(ActionIcon.ChevronRight, Modifier.size(64.dp), onLongClick = { copy("right") }) { fire("right") }
         }
-        PadBtn(ActionIcon.ChevronDown, Modifier.size(64.dp)) { fire("down") }
+        PadBtn(ActionIcon.ChevronDown, Modifier.size(64.dp), onLongClick = { copy("down") }) { fire("down") }
     }
 }
 
 /** The full key set, laid out on the same grid rhythm as the controls section. */
 @Composable
-private fun ExpandedKeys(fire: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun ExpandedKeys(fire: (String) -> Unit, copy: (String) -> Unit, modifier: Modifier = Modifier) {
     val rows = listOf(
         listOf("1", "2", "3"),
         listOf("4", "5", "6"),
@@ -280,14 +329,14 @@ private fun ExpandedKeys(fire: (String) -> Unit, modifier: Modifier = Modifier) 
         rows.forEach { row ->
             Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEach { key ->
-                    KeyTile(key, Modifier.weight(1f).fillMaxHeight()) { fire(key) }
+                    KeyTile(key, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy(key) }) { fire(key) }
                 }
             }
         }
         Row(Modifier.fillMaxWidth().height(52.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight()) { fire("power") }
-            PadBtn(ActionIcon.Menu, Modifier.weight(1f).fillMaxHeight()) { fire("menu") }
-            PadBtn(ActionIcon.Info, Modifier.weight(1f).fillMaxHeight()) { fire("info") }
+            PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("power") }) { fire("power") }
+            PadBtn(ActionIcon.Menu, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("menu") }) { fire("menu") }
+            PadBtn(ActionIcon.Info, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("info") }) { fire("info") }
         }
     }
 }
@@ -448,9 +497,14 @@ private fun KeyboardGrid(
 
 /** Digit / word key — same tile surface as the icon keys. */
 @Composable
-private fun KeyTile(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun KeyTile(
+    label: String,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
+) {
     Box(
-        modifier.bgTile(20.dp).pressable(feedback = {}, onClick = onClick),
+        modifier.bgTile(20.dp).combinedPressable(onClick = onClick, onLongClick = onLongClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(label.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium)
@@ -465,26 +519,29 @@ private fun RockerColumn(
     label: String,
     onUp: () -> Unit,
     onDown: () -> Unit,
+    onLongUp: (() -> Unit)? = null,
+    onLongDown: (() -> Unit)? = null,
 ) {
     Column(
         Modifier.fillMaxHeight().width(64.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        RockerKey(up) { onUp() }
+        RockerKey(up, onLongUp) { onUp() }
         Text(label, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
-        RockerKey(down) { onDown() }
+        RockerKey(down, onLongDown) { onDown() }
     }
 }
 
-/** Rocker key: immediate send, then hold-to-repeat per issue #11 settings. */
+/** Rocker key: immediate send, hold-to-repeat, long-press copy when supplied. */
 @Composable
-private fun RockerKey(icon: ActionIcon, onFire: () -> Unit) {
+private fun RockerKey(icon: ActionIcon, onLongClick: (() -> Unit)? = null, onFire: () -> Unit) {
     Box(
         Modifier
             .size(56.dp)
             .bgTile(20.dp, MaterialTheme.colorScheme.surfaceVariant)
-            .rockerPressable(repeatEnabled = Feedback.rockerRepeatOn, onFire = onFire),
+            .rockerPressable(repeatEnabled = Feedback.rockerRepeatOn, onFire = onFire)
+            .combinedPressable(onClick = {}, onLongClick = onLongClick),
         contentAlignment = Alignment.Center,
     ) {
         ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
@@ -496,15 +553,89 @@ private fun PadBtn(
     icon: ActionIcon,
     modifier: Modifier = Modifier,
     accent: Boolean = false,
-    feedback: (android.view.View?) -> Unit = {},
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     Box(
         modifier.bgTile(20.dp, if (accent) Accent else MaterialTheme.colorScheme.surfaceVariant)
-            .pressable(feedback = feedback, onClick = onClick),
+            .combinedPressable(onClick = onClick, onLongClick = onLongClick),
         contentAlignment = Alignment.Center,
     ) {
         ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+/**
+ * Paste target (issue #10): the clipboard code plus this remote's local
+ * copies. Paste adds the clipboard code to the remote's own list; a local
+ * copy can be sent or removed. Empty state explains the gesture.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CopiedKeysSheet(
+    clipboard: CopiedButton?,
+    local: List<CopiedButton>,
+    onPaste: (CopiedButton) -> Unit,
+    onRemove: (String) -> Unit,
+    onSend: (CopiedButton) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
+        Column(Modifier.padding(horizontal = 24.dp)) {
+            Text("Copied keys", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(16.dp))
+            if (clipboard == null) {
+                Text(
+                    "Nothing copied yet. Long-press a key on another remote to copy its code here.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = PaperFaint,
+                )
+            } else {
+                SheetKeyRow(
+                    label = "Paste ${clipboard.name}",
+                    hint = "${clipboard.carrierHz} Hz · ${clipboard.pattern.size} marks",
+                    onClick = { onPaste(clipboard) },
+                )
+            }
+            if (local.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                Text("On this remote", style = MaterialTheme.typography.labelSmall, color = PaperFaint)
+                local.forEach { btn ->
+                    SheetKeyRow(
+                        label = btn.name,
+                        hint = "${btn.carrierHz} Hz · tap to send",
+                        onClick = { onSend(btn) },
+                        onLongClick = { onRemove(btn.name) },
+                    )
+                }
+            }
+            Spacer(Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+private fun SheetKeyRow(
+    label: String,
+    hint: String,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+) {
+    Row(
+        Modifier.fillMaxWidth()
+            .combinedPressable(onClick = onClick, onLongClick = onLongClick)
+            .padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column {
+            Text(label, style = MaterialTheme.typography.titleMedium)
+            Text(hint, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
+        }
     }
 }
 
