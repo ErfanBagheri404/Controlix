@@ -69,7 +69,7 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
             // Parsed layout: [protoId(1), rsvd(3 all-zero), addr(4), cmd(4)].
             // The rsvd-byte check keeps 12-byte RAW blobs (small durations)
             // from being misread as parsed frames.
-            if (blob.size == 12 && blob[0].toInt() in 1..26 &&
+            if (blob.size == 12 && blob[0].toInt() in 1..30 &&
                 blob[1].toInt() == 0 && blob[2].toInt() == 0 && blob[3].toInt() == 0
             ) {
                 val protoId = blob[0].toInt() and 0xFF
@@ -103,6 +103,10 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
                         24 -> TeacK.encode(addr and 0xFFF, cmd and 0xFF)
                         25 -> DishPlayer.encode(addr and 0x3FF, cmd and 0x3F)
                         26 -> Xmp.encode(addr and 0xFFFF, cmd and 0x3FF)
+                        27 -> Bose.encode(cmd and 0xFF)
+                        28 -> PaceMss.encode(0, addr and 0x1, cmd and 0xFF)
+                        29 -> Gxb.encode(addr and 0xF, cmd and 0xFF)
+                        30 -> Logitech.encode(addr and 0xF, cmd and 0xFF)
                         else -> null
                     }
                 } catch (e: Exception) {

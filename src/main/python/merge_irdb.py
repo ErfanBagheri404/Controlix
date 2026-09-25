@@ -171,6 +171,11 @@ PROTO_MAP = {
     'XMP':       (26, 38000, 0xFFFF, 0x3FF),   # D:8 S:8, F 0..512
     'XMP-1':     (26, 38000, 0xFFFF, 0x3FF),
     'XMP-2':     (26, 38000, 0xFFFF, 0x3FF),
+    # === Batch 2: IrpTransmogrifier-verified encoders ===
+    'Bose':      (27, 38000, 0x00, 0xFF),     # F:8 only, no address
+    'PaceMSS':   (28, 38000, 0x01, 0xFF),     # T:1 D:1 F:8; T fixed 0 (irdb has no T column)
+    'GXB':       (29, 38300, 0x0F, 0xFF),     # D:4 F:8; P = 1 - popcount(F)%2 derived
+    'Logitech':  (30, 38000, 0x0F, 0xFF),     # D:4 F:8, LSB-first
 }
 
 
@@ -303,6 +308,14 @@ def irdb_to_blob(protocol, device_str, subdevice_str, function_str):
         addr = (device & 0x1F) | ((subdevice & 0x1F) << 5)
     elif proto_id in (26,):  # XMP — D:8 low, S:8 above
         addr = (device & 0xFF) | ((subdevice & 0xFF) << 8)
+    elif proto_id in (27,):  # Bose — function-only frame, address unused
+        addr = 0
+    elif proto_id in (28,):  # PaceMSS — T:1 above D:1
+        addr = (device & 0x1)
+    elif proto_id in (29,):  # GXB — 4-bit address
+        addr = device & 0xF
+    elif proto_id in (30,):  # Logitech — 4-bit address
+        addr = device & 0xF
     else:  # NEC1, Samsung32, etc
         addr = device & 0xFF
 

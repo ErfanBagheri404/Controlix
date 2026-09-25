@@ -22,6 +22,10 @@ import com.erfanbagheri.controlix.ir.protocols.Samsung32
 import com.erfanbagheri.controlix.ir.protocols.SharpDenon
 import com.erfanbagheri.controlix.ir.protocols.Sirc
 import com.erfanbagheri.controlix.ir.protocols.Xmp
+import com.erfanbagheri.controlix.ir.protocols.Bose
+import com.erfanbagheri.controlix.ir.protocols.Gxb
+import com.erfanbagheri.controlix.ir.protocols.Logitech
+import com.erfanbagheri.controlix.ir.protocols.PaceMss
 
 /**
  * Bridges the public file-format spelling of a protocol ("NEC", "SIRC15",
@@ -74,6 +78,10 @@ internal object IrProtocolCode {
                 DishPlayer.CARRIER_HZ to DishPlayer.encode(address and 0x3FF, command and 0x3F)
             "XMP", "XMP1", "XMP2" ->
                 Xmp.CARRIER_HZ to Xmp.encode(address and 0xFFFF, command and 0x3FF)
+            "BOSE" -> Bose.CARRIER_HZ to Bose.encode(command and 0xFF)
+            "PACEMSS" -> PaceMss.CARRIER_HZ to PaceMss.encode(0, address and 0x1, command and 0xFF)
+            "GXB" -> Gxb.CARRIER_HZ to Gxb.encode(address and 0xF, command and 0xFF)
+            "LOGITECH" -> Logitech.CARRIER_HZ to Logitech.encode(address and 0xF, command and 0xFF)
             else -> null
         }
     }
