@@ -351,7 +351,7 @@ private fun MenuDrawer(
 
             SectionHead("Tools")
             DrawerRow(ActionIcon.Macros, "Macros", onMacros)
-            DrawerRow(ActionIcon.Sweep, "Power-off sweep", onSweep)
+            DrawerRow(ActionIcon.Sweep, "TV-B-Gone", onSweep)
             DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)
             DrawerRow(ActionIcon.Gauge, "Database health", onDbHealth)
 
