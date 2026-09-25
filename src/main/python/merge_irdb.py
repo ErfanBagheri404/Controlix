@@ -162,6 +162,37 @@ PROTO_MAP = {
 }
 
 
+def sibling_or_synth_name(csv_path, function, protocol, device, subdevice):
+    """Label for a row whose functionname cell is blank.
+
+    irdb uses blank names for single-row address markers and rows a
+    contributor left unnamed. The same (protocol, device, subdevice,
+    function) tuple in a sibling file of the same manufacturer is the same
+    button, so reuse that label; otherwise return None and the caller
+    synthesizes one. Never drops the row.
+    """
+    manufacturer = os.path.dirname(os.path.dirname(csv_path))
+    wanted = (function, protocol, device, subdevice)
+    for sib in sorted(glob.glob(os.path.join(manufacturer, '*', '*.csv'))):
+        if sib == csv_path:
+            continue
+        try:
+            rows = list(csv.DictReader(open(sib, encoding='utf-8', errors='ignore')))
+        except OSError:
+            continue
+        for row in rows:
+            key = ((row.get('function') or '').strip(),
+                   (row.get('protocol') or '').strip(),
+                   (row.get('device') or '').strip(),
+                   (row.get('subdevice') or '').strip())
+            if key != wanted:
+                continue
+            name = (row.get('functionname') or '').strip()
+            if name:
+                return name
+    return None
+
+
 def encode_parsed_12(proto_id, address, command):
     """12-byte parsed blob: [protoId, rsvd×3, addr(4 LE), cmd(4 LE)]."""
     addr = address & 0xFFFFFFFF
@@ -386,6 +417,7 @@ def main():
 
         # Convert buttons
         btn_count = 0
+        unnamed_idx = 0
         for row in rows:
             func_name = (row.get('functionname') or '').strip()
             protocol = (row.get('protocol') or '').strip()
@@ -393,9 +425,16 @@ def main():
             subdevice = (row.get('subdevice') or '').strip()
             function = (row.get('function') or '').strip()
 
-            if not func_name or not function:
+            if not function:
                 skipped_empty += 1
                 continue
+            if not func_name:
+                # Single-row address markers + unnamed rows: derive a label
+                # from a sibling row's name at the same function slot,
+                # else synthesize "<device> <function>" — never drop them.
+                func_name = (sibling_or_synth_name(csv_path, function, protocol, device, subdevice)
+                             or f"{model_name} {function}")
+                unnamed_idx += 1
 
             result = irdb_to_blob(protocol, device, subdevice, function)
             if result is None:
