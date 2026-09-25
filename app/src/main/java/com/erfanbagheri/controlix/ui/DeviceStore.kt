@@ -71,6 +71,9 @@ data class SavedDevice(
     }
 }
 
+/** AC remotes are stateful and get the climate pad, not the TV pad. */
+fun SavedDevice.isAc(): Boolean = categorySlug.startsWith("acs")
+
 enum class Room(val slug: String, val display: String) {
     LivingRoom("living_room", "Living Room"),
     Bedroom("bedroom", "Bedroom"),

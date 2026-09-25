@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
@@ -146,6 +147,8 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
             drawerState = drawerState,
             drawerContent = {
                 MenuDrawer(
+                    acDevices = model.devices.filter { it.isAc() },
+                    onOpenAc = { dev -> scope.launch { drawerState.close() }; route = Route.Pad(dev.remoteId) },
                     hasDevices = model.devices.isNotEmpty(),
                     onMacros = { scope.launch { drawerState.close() }; route = Route.Macros },
                     onSweep = { scope.launch { drawerState.close() }; route = Route.Sweep },
@@ -252,7 +255,18 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         // System back from a cold-start-restored pad returns Home, never traps.
                         BackHandler { route = Route.Home }
                         val saved = model.devices.firstOrNull { it.remoteId == r.remoteId }
-                        PadScreen(
+                        // AC remotes are stateful: their pad is a separate climate
+                        // layout. Every other category keeps the normal TV pad.
+                        if (saved?.isAc() == true) {
+                            AcPadScreen(
+                                deviceName = saved.name,
+                                remoteId = r.remoteId,
+                                repo = repo,
+                                transmitter = ir,
+                                toast = toast,
+                                onBack = { route = Route.Home },
+                            )
+                        } else PadScreen(
                             deviceName = saved?.name,
                             onRename = { newName -> saved?.let { model.rename(it.key, newName) } },
                             remoteId = r.remoteId,
@@ -332,6 +346,8 @@ private fun MissingDb() {
 }
 @Composable
 private fun MenuDrawer(
+    acDevices: List<SavedDevice>,
+    onOpenAc: (SavedDevice) -> Unit,
     hasDevices: Boolean,
     onMacros: () -> Unit,
     onSweep: () -> Unit,
@@ -348,6 +364,29 @@ private fun MenuDrawer(
             Spacer(Modifier.height(16.dp))
             Text("Menu", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(32.dp))
+
+            // AC-category remotes jump straight to the climate pad.
+            if (acDevices.isNotEmpty()) {
+                SectionHead("Air conditioning")
+                acDevices.forEach { dev ->
+                    Row(
+                        Modifier.fillMaxWidth().pressable { onOpenAc(dev) }.padding(vertical = 18.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        LucideIcon(
+                            LucideCategoryIcons.forCategory(dev.categorySlug), 22.dp,
+                            MaterialTheme.colorScheme.onSurface,
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            dev.name, style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface, maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(32.dp))
+            }
 
             SectionHead("Tools")
             DrawerRow(ActionIcon.Macros, "Macros", onMacros)
