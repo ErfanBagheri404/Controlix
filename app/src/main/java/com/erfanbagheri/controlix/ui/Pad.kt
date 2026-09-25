@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.CopiedButton
 import com.erfanbagheri.controlix.data.CopiedButtons
 import com.erfanbagheri.controlix.data.EffectiveButtons
+import com.erfanbagheri.controlix.data.FreeLayout
+import com.erfanbagheri.controlix.data.FreeLayout.Slot
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.ManualKeys
 import com.erfanbagheri.controlix.data.MediaLayout
@@ -136,6 +138,8 @@ fun PadScreen(
     // flow flags it, "covers zero standard keys" is the only honest
     // not-matched signal (issue #17).
     val manual = summary.extraCount > 0 && (!saved.matched || summary.onPad == 0)
+
+    val freeLayout = remember(saved.key) { DeviceStore(context).freeLayout(saved.key) }
 
     /**
      * The code a pad key would send. A pasted local copy wins, then the
@@ -256,11 +260,11 @@ fun PadScreen(
             BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
                 if (Orientation.useLandscapeLayout(maxWidth.value, maxHeight.value)) {
                     LandscapePad(::fire, ::copyKey, expanded, { expanded = !expanded }, Modifier.fillMaxSize(),
-                        manual, summary, manualOpen) { manualOpen = !manualOpen }
+                        manual, summary, manualOpen, { manualOpen = !manualOpen }, freeLayout)
                 } else {
                     Column(Modifier.fillMaxSize()) {
                         PadBodyStacked(::fire, ::copyKey, expanded, { expanded = !expanded }, Modifier.fillMaxWidth().weight(1f),
-                            manual, summary, manualOpen) { manualOpen = !manualOpen }
+                            manual, summary, manualOpen, { manualOpen = !manualOpen }, freeLayout)
                         Spacer(Modifier.height(16.dp))
                         PadControlsRow(::fire, ::copyKey, { expanded = !expanded }, Modifier.fillMaxWidth().height(CONTROL_BLOCK))
                     }
@@ -383,13 +387,16 @@ private fun PadBodyStacked(
     summary: ManualKeys.Summary? = null,
     manualOpen: Boolean = true,
     onToggleManualOpen: () -> Unit = {},
+    freeLayout: FreeLayout = FreeLayout.default(),
 ) {
     ContentSwap(expanded, modifier) { open ->
         if (open) {
             if (manual && summary != null) {
                 ManualKeyList(summary, fire, copy, Modifier.fillMaxSize(), manualOpen, onToggleManualOpen)
-            } else {
+            } else if (freeLayout == FreeLayout.default()) {
                 ExpandedKeys(fire, copy, Modifier.fillMaxSize())
+            } else {
+                FreeGrid(freeLayout, fire, copy, Modifier.fillMaxSize())
             }
         } else {
             ChevronPad(fire, copy, Modifier.fillMaxSize())
@@ -506,10 +513,11 @@ private fun LandscapePad(
     summary: ManualKeys.Summary? = null,
     manualOpen: Boolean = true,
     onToggleManualOpen: () -> Unit = {},
+    freeLayout: FreeLayout = FreeLayout.default(),
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         PadBodyStacked(fire, copy, expanded, onToggleExpand, Modifier.weight(1f).fillMaxHeight(),
-            manual, summary, manualOpen, onToggleManualOpen)
+            manual, summary, manualOpen, onToggleManualOpen, freeLayout)
         Spacer(Modifier.width(16.dp))
         PadControlsRow(fire, copy, onToggleExpand, Modifier.weight(1f).height(CONTROL_BLOCK))
     }
@@ -557,6 +565,26 @@ private fun ExpandedKeys(fire: (String) -> Unit, copy: (String) -> Unit, modifie
             PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("power") }) { fire("power") }
             PadBtn(ActionIcon.Menu, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("menu") }) { fire("menu") }
             PadBtn(ActionIcon.Info, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("info") }) { fire("info") }
+        }
+    }
+}
+
+
+/** Stored free layout: column count honoured, blanks keep their grid cell. */
+// ponytail: next step is the editor UI — column picker + move controls.
+@Composable
+private fun FreeGrid(layout: FreeLayout, fire: (String) -> Unit, copy: (String) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        layout.slots.chunked(layout.columns).forEach { row ->
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { slot ->
+                    when (slot) {
+                        is Slot.Key -> KeyTile(slot.name, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy(slot.name) }) { fire(slot.name) }
+                        Slot.Blank -> Spacer(Modifier.weight(1f).fillMaxHeight())
+                    }
+                }
+                repeat(layout.columns - row.size) { Spacer(Modifier.weight(1f).fillMaxHeight()) }
+            }
         }
     }
 }

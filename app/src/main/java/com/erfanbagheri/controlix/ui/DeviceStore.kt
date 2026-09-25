@@ -8,6 +8,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.erfanbagheri.controlix.data.DeviceKey
+import com.erfanbagheri.controlix.data.prefKey
+import com.erfanbagheri.controlix.data.FreeLayout
+import com.erfanbagheri.controlix.data.FreeLayoutCodec
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.PersistedDevice
 import com.erfanbagheri.controlix.data.RemoteIdentity
@@ -187,6 +190,15 @@ class DeviceStore(context: Context) {
     private fun write(list: List<SavedDevice>) {
         prefs.edit().putString("list", list.joinToString(";") { RemoteIdentity.serialize(it.toPersisted()) }).apply()
     }
+
+    /**
+     * Free pad layout for a device. Keyed by the stable DeviceKey so a saved
+     * layout survives a DB rebuild (remote ids are reassigned).
+     * ponytail: editor UI lands separately; this is the read side.
+     */
+    fun freeLayout(key: DeviceKey): FreeLayout =
+        runCatching { FreeLayoutCodec.decode(prefs.getString("layout_${key.prefKey()}", null)) }
+            .getOrElse { FreeLayout.default() }
 
     fun update(dev: SavedDevice) = save(dev)
     fun replaceAll(devices: List<SavedDevice>) = write(devices)

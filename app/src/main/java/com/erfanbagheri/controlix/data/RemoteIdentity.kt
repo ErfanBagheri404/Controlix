@@ -23,6 +23,17 @@ data class DeviceKey(
     val fileName: String,
 )
 
+/**
+ * Pref-key-safe stable identity. Uses `/` so it reads like a path; each
+ * segment is stripped of the separators the saved-device codec reserves
+ * (`|`, `;`) so a crafted name cannot escape into another device's slot.
+ * ponytail: no hashing — a collision needs a brand/file literally containing
+ * the delimiter, which the same strip prevents.
+ */
+fun DeviceKey.prefKey(): String =
+    listOf(categorySlug, brandName, fileName)
+        .joinToString("/") { it.replace('|', ' ').replace(';', ' ').trim() }
+
 /** One remote as the current DB sees it. [remoteId] is volatile. */
 data class RemoteRow(
     val remoteId: Int,
