@@ -1,5 +1,6 @@
 package com.erfanbagheri.controlix.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +35,7 @@ import com.erfanbagheri.controlix.data.CopiedButton
 import com.erfanbagheri.controlix.data.CopiedButtons
 import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.MediaLayout
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
@@ -72,6 +74,8 @@ fun PadScreen(
     var switcherOpen by remember { mutableStateOf(false) }
     var sheetOpen by remember { mutableStateOf(false) }
     var expanded by remember(remoteId) { mutableStateOf(false) }
+    // Media pad (issue #15): composed only from this remote's own buttons.
+    var mediaMode by remember(remoteId) { mutableStateOf(false) }
     var copiedOpen by remember { mutableStateOf(false) }
     // Local copies pasted onto this remote, from CopiedButtonStore.
     var localCopies by remember(remoteId) { mutableStateOf(copied.local(remoteId)) }
@@ -89,6 +93,8 @@ fun PadScreen(
         if (siblings.isNullOrEmpty()) emptyList()
         else EffectiveButtons.resolve(remoteId, buttons, siblings)
     }
+    // MCE/RC6 media layout — present/missing decided by ButtonNames only.
+    val media = remember(remoteId, buttons) { MediaLayout.compose(buttons.map { it.name }) }
     // Always resolvable so the header menu opens even if the list is stale.
     val saved = devices.firstOrNull { it.remoteId == remoteId }
         ?: SavedDevice(remoteId, deviceName ?: "Remote", "", "", 0)
@@ -169,6 +175,14 @@ fun PadScreen(
                 }
                 Text(deviceName ?: "Remote", style = MaterialTheme.typography.titleMedium)
             }
+            if (media.hasMediaKeys) {
+                Text(
+                    if (mediaMode) "PAD" else "MEDIA",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (mediaMode) Accent else PaperFaint,
+                    modifier = Modifier.pressable { mediaMode = !mediaMode }.padding(horizontal = 8.dp, vertical = 9.dp),
+                )
+            }
             Spacer(Modifier.weight(1f))
             ActionIconView(
                 ActionIcon.Dots, 26.dp, MaterialTheme.colorScheme.onSurface,
@@ -178,46 +192,51 @@ fun PadScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // ── Region 1: chevron pad — swapped out for the full key set ─────
-        ContentSwap(expanded, Modifier.fillMaxWidth().weight(1f)) { open ->
-            if (open) {
-                ExpandedKeys(::fire, ::copyKey, Modifier.fillMaxSize())
-            } else {
-                ChevronPad(::fire, ::copyKey, Modifier.fillMaxSize())
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // ── Region 2: controls section — VOL / keys / CH ─────────────────
-        Row(Modifier.fillMaxWidth().height(CONTROL_BLOCK), verticalAlignment = Alignment.CenterVertically) {
-            // No capsule: the keys sit directly on the screen surface.
-            RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL",
-                onUp = { fire("volume_up") }, onDown = { fire("volume_down") },
-                onLongUp = { copyKey("volume_up") }, onLongDown = { copyKey("volume_down") })
-
-            Spacer(Modifier.width(14.dp))
-
-            Column(
-                Modifier.weight(1f).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PadBtn(ActionIcon.Home, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copyKey("home") }) { fire("home") }
-                    PadBtn(ActionIcon.Back, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copyKey("back") }) { fire("back") }
+        if (mediaMode) {
+            // Media pad replaces both default regions; keyboard mode lives inside it.
+            MediaPad(media, ::fire, Modifier.fillMaxWidth().weight(1f))
+        } else {
+            // ── Region 1: chevron pad — swapped out for the full key set ─────
+            ContentSwap(expanded, Modifier.fillMaxWidth().weight(1f)) { open ->
+                if (open) {
+                    ExpandedKeys(::fire, ::copyKey, Modifier.fillMaxSize())
+                } else {
+                    ChevronPad(::fire, ::copyKey, Modifier.fillMaxSize())
                 }
-                Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copyKey("mute") }) { fire("mute") }
-                    PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copyKey("play_pause") }) { fire("play_pause") }
-                }
-                PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp)) { expanded = !expanded }
             }
 
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.height(16.dp))
 
-            RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH",
-                onUp = { fire("channel_up") }, onDown = { fire("channel_down") },
-                onLongUp = { copyKey("channel_up") }, onLongDown = { copyKey("channel_down") })
+            // ── Region 2: controls section — VOL / keys / CH ─────────────────
+            Row(Modifier.fillMaxWidth().height(CONTROL_BLOCK), verticalAlignment = Alignment.CenterVertically) {
+                // No capsule: the keys sit directly on the screen surface.
+                RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL",
+                    onUp = { fire("volume_up") }, onDown = { fire("volume_down") },
+                    onLongUp = { copyKey("volume_up") }, onLongDown = { copyKey("volume_down") })
+
+                Spacer(Modifier.width(14.dp))
+
+                Column(
+                    Modifier.weight(1f).fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        PadBtn(ActionIcon.Home, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copyKey("home") }) { fire("home") }
+                        PadBtn(ActionIcon.Back, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copyKey("back") }) { fire("back") }
+                    }
+                    Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copyKey("mute") }) { fire("mute") }
+                        PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copyKey("play_pause") }) { fire("play_pause") }
+                    }
+                    PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp)) { expanded = !expanded }
+                }
+
+                Spacer(Modifier.width(14.dp))
+
+                RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH",
+                    onUp = { fire("channel_up") }, onDown = { fire("channel_down") },
+                    onLongUp = { copyKey("channel_up") }, onLongDown = { copyKey("channel_down") })
+            }
         }
 
         if (lastSent != null) {
@@ -318,6 +337,160 @@ private fun ExpandedKeys(fire: (String) -> Unit, copy: (String) -> Unit, modifie
             PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("power") }) { fire("power") }
             PadBtn(ActionIcon.Menu, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("menu") }) { fire("menu") }
             PadBtn(ActionIcon.Info, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("info") }) { fire("info") }
+        }
+    }
+}
+
+/**
+ * Dedicated MCE/RC6 media pad. Flat rows, hairline separators, haptics-only
+ * feedback; no stock toggles, no rounded cards.
+ *
+ * Keyboard mode is a compact on-screen grid: each tap maps to one of the
+ * remote's own digit/navigation keys in sequence and transmits its resolved
+ * real pattern.
+ *
+ * ponytail: this navigates media UIs; it does not inject Android key events
+ * or type text into other apps. Upgrade path: an explicit system-wide
+ * accessibility/IME service if text entry is ever requested.
+ */
+@Composable
+private fun MediaPad(
+    layout: MediaLayout.Layout,
+    fire: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var keyboard by remember { mutableStateOf(false) }
+
+    Column(modifier) {
+        // Mode toggle: flat custom switch (hairline track + sliding dot), not a stock Switch.
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                if (keyboard) "KEYBOARD" else "MEDIA PAD",
+                style = MaterialTheme.typography.labelSmall,
+                color = PaperFaint,
+            )
+            Spacer(Modifier.weight(1f))
+            MediaToggle(keyboard) { keyboard = !keyboard }
+        }
+
+        Spacer(Modifier.height(10.dp))
+        Hairline()
+        Spacer(Modifier.height(10.dp))
+
+        if (keyboard) {
+            KeyboardGrid(layout.keyboardRows, fire, Modifier.weight(1f))
+        } else {
+            MediaLayoutBody(layout, fire, Modifier.weight(1f))
+        }
+    }
+}
+
+/** Hairline divider, one physical pixel at any density. */
+@Composable
+private fun Hairline() {
+    Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)))
+}
+
+/** Flat custom toggle: 34x18 hairline track, 14dp dot; no rounded chrome. */
+@Composable
+private fun MediaToggle(checked: Boolean, onToggle: () -> Unit) {
+    Box(
+        Modifier
+            .width(38.dp)
+            .height(20.dp)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
+            .background(
+                if (checked) Accent.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
+                RoundedCornerShape(10.dp),
+            )
+            .pressable(onToggle),
+        contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
+    ) {
+        Box(
+            Modifier
+                .padding(horizontal = 2.dp)
+                .size(14.dp)
+                .background(if (checked) Accent else MaterialTheme.colorScheme.onSurfaceVariant, RoundedCornerShape(7.dp)),
+        )
+    }
+}
+
+/** Transport row, D-pad with OK, digit pad, back/exit rows — present keys only. */
+@Composable
+private fun MediaLayoutBody(
+    layout: MediaLayout.Layout,
+    fire: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (layout.section("transport").isNotEmpty()) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                layout.section("transport").forEach { key ->
+                    PadBtn(ActionIcon.Play, Modifier.weight(1f).height(52.dp)) { fire(key) }
+                }
+            }
+        }
+
+        if (layout.section("dpad").isNotEmpty()) {
+            val dpad = layout.section("dpad")
+            Column(
+                Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if ("up" in dpad) PadBtn(ActionIcon.ChevronUp, Modifier.width(68.dp).height(44.dp)) { fire("up") }
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if ("left" in dpad) PadBtn(ActionIcon.ChevronLeft, Modifier.size(52.dp)) { fire("left") }
+                    if ("ok" in dpad) PadBtn(ActionIcon.Ok, Modifier.size(64.dp), accent = true) { fire("ok") }
+                    if ("right" in dpad) PadBtn(ActionIcon.ChevronRight, Modifier.size(52.dp)) { fire("right") }
+                }
+                if ("down" in dpad) PadBtn(ActionIcon.ChevronDown, Modifier.width(68.dp).height(44.dp)) { fire("down") }
+            }
+        }
+
+        if (layout.digitRows.isNotEmpty()) {
+            layout.digitRows.forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { key ->
+                        KeyTile(
+                            label = key,
+                            modifier = Modifier.weight(1f).height(46.dp),
+                        ) { fire(key) }
+                    }
+                    // Nav strips can carry 4 keys — never negative-fill.
+                    repeat((3 - row.size).coerceAtLeast(0)) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+    }
+}
+
+/** Keyboard mode: flat key grid, each tap fires that remote key's real pattern. */
+@Composable
+private fun KeyboardGrid(
+    rows: List<List<String>>,
+    fire: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        rows.forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { key ->
+                    KeyTile(
+                        label = key,
+                        modifier = Modifier.weight(1f).height(46.dp),
+                    ) { fire(key) }
+                }
+                // Nav strips can carry 4 keys — never negative-fill.
+                repeat((3 - row.size).coerceAtLeast(0)) { Spacer(Modifier.weight(1f)) }
+            }
         }
     }
 }
