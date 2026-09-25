@@ -68,6 +68,7 @@ private sealed interface Route {
     data object Sweep : Route
     data object SelfTest : Route
     data object Macros : Route
+    data object Builder : Route
     data object DbHealth : Route
 }
 
@@ -165,6 +166,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
             drawerState = drawerState,
             drawerContent = {
                 MenuDrawer(
+                    onBuild = { scope.launch { drawerState.close() }; route = Route.Builder },
                     acDevices = model.devices.filter { it.isAc() },
                     onOpenAc = { dev -> scope.launch { drawerState.close() }; route = Route.Pad(dev.remoteId) },
                     hasDevices = model.devices.isNotEmpty(),
@@ -341,6 +343,13 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
 
                     is Route.Sweep -> SweepScreen(repo, ir) { route = Route.Home }
                     is Route.SelfTest -> SelfTestScreen(ir) { route = Route.Home }
+                    is Route.Builder -> BuilderScreen(
+                        repo = repo,
+                        model = model,
+                        toast = toast,
+                        onSaved = { route = Route.Pad(it) },
+                        onBack = { route = Route.Home },
+                    )
                     is Route.Macros -> MacrosScreen(
                         repo = repo,
                         transmitter = ir,
@@ -380,6 +389,7 @@ private fun MissingDb() {
 }
 @Composable
 private fun MenuDrawer(
+    onBuild: () -> Unit,
     acDevices: List<SavedDevice>,
     onOpenAc: (SavedDevice) -> Unit,
     hasDevices: Boolean,
@@ -426,6 +436,7 @@ private fun MenuDrawer(
             }
 
             SectionHead("Tools")
+            DrawerRow(ActionIcon.Add, "Build remote", onBuild)
             DrawerRow(ActionIcon.Macros, "Macros", onMacros)
             DrawerRow(ActionIcon.Sweep, "TV-B-Gone", onSweep)
             DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)
