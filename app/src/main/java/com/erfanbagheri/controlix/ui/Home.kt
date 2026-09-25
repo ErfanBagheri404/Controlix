@@ -238,6 +238,7 @@ fun DeviceActionSheet(
     onDismiss: () -> Unit,
     onCopiedKeys: (() -> Unit)? = null,
     onFavorites: (() -> Unit)? = null,
+    onInspectSignals: (() -> Unit)? = null,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -254,6 +255,9 @@ fun DeviceActionSheet(
                 SheetAction("Copied keys", "paste a copied code") { onDismiss(); onCopiedKeys() }
             if (onFavorites != null) {
                 SheetAction("Favorites", "pin keys to the home row") { onDismiss(); onFavorites() }
+            }
+            if (onInspectSignals != null) {
+                SheetAction("Inspect signals", "waveform, carrier, protocol") { onDismiss(); onInspectSignals() }
             }
             }
             SheetAction("Edit", "name, room, shortcut") { onDismiss(); onEdit(dev) }
