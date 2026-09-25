@@ -50,7 +50,10 @@ import com.erfanbagheri.controlix.data.DbChangelog
 import com.erfanbagheri.controlix.data.DbRefresh
 import com.erfanbagheri.controlix.data.AppUpdateCheck
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.ReleaseInfo
+import com.erfanbagheri.controlix.data.SemVer
 import com.erfanbagheri.controlix.data.UpdateCheckState
+import com.erfanbagheri.controlix.data.WhatsNewStore
 import com.erfanbagheri.controlix.feature.sceneFromMacro
 import com.erfanbagheri.controlix.data.RefreshState
 import com.erfanbagheri.controlix.ir.IrTransmitter
@@ -176,6 +179,8 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
     // and only writes into the drawer's status line; a manual tap on the row
     // re-runs it. Never blocks first paint and never opens a dialog by itself.
     var updateState by remember { mutableStateOf<UpdateCheckState>(UpdateCheckState.Idle) }
+    var whatsNewRelease by remember { mutableStateOf<ReleaseInfo?>(null) }
+    var whatsNewVersion by remember { mutableStateOf<String?>(null) }
 
     fun installedVersion(): String = runCatching {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -186,6 +191,17 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
         val installed = installedVersion()
         val release = withContext(Dispatchers.IO) { AppUpdateCheck.fetchLatest() }
         updateState = AppUpdateCheck.evaluate(installed, release)
+        // "What's new" (issue #52) rides the same single fetch, no second request.
+        // Only fire when the version we are RUNNING is the release itself, so the
+        // notes always describe the build the user actually installed.
+        val running = SemVer.parse(installed)
+        val released = release?.let { SemVer.parse(it.tagName) }
+        if (release != null && running != null && running == released &&
+            WhatsNewStore.shouldShow(installed)
+        ) {
+            whatsNewVersion = installed
+            whatsNewRelease = release
+        }
     }
 
     LaunchedEffect(Unit) { runUpdateCheck() }
@@ -433,6 +449,21 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
         // Scenes mirror the macro store — one projection, no second editor.
         LaunchedEffect(macroModel.macros) {
             favoritesModel.replaceScenes(macroModel.macros.map { sceneFromMacro(it, it.id) })
+        }
+        // What's-new modal (issue #52). Hosted here, not in a route, so it floats
+        // over whatever screen the user is on when the release is detected.
+        val whatsNew = whatsNewRelease
+        val whatsNewAt = whatsNewVersion
+        if (whatsNew != null && whatsNewAt != null) {
+            WhatsNewDialog(
+                version = whatsNewAt,
+                notes = whatsNew.body.orEmpty(),
+                onDismiss = {
+                    WhatsNewStore.markSeen(whatsNewAt)
+                    whatsNewRelease = null
+                    whatsNewVersion = null
+                },
+            )
         }
     }
 }
