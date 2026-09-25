@@ -30,6 +30,33 @@ class ExternalCommandTest {
     }
 
     @Test
+    fun `an oversized pattern array is refused`() {
+        // Extras come from another app; a huge burst must not be allocated and
+        // then handed to a blocking transmit.
+        val huge = IntArray(ExternalCommand.MAX_PATTERN_LEN + 2) { 100 }
+        assertNull(
+            cmd(ExternalCommand.EXTRA_CARRIER_HZ to 38000, ExternalCommand.EXTRA_PATTERN to huge)
+        )
+    }
+
+    @Test
+    fun `an oversized int pattern is refused`() {
+        val big = IntArray(ExternalCommand.MAX_PATTERN_LEN + 2) { 100 }
+        assertFalse(ExternalCommand.isValidPattern(big))
+    }
+
+    @Test
+    fun `a pattern at the cap is still accepted`() {
+        val atCap = IntArray(ExternalCommand.MAX_PATTERN_LEN) { 100 }
+        assertNotNull(
+            cmd(
+                ExternalCommand.EXTRA_CARRIER_HZ to 38000,
+                ExternalCommand.EXTRA_PATTERN to atCap,
+            )
+        )
+    }
+
+    @Test
     fun `remote id plus button parses`() {
         val c = cmd(ExternalCommand.EXTRA_REMOTE_ID to 42, ExternalCommand.EXTRA_BUTTON to "power")
         assertNotNull(c)

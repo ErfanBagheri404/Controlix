@@ -53,6 +53,9 @@ data class ExternalCommand(
         const val MAX_CARRIER_HZ = 60_000
         const val MAX_REPEAT = 10
 
+        /** Longest accepted burst: 512 durations is far past any real remote. */
+        const val MAX_PATTERN_LEN = 512
+
         /** Reads the extras off an Intent. Ints may also arrive as strings. */
         fun parse(intent: Intent): ExternalCommand? = parse(
             object : Extras {
@@ -92,9 +95,10 @@ data class ExternalCommand(
         const val EXTRA_PATTERN = "pattern"
         const val EXTRA_REPEAT = "repeat"
 
-        /** Even count of on/off pairs, all strictly positive. */
+        /** Even count of on/off pairs, all strictly positive, length capped. */
         fun isValidPattern(pattern: IntArray?): Boolean =
-            pattern != null && pattern.size >= 2 && pattern.size % 2 == 0 && pattern.all { it > 0 }
+            pattern != null && pattern.size in 2..MAX_PATTERN_LEN &&
+                pattern.size % 2 == 0 && pattern.all { it > 0 }
 
         /**
          * `adb shell` cannot pass an int array, so `--es pattern "100,200,300"`
@@ -102,7 +106,10 @@ data class ExternalCommand(
          */
         private fun parsePatternText(raw: String): IntArray? {
             val tokens = raw.split(',', ' ', '\t', '\n').filter { it.isNotBlank() }
-            if (tokens.isEmpty()) return null
+            // Capped: extras come from another app, so a hostile sender could
+            // otherwise hand us a megabyte of durations to allocate and then
+            // block a transmit thread on.
+            if (tokens.isEmpty() || tokens.size > MAX_PATTERN_LEN) return null
             val out = IntArray(tokens.size)
             for (i in tokens.indices) out[i] = tokens[i].trim().toIntOrNull() ?: return null
             return out
