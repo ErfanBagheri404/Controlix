@@ -79,6 +79,9 @@ data class SavedDevice(
     }
 }
 
+/** AC remotes are stateful and get the climate pad, not the TV pad. */
+fun SavedDevice.isAc(): Boolean = categorySlug.startsWith("acs")
+
 enum class Room(val slug: String, val display: String) {
     LivingRoom("living_room", "Living Room"),
     Bedroom("bedroom", "Bedroom"),
@@ -183,6 +186,8 @@ class DeviceStore(context: Context) {
         prefs.edit().putString("list", list.joinToString(";") { RemoteIdentity.serialize(it.toPersisted()) }).apply()
     }
 
+    fun update(dev: SavedDevice) = save(dev)
+    fun replaceAll(devices: List<SavedDevice>) = write(devices)
     private fun clean(s: String): String = s.replace('|', '/').replace(';', ',')
 }
 
@@ -224,6 +229,7 @@ class DeviceModel(private val store: DeviceStore, private val index: RemoteIndex
     fun togglePin(key: DeviceKey) { store.togglePin(key); devices = store.load(index) }
     fun toggleEnabled(key: DeviceKey) { store.toggleEnabled(key); devices = store.load(index) }
     fun setRoom(key: DeviceKey, slug: String) { store.setRoom(key, slug); devices = store.load(index) }
+    fun replaceAll(devices: List<SavedDevice>) { store.replaceAll(devices); this.devices = store.load(index) }
 
     private fun clean(s: String): String = s.replace('|', '/').replace(';', ',')
 }
