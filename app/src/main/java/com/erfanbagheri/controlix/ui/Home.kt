@@ -261,7 +261,10 @@ fun DeviceActionSheet(
                 if (dev.pinned) "Unpin" else "Pin",
                 if (dev.pinned) "remove the star" else "mark with a star",
             ) { model.togglePin(dev.key); onDismiss(); toast.show(if (dev.pinned) "${dev.name} unpinned" else "${dev.name} pinned") }
-            SheetAction("Share", "show QR code") { onDismiss(); onShare(dev) }
+            // Custom remotes have no DB id to encode — nothing to scan.
+            if (dev.remoteId >= 0) {
+                SheetAction("Share", "show QR code") { onDismiss(); onShare(dev) }
+            }
             SheetAction("Delete", null, destructive = true) {
                 model.remove(dev.key)
                 onDismiss()
