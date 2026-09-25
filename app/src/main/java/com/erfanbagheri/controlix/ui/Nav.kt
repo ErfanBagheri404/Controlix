@@ -49,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.DbChangelog
 import com.erfanbagheri.controlix.data.DbRefresh
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.feature.AutomationState
+import com.erfanbagheri.controlix.feature.ExternalCommand
 import com.erfanbagheri.controlix.feature.sceneFromMacro
 import com.erfanbagheri.controlix.data.RefreshState
 import com.erfanbagheri.controlix.ir.IrTransmitter
@@ -503,6 +505,23 @@ private fun MenuDrawer(
                 effectiveResumeEnabled(ResumeState.explicit, hasDevices),
                 ResumeState::setEnabled,
             )
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead("Automation")
+            val automationCtx = LocalContext.current
+            DrawerToggle(
+                "Allow external broadcasts",
+                AutomationState.enabled,
+            ) { AutomationState.setEnabled(automationCtx, it) }
+            if (AutomationState.enabled) {
+                Text(
+                    "Tasker / Home Assistant can fire codes:\n" +
+                        "adb shell am broadcast -a ${ExternalCommand.ACTION} \\\n" +
+                        "  --es remote_name \"TV\" --es button power",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Transmitter")
