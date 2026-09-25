@@ -155,6 +155,13 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
             }
         }
 
+    /** Human-readable model/file name for a remote, used by borrowed-code provenance. */
+    fun remoteName(remoteId: Int): String? =
+        db.rawQuery(
+            "SELECT COALESCE(NULLIF(TRIM(model_name), ''), file_name) FROM remote WHERE id = ?",
+            arrayOf(remoteId.toString()),
+        ).use { c -> if (c.moveToFirst()) c.getString(0)?.takeIf { it.isNotBlank() } else null }
+
     /** Search model names across the whole DB, returns remote id + display strings. */
     fun searchModels(query: String, limit: Int = 50): List<Pair<Remote, String>> {
         val like = "%${query.trim()}%"

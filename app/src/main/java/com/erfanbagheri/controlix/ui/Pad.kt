@@ -1,5 +1,6 @@
 package com.erfanbagheri.controlix.ui
 
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -87,10 +88,14 @@ fun PadScreen(
     var switcherOpen by remember { mutableStateOf(false) }
     var sheetOpen by remember { mutableStateOf(false) }
     var expanded by remember(remoteId) { mutableStateOf(false) }
+    var pendingBorrow by remember(remoteId) { mutableStateOf<PendingBorrow?>(null) }
+    var provenanceKey by remember(remoteId) { mutableStateOf<String?>(null) }
+    val (borrowMemory, updateBorrowMemory) = rememberBorrowedCodeMemory()
     // Issue #17: manual list open by default — expand → label is then 2 taps.
     var manualOpen by remember(remoteId) { mutableStateOf(true) }
     // Media pad (issue #15): composed only from this remote's own buttons.
     var mediaMode by remember(remoteId) { mutableStateOf(false) }
+
     var copiedOpen by remember { mutableStateOf(false) }
     var favoritesOpen by remember { mutableStateOf(false) }
     // Local copies pasted onto this remote, from CopiedButtonStore.
@@ -116,14 +121,36 @@ fun PadScreen(
     // this remote lacks. Used when the remote's own buttons fall short.
     // Custom remotes resolve against their own set only — the recipe is
     // exactly what the user picked; borrowing would override their choices.
-    val effective = remember(remoteId, buttons, recipe) {
-        if (recipe != null) EffectiveButtons.resolve(remoteId, buttons, buttons)
+    val siblings = remember(remoteId, recipe) {
+        if (recipe != null) emptyList()
         else {
             val brand = runCatching { repo?.brandIdOf(remoteId) }.getOrNull()
-            val siblings = if (brand == null) null
-            else runCatching { repo?.brandButtons(brand) }.getOrNull()
-            if (siblings.isNullOrEmpty()) emptyList()
-            else EffectiveButtons.resolve(remoteId, buttons, siblings)
+            if (brand == null) emptyList()
+            else runCatching { repo?.brandButtons(brand) }.getOrNull().orEmpty()
+        }
+    }
+    val effective = remember(remoteId, recipe, buttons, siblings, borrowMemory) {
+        if (recipe != null) EffectiveButtons.resolve(remoteId, buttons, buttons)
+        else if (siblings.isEmpty()) emptyList()
+        else EffectiveButtons.resolve(remoteId, buttons, siblings, borrowMemory)
+    }
+    val borrowedKeys = remember(effective) { effective.filter { it.borrowed }.associateBy { it.key } }
+
+    fun showProvenance(key: String) {
+        val borrowed = borrowedKeys[key] ?: return
+        val source = runCatching { repo?.remoteName(borrowed.remoteId) }.getOrNull()
+        val label = "${key.replace('_', ' ').replaceFirstChar { it.uppercase() }} · " +
+            borrowedSourceLabel(borrowed, source)
+        toast.show(label)
+    }
+
+    fun sendResolved(resolved: EffectiveButtons.Resolved) {
+        if (transmitter.transmitButton(resolved.carrierHz, resolved.pattern)) {
+            lastSent = "Sent: ${resolved.name}"
+            emitKey = Any()
+        } else {
+            lastSent = "Not sent"
+            toast.show(if (!transmitter.hasIrEmitter()) "This device has no IR blaster." else "Couldn't send. Try again.")
         }
     }
     // MCE/RC6 media layout — present/missing decided by ButtonNames only.
@@ -260,13 +287,16 @@ fun PadScreen(
             BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
                 if (Orientation.useLandscapeLayout(maxWidth.value, maxHeight.value)) {
                     LandscapePad(::fire, ::copyKey, expanded, { expanded = !expanded }, Modifier.fillMaxSize(),
-                        manual, summary, manualOpen, { manualOpen = !manualOpen }, freeLayout)
+                        manual, summary, manualOpen, { manualOpen = !manualOpen }, freeLayout,
+                        borrowedKeys, ::showProvenance)
                 } else {
                     Column(Modifier.fillMaxSize()) {
                         PadBodyStacked(::fire, ::copyKey, expanded, { expanded = !expanded }, Modifier.fillMaxWidth().weight(1f),
-                            manual, summary, manualOpen, { manualOpen = !manualOpen }, freeLayout)
+                            manual, summary, manualOpen, { manualOpen = !manualOpen }, freeLayout,
+                            borrowedKeys, ::showProvenance)
                         Spacer(Modifier.height(16.dp))
-                        PadControlsRow(::fire, ::copyKey, { expanded = !expanded }, Modifier.fillMaxWidth().height(CONTROL_BLOCK))
+                        PadControlsRow(::fire, ::copyKey, { expanded = !expanded }, Modifier.fillMaxWidth().height(CONTROL_BLOCK),
+                            borrowedKeys, ::showProvenance)
                     }
                 }
             }
@@ -278,6 +308,26 @@ fun PadScreen(
         } else {
             Spacer(Modifier.height(10.dp))
         }
+    }
+
+    pendingBorrow?.let { pending ->
+        val remoteName = remember(pending.resolved.remoteId) {
+            runCatching { repo?.remoteName(pending.resolved.remoteId) }.getOrNull()
+        }
+        BorrowedCodeConfirmSheet(
+            pending = pending,
+            source = borrowedSourceLabel(pending.resolved, remoteName),
+            onKeep = {
+                updateBorrowMemory(borrowMemory.accept(remoteId, pending.resolved.key, pending.candidate))
+                pendingBorrow = null
+                sendResolved(pending.resolved)
+            },
+            onReject = {
+                updateBorrowMemory(borrowMemory.reject(remoteId, pending.resolved.key, pending.candidate))
+                pendingBorrow = null
+                toast.show("Noted. A different code will be preferred next time.")
+            },
+        )
     }
 
     if (switcherOpen) {
@@ -388,18 +438,20 @@ private fun PadBodyStacked(
     manualOpen: Boolean = true,
     onToggleManualOpen: () -> Unit = {},
     freeLayout: FreeLayout = FreeLayout.default(),
+    borrowedKeys: Map<String, EffectiveButtons.Resolved> = emptyMap(),
+    onProvenance: ((String) -> Unit)? = null,
 ) {
     ContentSwap(expanded, modifier) { open ->
         if (open) {
             if (manual && summary != null) {
                 ManualKeyList(summary, fire, copy, Modifier.fillMaxSize(), manualOpen, onToggleManualOpen)
             } else if (freeLayout == FreeLayout.default()) {
-                ExpandedKeys(fire, copy, Modifier.fillMaxSize())
+                ExpandedKeys(fire, borrowedKeys, onProvenance, copy, Modifier.fillMaxSize())
             } else {
                 FreeGrid(freeLayout, fire, copy, Modifier.fillMaxSize())
             }
         } else {
-            ChevronPad(fire, copy, Modifier.fillMaxSize())
+            ChevronPad(fire, borrowedKeys, onProvenance, copy, Modifier.fillMaxSize())
         }
     }
 }
@@ -469,11 +521,16 @@ private fun PadControlsRow(
     copy: (String) -> Unit,
     onToggleExpand: () -> Unit,
     modifier: Modifier = Modifier,
+    borrowedKeys: Map<String, EffectiveButtons.Resolved> = emptyMap(),
+    onProvenance: ((String) -> Unit)? = null,
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL",
+            borrowedKeys["volume_up"] != null, borrowedKeys["volume_down"] != null,
             onUp = { fire("volume_up") }, onDown = { fire("volume_down") },
-            onLongUp = { copy("volume_up") }, onLongDown = { copy("volume_down") })
+            onLongUp = { copy("volume_up") }, onLongDown = { copy("volume_down") },
+            upOnProvenance = onProvenance?.let { p -> { p("volume_up") } },
+            downOnProvenance = onProvenance?.let { p -> { p("volume_down") } })
 
         Spacer(Modifier.width(14.dp))
 
@@ -482,12 +539,20 @@ private fun PadControlsRow(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PadBtn(ActionIcon.Home, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("home") }) { fire("home") }
-                PadBtn(ActionIcon.Back, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("back") }) { fire("back") }
+                PadBtn(ActionIcon.Home, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["home"] != null,
+                    onLongClick = { copy("home") },
+                    onProvenance = onProvenance?.let { p -> { p("home") } }) { fire("home") }
+                PadBtn(ActionIcon.Back, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["back"] != null,
+                    onLongClick = { copy("back") },
+                    onProvenance = onProvenance?.let { p -> { p("back") } }) { fire("back") }
             }
             Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("mute") }) { fire("mute") }
-                PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("play_pause") }) { fire("play_pause") }
+                PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["mute"] != null,
+                    onLongClick = { copy("mute") },
+                    onProvenance = onProvenance?.let { p -> { p("mute") } }) { fire("mute") }
+                PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["play_pause"] != null,
+                    onLongClick = { copy("play_pause") },
+                    onProvenance = onProvenance?.let { p -> { p("play_pause") } }) { fire("play_pause") }
             }
             PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp),
                 onLongClick = { onToggleExpand() }) { onToggleExpand() }
@@ -496,8 +561,11 @@ private fun PadControlsRow(
         Spacer(Modifier.width(14.dp))
 
         RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH",
+            borrowedKeys["channel_up"] != null, borrowedKeys["channel_down"] != null,
             onUp = { fire("channel_up") }, onDown = { fire("channel_down") },
-            onLongUp = { copy("channel_up") }, onLongDown = { copy("channel_down") })
+            onLongUp = { copy("channel_up") }, onLongDown = { copy("channel_down") },
+            upOnProvenance = onProvenance?.let { p -> { p("channel_up") } },
+            downOnProvenance = onProvenance?.let { p -> { p("channel_down") } })
     }
 }
 
@@ -514,39 +582,62 @@ private fun LandscapePad(
     manualOpen: Boolean = true,
     onToggleManualOpen: () -> Unit = {},
     freeLayout: FreeLayout = FreeLayout.default(),
+    borrowedKeys: Map<String, EffectiveButtons.Resolved> = emptyMap(),
+    onProvenance: ((String) -> Unit)? = null,
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         PadBodyStacked(fire, copy, expanded, onToggleExpand, Modifier.weight(1f).fillMaxHeight(),
-            manual, summary, manualOpen, onToggleManualOpen, freeLayout)
+            manual, summary, manualOpen, onToggleManualOpen, freeLayout, borrowedKeys, onProvenance)
         Spacer(Modifier.width(16.dp))
-        PadControlsRow(fire, copy, onToggleExpand, Modifier.weight(1f).height(CONTROL_BLOCK))
+        PadControlsRow(fire, copy, onToggleExpand, Modifier.weight(1f).height(CONTROL_BLOCK),
+            borrowedKeys, onProvenance)
     }
 }
 
 /** Chevrons only — no keys, no OK. Small side padding so the pad breathes. */
 @Composable
-private fun ChevronPad(fire: (String) -> Unit, copy: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun ChevronPad(
+    fire: (String) -> Unit,
+    borrowedKeys: Map<String, EffectiveButtons.Resolved>,
+    onProvenance: ((String) -> Unit)? = null,
+    copy: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier.padding(horizontal = 12.dp),
         verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        PadBtn(ActionIcon.ChevronUp, Modifier.size(64.dp), onLongClick = { copy("up") }) { fire("up") }
+        PadBtn(ActionIcon.ChevronUp, Modifier.size(64.dp), borrowed = borrowedKeys["up"] != null,
+            onLongClick = { copy("up") },
+            onProvenance = onProvenance?.let { p -> { p("up") } }) { fire("up") }
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            PadBtn(ActionIcon.ChevronLeft, Modifier.size(64.dp), onLongClick = { copy("left") }) { fire("left") }
-            PadBtn(ActionIcon.ChevronRight, Modifier.size(64.dp), onLongClick = { copy("right") }) { fire("right") }
+            PadBtn(ActionIcon.ChevronLeft, Modifier.size(64.dp), borrowed = borrowedKeys["left"] != null,
+                onLongClick = { copy("left") },
+                onProvenance = onProvenance?.let { p -> { p("left") } }) { fire("left") }
+            PadBtn(ActionIcon.ChevronRight, Modifier.size(64.dp), borrowed = borrowedKeys["right"] != null,
+                onLongClick = { copy("right") },
+                onProvenance = onProvenance?.let { p -> { p("right") } }) { fire("right") }
         }
-        PadBtn(ActionIcon.ChevronDown, Modifier.size(64.dp), onLongClick = { copy("down") }) { fire("down") }
+        PadBtn(ActionIcon.ChevronDown, Modifier.size(64.dp), borrowed = borrowedKeys["down"] != null,
+            onLongClick = { copy("down") },
+            onProvenance = onProvenance?.let { p -> { p("down") } }) { fire("down") }
     }
 }
 
 /** The full key set, laid out on the same grid rhythm as the controls section. */
 @Composable
-private fun ExpandedKeys(fire: (String) -> Unit, copy: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun ExpandedKeys(
+    fire: (String) -> Unit,
+    borrowedKeys: Map<String, EffectiveButtons.Resolved>,
+    onProvenance: ((String) -> Unit)? = null,
+    copy: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val rows = listOf(
         listOf("1", "2", "3"),
         listOf("4", "5", "6"),
@@ -557,14 +648,22 @@ private fun ExpandedKeys(fire: (String) -> Unit, copy: (String) -> Unit, modifie
         rows.forEach { row ->
             Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEach { key ->
-                    KeyTile(key, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy(key) }) { fire(key) }
+                    KeyTile(key, Modifier.weight(1f).fillMaxHeight(), borrowedKeys[key] != null,
+                        onLongClick = { copy(key) },
+                        onProvenance = onProvenance?.let { p -> { p(key) } }) { fire(key) }
                 }
             }
         }
         Row(Modifier.fillMaxWidth().height(52.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("power") }) { fire("power") }
-            PadBtn(ActionIcon.Menu, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("menu") }) { fire("menu") }
-            PadBtn(ActionIcon.Info, Modifier.weight(1f).fillMaxHeight(), onLongClick = { copy("info") }) { fire("info") }
+            PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["power"] != null,
+                onLongClick = { copy("power") },
+                onProvenance = onProvenance?.let { p -> { p("power") } }) { fire("power") }
+            PadBtn(ActionIcon.Menu, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["menu"] != null,
+                onLongClick = { copy("menu") },
+                onProvenance = onProvenance?.let { p -> { p("menu") } }) { fire("menu") }
+            PadBtn(ActionIcon.Info, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["info"] != null,
+                onLongClick = { copy("info") },
+                onProvenance = onProvenance?.let { p -> { p("info") } }) { fire("info") }
         }
     }
 }
@@ -786,14 +885,22 @@ private fun MediaLayoutBody(
 private fun KeyTile(
     label: String,
     modifier: Modifier = Modifier,
+    borrowed: Boolean = false,
+    onProvenance: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    Box(
-        modifier.bgTile(20.dp).combinedPressable(onClick = onClick, onLongClick = onLongClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium)
+    Box(modifier) {
+        Box(
+            Modifier.fillMaxSize().bgTile(20.dp).combinedPressable(
+                onClick = onClick,
+                onLongClick = onLongClick ?: onProvenance,
+            ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(label.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium)
+        }
+        if (borrowed) Box(Modifier.align(Alignment.TopEnd).padding(6.dp)) { BorrowedBadge() }
     }
 }
 
@@ -803,34 +910,46 @@ private fun RockerColumn(
     up: ActionIcon,
     down: ActionIcon,
     label: String,
+    upBorrowed: Boolean = false,
+    downBorrowed: Boolean = false,
     onUp: () -> Unit,
     onDown: () -> Unit,
     onLongUp: (() -> Unit)? = null,
     onLongDown: (() -> Unit)? = null,
+    upOnProvenance: (() -> Unit)? = null,
+    downOnProvenance: (() -> Unit)? = null,
 ) {
     Column(
         Modifier.fillMaxHeight().width(64.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        RockerKey(up, onLongUp) { onUp() }
+        RockerKey(up, borrowed = upBorrowed, onLongClick = onLongUp) { onUp() }
         Text(label, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
-        RockerKey(down, onLongDown) { onDown() }
+        RockerKey(down, borrowed = downBorrowed, onLongClick = onLongDown) { onDown() }
     }
 }
 
 /** Rocker key: immediate send, hold-to-repeat, long-press copy when supplied. */
 @Composable
-private fun RockerKey(icon: ActionIcon, onLongClick: (() -> Unit)? = null, onFire: () -> Unit) {
-    Box(
-        Modifier
-            .size(56.dp)
-            .bgTile(20.dp, MaterialTheme.colorScheme.surfaceVariant)
-            .rockerPressable(repeatEnabled = Feedback.rockerRepeatOn, onFire = onFire)
-            .combinedPressable(onClick = {}, onLongClick = onLongClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
+private fun RockerKey(
+    icon: ActionIcon,
+    borrowed: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
+    onFire: () -> Unit,
+) {
+    Box(Modifier.size(56.dp)) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .bgTile(20.dp, MaterialTheme.colorScheme.surfaceVariant)
+                .rockerPressable(repeatEnabled = Feedback.rockerRepeatOn, onFire = onFire)
+                .combinedPressable(onClick = {}, onLongClick = onLongClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
+        }
+        if (borrowed) Box(Modifier.align(Alignment.TopEnd)) { BorrowedBadge() }
     }
 }
 
@@ -839,16 +958,27 @@ private fun PadBtn(
     icon: ActionIcon,
     modifier: Modifier = Modifier,
     accent: Boolean = false,
-    onLongClick: (() -> Unit)? = null,
     feedback: (android.view.View?) -> Unit = {},
+    borrowed: Boolean = false,
+    onProvenance: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    Box(
-        modifier.bgTile(20.dp, if (accent) Accent else MaterialTheme.colorScheme.surfaceVariant)
-            .combinedPressable(onClick = onClick, onLongClick = onLongClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
+    Box(modifier) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .bgTile(20.dp, if (accent) Accent else MaterialTheme.colorScheme.surfaceVariant)
+                .then(
+                    if (onLongClick != null || onProvenance != null)
+                        Modifier.combinedPressable(onClick = onClick, onLongClick = onLongClick ?: onProvenance)
+                    else Modifier.pressable(feedback = feedback, onClick = onClick)
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
+        }
+        if (borrowed) Box(Modifier.align(Alignment.TopEnd).padding(5.dp)) { BorrowedBadge() }
     }
 }
 
