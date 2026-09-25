@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.DbChangelog
 import com.erfanbagheri.controlix.data.DbRefresh
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.RemoteShareCodec
 import com.erfanbagheri.controlix.feature.sceneFromMacro
 import com.erfanbagheri.controlix.data.RefreshState
 import com.erfanbagheri.controlix.ir.IrTransmitter
@@ -258,13 +259,28 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
 
                     is Route.Scan -> ScanScreen(
                         onResult = { text ->
-                            // controlix://remote/{id}/{name}/{brand}/{catSlug}
+                            // New format (issue #56): the QR carries the buttons
+                            // themselves, so no shared database is needed. The
+                            // remote is stored on this phone with a negative id.
+                            if (RemoteShareCodec.isCompact(text)) {
+                                val shared = SharedRemoteImport.fromPayload(text)
+                                if (shared != null) {
+                                    val saved = SharedRemoteStore(context).save(shared)
+                                    toast.show("Imported ${saved.name} · ${saved.buttons.size} buttons")
+                                    route = Route.Pad(saved.remoteId)
+                                } else {
+                                    toast.show("That QR code is not a Controlix remote")
+                                    route = Route.AddDevice
+                                }
+                                return@ScanScreen
+                            }
+                            // Legacy: controlix://remote/{id}/{name}/{brand}/{catSlug}
                             val m = Regex("""controlix://remote/(\d+)/([^/]*)/([^/]*)/([^/]*)""").find(text)
                             if (m != null && repo != null) {
                                 val (id, name, brand, slug) = m.destructured
                                 val rid = id.toIntOrNull() ?: -1
                                 if (repo.buttons(rid).isNotEmpty()) {
-                                    val decodedName = java.net.URLDecoder.decode(name, "UTF-8").ifBlank { brand }
+                                    val decodedName = legacyShareName(name, brand)
                                     model.saveById(
                                         remoteId = rid,
                                         name = decodedName,
@@ -370,6 +386,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         if (dev != null) {
                             ShareScreen(
                                 device = dev,
+                                repo = repo,
                                 onBack = { route = Route.Home },
                             )
                         }
