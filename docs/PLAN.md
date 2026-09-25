@@ -54,7 +54,7 @@ iOS, learning mode (hardware impossible), accounts, telemetry, ads, content feed
 
 ### M4 — Integration
 - [ ] Quick-settings tile
-- [ ] `controlix://` intent API
+- [x] `com.erfanbagheri.controlix.TRANSMIT` broadcast API (issue #53)
 - [ ] QR export/import
 
 ### M5 — Distribution
