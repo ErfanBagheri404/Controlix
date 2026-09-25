@@ -50,6 +50,7 @@ import com.erfanbagheri.controlix.data.DbRefresh
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.RefreshState
 import com.erfanbagheri.controlix.ir.IrTransmitter
+import com.erfanbagheri.controlix.quicksettings.TileStore
 import com.erfanbagheri.controlix.ui.theme.ThemeState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -75,6 +76,7 @@ private sealed interface Route {
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean = true) {
     val model = rememberDeviceModel(repo)
     val macroModel = rememberMacroModel()
+    val ctx = LocalContext.current
     val copiedModel = rememberCopiedButtonModel()
     // Cold start only: a cold launch restores the last-used pad; Activity
     // recreation (rotation, savedInstanceState != null) lands on Home —
@@ -285,6 +287,8 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         // System back from a cold-start-restored pad returns Home, never traps.
                         BackHandler { route = Route.Home }
                         val saved = model.devices.firstOrNull { it.remoteId == r.remoteId }
+                        // The tile fires this remote's power code.
+                        LaunchedEffect(r.remoteId) { TileStore(ctx).rememberRemoteId(r.remoteId) }
                         // AC remotes are stateful: their pad is a separate climate
                         // layout. Every other category keeps the normal TV pad.
                         if (saved?.isAc() == true) {
