@@ -62,6 +62,7 @@ object Motion {
 fun Modifier.combinedPressable(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
+    feedback: (android.view.View?) -> Unit = Feedback::tap,
     enabled: Boolean = true,
 ): Modifier = composed {
     val interactionSource = remember { MutableInteractionSource() }
@@ -89,7 +90,7 @@ fun Modifier.combinedPressable(
                 }
             },
             onClick = {
-                Feedback.tap(view)
+                feedback(view)
                 onClick()
             },
         )
