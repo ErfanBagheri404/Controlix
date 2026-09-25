@@ -16,7 +16,7 @@ class PadCoverageContractTest {
         "power", "volume_up", "volume_down", "channel_up", "channel_down", "mute",
         "up", "down", "left", "right", "home", "back", "play_pause", "source",
         "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-        "exit", "guide", "menu", "info",
+        "exit", "guide", "menu", "info", "ok",
     )
 
     @Test
