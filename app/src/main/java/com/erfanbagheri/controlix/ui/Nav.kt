@@ -270,6 +270,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                                         brand = java.net.URLDecoder.decode(brand, "UTF-8"),
                                         categorySlug = slug,
                                         buttonCount = repo.buttons(rid).size,
+                                        matched = false, // raw remote-id pick — no model matched
                                     )
                                     openPad(rid)
                                 } else route = Route.AddDevice
