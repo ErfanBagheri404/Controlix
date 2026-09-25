@@ -50,6 +50,9 @@ import com.erfanbagheri.controlix.data.DbRefresh
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.RefreshState
 import com.erfanbagheri.controlix.ir.IrTransmitter
+import com.erfanbagheri.controlix.ir.TransmitterChoice
+import com.erfanbagheri.controlix.ir.TransmitterSelection
+import com.erfanbagheri.controlix.ir.display
 import com.erfanbagheri.controlix.quicksettings.TileStore
 import com.erfanbagheri.controlix.ui.theme.ThemeState
 import kotlinx.coroutines.Dispatchers
@@ -466,6 +469,10 @@ private fun MenuDrawer(
             )
 
             Spacer(Modifier.height(32.dp))
+            SectionHead("Transmitter")
+            TransmitterPickerRow()
+
+            Spacer(Modifier.height(32.dp))
             SectionHead("Backup")
             DrawerRow(ActionIcon.Share, "Export backup", onExport)
             DrawerRow(ActionIcon.Down, "Import backup", onImport)
@@ -542,5 +549,38 @@ private fun DrawerToggle(label: String, checked: Boolean, onChange: (Boolean) ->
                 uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
             ),
         )
+    }
+}
+
+/**
+ * Transmitter picker: flat row, tap cycles Internal > USB dongle > BLE
+ * blaster, persisted in SharedPreferences (TransmitterSelection).
+ */
+@Composable
+private fun TransmitterPickerRow() {
+    val choice = TransmitterSelection.choice
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .pressable {
+                val entries = TransmitterChoice.entries
+                TransmitterSelection.select(entries[(choice.ordinal + 1) % entries.size])
+            }
+            .padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "Transmitter",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            choice.display,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.width(10.dp))
+        ActionIconView(ActionIcon.ChevRight, 16.dp, MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
