@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.EffectiveButtons
@@ -69,6 +70,7 @@ fun PadScreen(
     var switcherOpen by remember { mutableStateOf(false) }
     var sheetOpen by remember { mutableStateOf(false) }
     var expanded by remember(remoteId) { mutableStateOf(false) }
+    val view = LocalView.current
 
     val buttons = remember(remoteId) {
         runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
@@ -87,9 +89,14 @@ fun PadScreen(
         ?: SavedDevice(remoteId, deviceName ?: "Remote", "", "", 0)
 
     val context = LocalContext.current
-    val freeLayout = remember(remoteId) { DeviceStore(context).freeLayout(remoteId) }
+    val freeLayout = remember(saved.key) { DeviceStore(context).freeLayout(saved.key) }
 
     fun fire(name: String) {
+        // One tick per activation at the key's own weight — here in the single
+        // choke point every IR key passes through, so the tick lands whether
+        // or not this remote carries the code. The pad keys carry a no-op
+        // pressable so they can't double-tick.
+        Feedback.press(view, name)
         // Effective list first: standard keys (incl. digits/d-pad) may be
         // borrowed from brand siblings. Semantic key == the action name the
         // pad passes for CHECKS entries; raw-name lookup covers the rest.
@@ -191,7 +198,8 @@ fun PadScreen(
                     PadBtn(ActionIcon.Mute, Modifier.weight(1f).fillMaxHeight()) { fire("mute") }
                     PadBtn(ActionIcon.Play, Modifier.weight(1f).fillMaxHeight()) { fire("play_pause") }
                 }
-                PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp)) { expanded = !expanded }
+                PadBtn(ActionIcon.DotsH, Modifier.fillMaxWidth().height(48.dp),
+                    feedback = Feedback::tap) { expanded = !expanded }
             }
 
             Spacer(Modifier.width(14.dp))
@@ -296,7 +304,7 @@ private fun FreeGrid(layout: FreeLayout, fire: (String) -> Unit, modifier: Modif
 @Composable
 private fun KeyTile(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
-        modifier.bgTile(20.dp).pressable(onClick),
+        modifier.bgTile(20.dp).pressable(feedback = {}, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(label.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium)
@@ -317,16 +325,37 @@ private fun RockerColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        PadBtn(up, Modifier.size(56.dp)) { onUp() }
+        RockerKey(up) { onUp() }
         Text(label, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
-        PadBtn(down, Modifier.size(56.dp)) { onDown() }
+        RockerKey(down) { onDown() }
+    }
+}
+
+/** Rocker key: immediate send, then hold-to-repeat per issue #11 settings. */
+@Composable
+private fun RockerKey(icon: ActionIcon, onFire: () -> Unit) {
+    Box(
+        Modifier
+            .size(56.dp)
+            .bgTile(20.dp, MaterialTheme.colorScheme.surfaceVariant)
+            .rockerPressable(repeatEnabled = Feedback.rockerRepeatOn, onFire = onFire),
+        contentAlignment = Alignment.Center,
+    ) {
+        ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
     }
 }
 
 @Composable
-private fun PadBtn(icon: ActionIcon, modifier: Modifier = Modifier, accent: Boolean = false, onClick: () -> Unit) {
+private fun PadBtn(
+    icon: ActionIcon,
+    modifier: Modifier = Modifier,
+    accent: Boolean = false,
+    feedback: (android.view.View?) -> Unit = {},
+    onClick: () -> Unit,
+) {
     Box(
-        modifier.bgTile(20.dp, if (accent) Accent else MaterialTheme.colorScheme.surfaceVariant).pressable(onClick),
+        modifier.bgTile(20.dp, if (accent) Accent else MaterialTheme.colorScheme.surfaceVariant)
+            .pressable(feedback = feedback, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
