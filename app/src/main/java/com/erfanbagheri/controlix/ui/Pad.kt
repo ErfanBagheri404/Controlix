@@ -46,6 +46,7 @@ import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.FreeLayout
 import com.erfanbagheri.controlix.data.FreeLayout.Slot
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.MissingCodeReport
 import com.erfanbagheri.controlix.data.ManualKeys
 import com.erfanbagheri.controlix.data.MediaLayout
 import com.erfanbagheri.controlix.ir.IrTransmitter
@@ -200,7 +201,18 @@ fun PadScreen(
         Feedback.press(view, name)
         val code = codeFor(name)
         if (code == null) {
-            toast.show("This remote has no ${name.replace('_', ' ')} code.")
+            // Issue #79: the user holds the exact context here — which key
+            // died, on whose remote. Queue it so the report form opens
+            // prefilled instead of relying on memory.
+            val identity = runCatching { repo?.reportIdentity(remoteId) }.getOrNull()
+            if (identity != null) {
+                MissingCodeReportStore(context).queue(
+                    MissingCodeReport(identity.first, identity.second, identity.third, name)
+                )
+                toast.show("No ${name.replace('_', ' ')} code. Queued for a report.")
+            } else {
+                toast.show("This remote has no ${name.replace('_', ' ')} code.")
+            }
             return
         }
         if (transmitter.transmitButton(code.carrierHz, code.pattern)) {
