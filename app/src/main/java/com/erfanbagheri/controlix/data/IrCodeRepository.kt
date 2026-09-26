@@ -347,6 +347,24 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
         }
 
     /**
+     * Everything a missing-code report needs about a remote (issue #79):
+     * brand name, category slug and model/file name in one join, so the pad
+     * never has to stitch three lookups together and can prefill the form
+     * from whatever it already knows. Null when the remote is gone.
+     */
+    fun reportIdentity(remoteId: Int): Triple<String, String, String>? =
+        db.rawQuery(
+            """SELECT b.name, cat.slug, COALESCE(NULLIF(TRIM(r.model_name), ''), r.file_name)
+               FROM remote r
+               JOIN brand b ON b.id = r.brand_id
+               JOIN category cat ON cat.id = b.category_id
+               WHERE r.id = ?""",
+            arrayOf(remoteId.toString()),
+        ).use { c ->
+            if (c.moveToFirst()) Triple(c.getString(0), c.getString(1), c.getString(2)) else null
+        }
+
+    /**
      * Buttons from remotes that claim the same model string as this remote's
      * model_name, excluding the remote itself. Model agreement is the
      * strongest compatibility signal in community data, so the ritual prefers
