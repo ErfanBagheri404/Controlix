@@ -36,8 +36,15 @@ real hardware) in progress.
 - **Macros** — multi-device sequences with per-step delays ("movie time" =
   TV on, receiver to HDMI 2, AC to 24 °C).
 - **Quick-settings tile** — the most-used remote one swipe from anywhere.
-- **Intent API** — `controlix://transmit?remote=<id>&key=Vol_up` for Tasker,
-  MacroDroid, and automation apps.
+- **Intent API** — a broadcast lets Tasker, MacroDroid, Home Assistant or
+  `adb` fire a stored button or a raw pattern. Off by default; enable
+  "Allow external broadcasts" in the menu drawer:
+  ```bash
+  adb shell am broadcast -a com.erfanbagheri.controlix.TRANSMIT \
+      --es remote_name "Living Room TV" --es button power --ei repeat 2
+  adb shell am broadcast -a com.erfanbagheri.controlix.TRANSMIT \
+      --ei carrier_hz 38000 --es pattern "9000,4500,560,1690,560,1690"
+  ```
 - **QR / URI remote sharing** — export a configured remote as a scannable code.
 - **Community-updatable code database** — contribute codes by pull request,
   the same model that made irdb work.

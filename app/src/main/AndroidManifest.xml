@@ -26,6 +26,16 @@
                 android:resource="@xml/controlix_widget_info" />
         </receiver>
 
+        <!-- Issue #53: Tasker / home automation entry point. Exported on
+             purpose, so AutomationState (default off) is the trust gate. -->
+        <receiver
+            android:name=".feature.ExternalReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.erfanbagheri.controlix.TRANSMIT" />
+            </intent-filter>
+        </receiver>
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
