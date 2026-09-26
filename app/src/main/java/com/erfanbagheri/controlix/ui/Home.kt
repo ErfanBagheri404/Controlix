@@ -41,6 +41,7 @@ import com.erfanbagheri.controlix.data.GlobalFavorite
 import com.erfanbagheri.controlix.data.GlobalFavorites
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.RemoteIdentity
+import com.erfanbagheri.controlix.feature.FavoriteFire
 import com.erfanbagheri.controlix.feature.RepoKeyResolver
 import com.erfanbagheri.controlix.feature.Resolution
 import com.erfanbagheri.controlix.feature.Scene
@@ -92,9 +93,7 @@ fun HomeScreen(
     var sceneStatus by remember { mutableStateOf<String?>(null) }
 
     fun fireFavorite(state: FavoriteState) {
-        val r = resolver ?: return
-        val remoteId = index?.let { RemoteIdentity.resolve(state.favorite.device, it)?.remoteId } ?: -1
-        when (val res = if (remoteId >= 0) r.resolve(remoteId, state.favorite.button) else Resolution.Unsupported) {
+        when (val res = FavoriteFire.resolve(state.favorite, index, resolver)) {
             is Resolution.Found ->
                 if (!transmitter.transmitButton(res.code.carrierHz, res.code.pattern)) {
                     toast.show(
