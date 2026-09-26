@@ -97,6 +97,7 @@ private sealed interface Route {
         val pattern: IntArray,
         val protocol: String?,
     ) : Route
+    data object RecentSends : Route
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -107,6 +108,8 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
     val favoritesModel = rememberFavoritesModel()
     val ctx = LocalContext.current
     val copiedModel = rememberCopiedButtonModel()
+    // Issue #68: one shared history — pads append, Recent sends reads it.
+    val sendLogModel = rememberSendLogModel()
     // Cold start only: a cold launch restores the last-used pad; Activity
     // recreation (rotation, savedInstanceState != null) lands on Home —
     // route is plain remember, not saveable. Pad back still returns
@@ -268,6 +271,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         is UpdateCheckState.UpdateAvailable -> "${s.release.tagName} available"
                         is UpdateCheckState.Failed -> s.reason
                     },
+                    onRecentSends = { scope.launch { drawerState.close() }; route = Route.RecentSends },
                 )
             },
         ) {
@@ -403,6 +407,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                                 repo = repo,
                                 transmitter = ir,
                                 toast = toast,
+                                sendLog = sendLogModel,
                                 onBack = { route = Route.Home },
                             )
                         } else PadScreen(
@@ -416,6 +421,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             favoritesModel = favoritesModel,
                             copied = copiedModel,
                             toast = toast,
+                            sendLog = sendLogModel,
                             onSwitchDevice = { openPad(it.remoteId) },
                             onEdit = { route = Route.Edit(it.remoteId) },
                             onShare = { route = Route.Share(it.remoteId) },
@@ -485,6 +491,12 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             onBack = { route = Route.Home },
                         )
                     }
+                    is Route.RecentSends -> RecentSendsScreen(
+                        model = sendLogModel,
+                        transmitter = ir,
+                        toast = toast,
+                        onBack = { route = Route.Home },
+                    )
                 }
             }
         }
@@ -496,21 +508,6 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
             // Steps resolve by stable key, so the projection needs the index.
             favoritesModel.replaceScenes(
                 macroModel.macros.map { sceneFromMacro(it, it.id, runCatching { repo?.remoteIndex() }.getOrNull()) },
-            )
-        }
-        // What's-new modal (issue #52). Hosted here, not in a route, so it floats
-        // over whatever screen the user is on when the release is detected.
-        val whatsNew = whatsNewRelease
-        val whatsNewAt = whatsNewVersion
-        if (whatsNew != null && whatsNewAt != null) {
-            WhatsNewDialog(
-                version = whatsNewAt,
-                notes = whatsNew.body.orEmpty(),
-                onDismiss = {
-                    WhatsNewStore.markSeen(whatsNewAt)
-                    whatsNewRelease = null
-                    whatsNewVersion = null
-                },
             )
         }
         // What's-new modal (issue #52). Hosted here, not in a route, so it floats
@@ -567,6 +564,7 @@ private fun MenuDrawer(
     onDbHealth: () -> Unit,
     onCheckUpdate: () -> Unit,
     updateStateLabel: String?,
+    onRecentSends: () -> Unit,
 ) {
     ModalDrawerSheet(
         drawerContainerColor = MaterialTheme.colorScheme.background,
@@ -622,6 +620,7 @@ private fun MenuDrawer(
                 )
             }
             DrawerRow(ActionIcon.Gauge, "Database health", onDbHealth)
+            DrawerRow(ActionIcon.History, "Recent sends", onRecentSends)
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Settings")
