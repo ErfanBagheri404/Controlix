@@ -1,5 +1,8 @@
 package com.erfanbagheri.controlix.ui
 
+import com.erfanbagheri.controlix.data.FontScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -130,7 +133,7 @@ fun AcPadScreen(
         SectionHead("Target")
         Hairline()
         Row(
-            Modifier.fillMaxWidth().height(76.dp), verticalAlignment = Alignment.CenterVertically,
+            Modifier.fillMaxWidth().heightIn(min = 76.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), verticalAlignment = Alignment.CenterVertically,
         ) {
             FlatKey("−", enabled = target > (temps.firstOrNull() ?: target)) {
                 val idx = temps.indexOf(target)
@@ -190,7 +193,7 @@ fun AcPadScreen(
         // ── Power ────────────────────────────────────────────────────────
         SectionHead("Power")
         Hairline()
-        Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), verticalAlignment = Alignment.CenterVertically) {
             FlatKey("On", enabled = powerOnKey != null) {
                 powerOnKey?.let { transmit(it, "power") }
                     ?: toast.show(explainPower(available, on = true))
@@ -231,7 +234,7 @@ fun AcPadScreen(
         if (swingKey != null) {
             SectionHead("Swing")
             Hairline()
-            Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), verticalAlignment = Alignment.CenterVertically) {
                 FlatKey(swingKey.name) { transmit(swingKey, "swing") }
             }
             Hairline()
