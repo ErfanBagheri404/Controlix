@@ -1,7 +1,9 @@
 package com.erfanbagheri.controlix.ui
 
-import com.erfanbagheri.controlix.feature.Macro
-import com.erfanbagheri.controlix.feature.MacroStep
+import com.erfanbagheri.controlix.data.DeviceKey
+import com.erfanbagheri.controlix.data.Macro
+import com.erfanbagheri.controlix.data.MacroStep
+import com.erfanbagheri.controlix.data.RemoteIndex
 
 /** Bump only alongside a migration branch in [BackupCodec.decode]. */
 const val BACKUP_VERSION = 1
@@ -42,7 +44,16 @@ object BackupCodec {
             append(",\"steps\":[")
             m.steps.forEachIndexed { stepIndex, s ->
                 if (stepIndex > 0) append(',')
-                append("{\"remoteId\":").append(s.remoteId)
+                // A step with a stable key writes it; a pre-#70 step keeps its
+                // volatile id so it round trips as itself (issue #70).
+                val k = s.key
+                if (k == null) {
+                    append("{\"remoteId\":").append(s.legacyRemoteId)
+                } else {
+                    append("{\"categorySlug\":").append(quoted(k.categorySlug))
+                    append(",\"brand\":").append(quoted(k.brandName))
+                    append(",\"fileName\":").append(quoted(k.fileName))
+                }
                 append(",\"buttonName\":").append(quoted(s.buttonName))
                 append(",\"delayMs\":").append(s.delayMs)
                 append('}')
@@ -82,7 +93,6 @@ object BackupCodec {
     private val ROOT_FIELDS = setOf("version", "devices", "macros")
     private val DEVICE_FIELDS = setOf("remoteId", "name", "brand", "categorySlug", "buttonCount", "pinned", "enabled", "roomSlug")
     private val MACRO_FIELDS = setOf("id", "name", "steps")
-    private val STEP_FIELDS = setOf("remoteId", "buttonName", "delayMs")
 
     private fun device(value: JsonValue, index: Int): SavedDevice {
         val o = obj(value, "Device $index", DEVICE_FIELDS)
@@ -108,12 +118,40 @@ object BackupCodec {
         )
     }
 
+    /**
+     * Step fields: the pre-#70 shape was remoteId/buttonName/delayMs, the
+     * post-#70 shape is categorySlug/brand/fileName/buttonName/delayMs.
+     * Both are read; an exported backup from either era imports.
+     */
+    private val STEP_FIELDS = setOf("remoteId", "buttonName", "delayMs")
+    private val STEP_KEY_FIELDS = setOf("categorySlug", "brand", "fileName", "buttonName", "delayMs")
+
     private fun step(value: JsonValue, macroIndex: Int, stepIndex: Int): MacroStep {
-        val o = obj(value, "Macro $macroIndex step $stepIndex", STEP_FIELDS)
+        val label = "Macro $macroIndex step $stepIndex"
+        val o = value as? JsonValue.Obj ?: throw IllegalArgumentException("$label must be an object")
+        val delayMs = (o.values["delayMs"] as? JsonValue.Num)?.value?.toLong()
+            ?: throw IllegalArgumentException("$label delayMs must be a number")
+        if (o.values.keys == STEP_KEY_FIELDS) {
+            val category = (o.values["categorySlug"] as? JsonValue.Str)?.value
+            val brand = (o.values["brand"] as? JsonValue.Str)?.value
+            val file = (o.values["fileName"] as? JsonValue.Str)?.value
+            if (category == null || brand == null || file == null) {
+                throw IllegalArgumentException("$label device fields must be strings")
+            }
+            return MacroStep(
+                key = DeviceKey(category, brand, file),
+                buttonName = o.str("buttonName"),
+                delayMs = delayMs,
+            )
+        }
+        if (o.values.keys != STEP_FIELDS) throw IllegalArgumentException("$label has unknown or missing fields")
+        val legacyId = (o.values["remoteId"] as? JsonValue.Num)?.value
+        if (legacyId !is Int) throw IllegalArgumentException("$label remoteId must be an integer")
         return MacroStep(
-            remoteId = o.int("remoteId"),
+            key = null,
             buttonName = o.str("buttonName"),
-            delayMs = o.num("delayMs").toLong(),
+            delayMs = delayMs,
+            legacyRemoteId = legacyId,
         )
     }
 

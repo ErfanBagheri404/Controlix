@@ -403,7 +403,10 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
         LaunchedEffect(route) { if (route is Route.Home) model.reload() }
         // Scenes mirror the macro store — one projection, no second editor.
         LaunchedEffect(macroModel.macros) {
-            favoritesModel.replaceScenes(macroModel.macros.map { sceneFromMacro(it, it.id) })
+            // Steps resolve by stable key, so the projection needs the index.
+            favoritesModel.replaceScenes(
+                macroModel.macros.map { sceneFromMacro(it, it.id, runCatching { repo?.remoteIndex() }.getOrNull()) },
+            )
         }
     }
 }
