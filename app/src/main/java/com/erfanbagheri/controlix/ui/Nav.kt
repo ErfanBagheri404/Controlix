@@ -89,7 +89,10 @@ private sealed interface Route {
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean = true) {
     val model = rememberDeviceModel(repo)
     val macroModel = rememberMacroModel()
-    val favoritesModel = rememberFavoritesModel()
+    // The index re-keys stored favourites and lets the pad pin keys, so the
+    // model is built once the DB is open (issue #71).
+    val remoteIndex = remember(repo) { runCatching { repo?.remoteIndex() }.getOrNull() }
+    val favoritesModel = rememberFavoritesModel(index = remoteIndex)
     val ctx = LocalContext.current
     val copiedModel = rememberCopiedButtonModel()
     // Cold start only: a cold launch restores the last-used pad; Activity
