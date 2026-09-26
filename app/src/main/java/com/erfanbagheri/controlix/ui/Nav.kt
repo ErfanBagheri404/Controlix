@@ -12,8 +12,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +48,7 @@ import com.erfanbagheri.controlix.data.DbRefresh
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.feature.sceneFromMacro
 import com.erfanbagheri.controlix.data.RefreshState
+import com.erfanbagheri.controlix.data.RepeatSettings
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ir.TransmitterChoice
 import com.erfanbagheri.controlix.ir.TransmitterSelection
@@ -530,32 +528,61 @@ private fun MenuDrawer(
             SectionHead("Rocker repeat")
             DrawerToggle("Hold VOL/CH to repeat", Feedback.rockerRepeatOn, Feedback::setRockerRepeat)
             if (Feedback.rockerRepeatOn) {
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    listOf(120 to "Fast", 180 to "Standard", 300 to "Slow").forEach { (ms, label) ->
-                        DrawerChoice(label, Feedback.rockerRepeatIntervalMs == ms) {
-                            Feedback.setRockerRepeatInterval(ms)
-                        }
-                    }
-                }
+                RepeatSettingRow(
+                    label = "Hold delay",
+                    valueMs = Feedback.rockerRepeatHoldMs,
+                    steps = RepeatSettings.HOLD_STEPS,
+                    slowMs = RepeatSettings.MAX_HOLD_MS,
+                    fastMs = RepeatSettings.MIN_HOLD_MS,
+                    onChange = Feedback::setRockerRepeatHold,
+                )
+                RepeatSettingRow(
+                    label = "Repeat interval",
+                    valueMs = Feedback.rockerRepeatIntervalMs,
+                    steps = RepeatSettings.INTERVAL_STEPS,
+                    slowMs = RepeatSettings.MAX_INTERVAL_MS,
+                    fastMs = RepeatSettings.MIN_INTERVAL_MS,
+                    onChange = Feedback::setRockerRepeatInterval,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun DrawerChoice(label: String, selected: Boolean, onClick: () -> Unit) {
-    Text(
-        label,
-        style = MaterialTheme.typography.labelMedium,
-        color = if (selected) com.erfanbagheri.controlix.ui.theme.Accent else MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier
-            .border(1.dp, if (selected) com.erfanbagheri.controlix.ui.theme.Accent else MaterialTheme.colorScheme.outline, RoundedCornerShape(20.dp))
-            .pressable(onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-    )
+private fun RepeatSettingRow(
+    label: String,
+    valueMs: Int,
+    steps: List<Int>,
+    slowMs: Int,
+    fastMs: Int,
+    onChange: (Int) -> Unit,
+) {
+    val view = LocalView.current
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .pressable {
+                Feedback.tap(view)
+                onChange(RepeatSettings.nextStep(valueMs, steps))
+            }
+            .padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            "$valueMs ms · ${RepeatSettings.paceLabel(valueMs, slowMs, fastMs)}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.width(10.dp))
+        ActionIconView(ActionIcon.ChevRight, 16.dp, MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
 @Composable

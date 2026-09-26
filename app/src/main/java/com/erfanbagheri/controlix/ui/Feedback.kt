@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.erfanbagheri.controlix.data.RepeatSettings
 
 /**
  * Shared interaction preferences — haptics and optional visual motion.
@@ -28,7 +29,11 @@ object Feedback {
     var rockerRepeatOn by mutableStateOf(true)
         private set
 
-    /** Hold-to-repeat interval in ms; 400 ms initial delay is fixed. */
+    /** Hold delay before the first repeat, in ms (issue #80). */
+    var rockerRepeatHoldMs by mutableIntStateOf(RepeatSettings.DEFAULT_HOLD_MS)
+        private set
+
+    /** Cadence once repeating starts, in ms (issue #80). */
     var rockerRepeatIntervalMs by mutableIntStateOf(HoldRepeatTiming.DEFAULT_INTERVAL_MS.toInt())
         private set
 
@@ -37,7 +42,8 @@ object Feedback {
         hapticsOn = prefs?.getBoolean("haptics", true) ?: true
         animationsOn = prefs?.getBoolean("animations", true) ?: true
         rockerRepeatOn = prefs?.getBoolean("rockerRepeat", true) ?: true
-        rockerRepeatIntervalMs = prefs?.getInt("rockerRepeatMs", 180) ?: 180
+        rockerRepeatHoldMs = RepeatSettings.resolveHold(prefs?.takeIf { it.contains(RepeatSettings.HOLD_KEY) }?.getInt(RepeatSettings.HOLD_KEY, 0))
+        rockerRepeatIntervalMs = RepeatSettings.resolveInterval(prefs?.takeIf { it.contains(RepeatSettings.INTERVAL_KEY) }?.getInt(RepeatSettings.INTERVAL_KEY, 0))
     }
 
     fun setHaptics(v: Boolean) {
@@ -55,14 +61,23 @@ object Feedback {
         prefs?.edit()?.putBoolean("rockerRepeat", v)?.apply()
     }
 
+    /** Clamp on write (issue #80), so nothing out of bounds ever persists. */
     fun setRockerRepeatInterval(ms: Int) {
-        rockerRepeatIntervalMs = ms.coerceIn(60, 400)
-        prefs?.edit()?.putInt("rockerRepeatMs", rockerRepeatIntervalMs)?.apply()
+        rockerRepeatIntervalMs = RepeatSettings.clampInterval(ms)
+        prefs?.edit()?.putInt(RepeatSettings.INTERVAL_KEY, rockerRepeatIntervalMs)?.apply()
+    }
+
+    fun setRockerRepeatHold(ms: Int) {
+        rockerRepeatHoldMs = RepeatSettings.clampHold(ms)
+        prefs?.edit()?.putInt(RepeatSettings.HOLD_KEY, rockerRepeatHoldMs)?.apply()
     }
 
     /** Repeat schedule for one rocker hold, built from live settings. */
     fun rockerTiming(): HoldRepeatTiming =
-        HoldRepeatTiming(initialDelayMs = 400, intervalMs = rockerRepeatIntervalMs.toLong())
+        HoldRepeatTiming(
+            initialDelayMs = rockerRepeatHoldMs.toLong(),
+            intervalMs = rockerRepeatIntervalMs.toLong(),
+        )
 
     /** UI press: light tick. */
     fun tap(view: View?) {
