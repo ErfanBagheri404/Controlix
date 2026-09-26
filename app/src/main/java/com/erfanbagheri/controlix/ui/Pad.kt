@@ -46,6 +46,7 @@ import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.FreeLayout
 import com.erfanbagheri.controlix.data.FreeLayout.Slot
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.KeyRepeat
 import com.erfanbagheri.controlix.data.ManualKeys
 import com.erfanbagheri.controlix.data.MediaLayout
 import com.erfanbagheri.controlix.ir.IrTransmitter
@@ -525,7 +526,7 @@ private fun PadControlsRow(
     onProvenance: ((String) -> Unit)? = null,
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL",
+        RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL", "volume_up", "volume_down",
             borrowedKeys["volume_up"] != null, borrowedKeys["volume_down"] != null,
             onUp = { fire("volume_up") }, onDown = { fire("volume_down") },
             onLongUp = { copy("volume_up") }, onLongDown = { copy("volume_down") },
@@ -560,7 +561,7 @@ private fun PadControlsRow(
 
         Spacer(Modifier.width(14.dp))
 
-        RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH",
+        RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH", "channel_up", "channel_down",
             borrowedKeys["channel_up"] != null, borrowedKeys["channel_down"] != null,
             onUp = { fire("channel_up") }, onDown = { fire("channel_down") },
             onLongUp = { copy("channel_up") }, onLongDown = { copy("channel_down") },
@@ -910,6 +911,8 @@ private fun RockerColumn(
     up: ActionIcon,
     down: ActionIcon,
     label: String,
+    upKey: String,
+    downKey: String,
     upBorrowed: Boolean = false,
     downBorrowed: Boolean = false,
     onUp: () -> Unit,
@@ -924,18 +927,23 @@ private fun RockerColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        RockerKey(up, borrowed = upBorrowed, onLongClick = onLongUp) { onUp() }
+        RockerKey(up, key = upKey, borrowed = upBorrowed, onLongRelease = onLongUp) { onUp() }
         Text(label, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
-        RockerKey(down, borrowed = downBorrowed, onLongClick = onLongDown) { onDown() }
+        RockerKey(down, key = downKey, borrowed = downBorrowed, onLongRelease = onLongDown) { onDown() }
     }
 }
 
-/** Rocker key: immediate send, hold-to-repeat, long-press copy when supplied. */
+/**
+ * Rocker key: immediate send, hold-to-repeat for a rampable key, copy-code on
+ * release after a long hold (issue #67 + #10). Copy fires on the lift, not
+ * mid-hold, so the ramp and the sheet never overlap.
+ */
 @Composable
 private fun RockerKey(
     icon: ActionIcon,
+    key: String,
     borrowed: Boolean = false,
-    onLongClick: (() -> Unit)? = null,
+    onLongRelease: (() -> Unit)? = null,
     onFire: () -> Unit,
 ) {
     Box(Modifier.size(56.dp)) {
@@ -943,8 +951,11 @@ private fun RockerKey(
             Modifier
                 .fillMaxSize()
                 .bgTile(20.dp, MaterialTheme.colorScheme.surfaceVariant)
-                .rockerPressable(repeatEnabled = Feedback.rockerRepeatOn, onFire = onFire)
-                .combinedPressable(onClick = {}, onLongClick = onLongClick),
+                .rockerPressable(
+                    rampable = KeyRepeat.isRampable(key),
+                    onFire = onFire,
+                    onLongRelease = onLongRelease,
+                ),
             contentAlignment = Alignment.Center,
         ) {
             ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
