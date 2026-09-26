@@ -70,4 +70,5 @@ fun actionVector(icon: ActionIcon) = when (icon) {
     ActionIcon.Info -> Lucide.Info
     ActionIcon.Database -> Lucide.Disc
     ActionIcon.Gauge -> Lucide.Gauge
+    ActionIcon.History -> Lucide.Undo
 }
