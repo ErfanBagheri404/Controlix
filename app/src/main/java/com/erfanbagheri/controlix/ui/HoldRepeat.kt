@@ -97,7 +97,7 @@ fun Modifier.rockerPressable(
         .pointerInput(repeating) {
             awaitEachGesture {
                 awaitFirstDown(requireUnconsumed = false)
-                val timing = HoldRepeatTiming(intervalMs = Feedback.rockerRepeatIntervalMs.toLong())
+                val timing = Feedback.rockerTiming()
                 pressed = true
                 onFire()
                 Feedback.tap(view)
