@@ -496,6 +496,21 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                 },
             )
         }
+        // What's-new modal (issue #52). Hosted here, not in a route, so it floats
+        // over whatever screen the user is on when the release is detected.
+        val whatsNew = whatsNewRelease
+        val whatsNewAt = whatsNewVersion
+        if (whatsNew != null && whatsNewAt != null) {
+            WhatsNewDialog(
+                version = whatsNewAt,
+                notes = whatsNew.body.orEmpty(),
+                onDismiss = {
+                    WhatsNewStore.markSeen(whatsNewAt)
+                    whatsNewRelease = null
+                    whatsNewVersion = null
+                },
+            )
+        }
     }
 }
 
