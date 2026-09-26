@@ -1,7 +1,9 @@
 package com.erfanbagheri.controlix.ir
 
-import com.erfanbagheri.controlix.feature.Macro
-import com.erfanbagheri.controlix.feature.MacroStep
+import com.erfanbagheri.controlix.data.DeviceKey
+import com.erfanbagheri.controlix.data.Macro
+import com.erfanbagheri.controlix.data.MacroStep
+import com.erfanbagheri.controlix.ui.BACKUP_VERSION
 import com.erfanbagheri.controlix.ui.BackupCodec
 import com.erfanbagheri.controlix.ui.BackupData
 import com.erfanbagheri.controlix.ui.BackupDecodeResult
@@ -21,8 +23,8 @@ class BackupCodecTest {
             id = 4,
             name = "Movie night",
             steps = listOf(
-                MacroStep(remoteId = 12, buttonName = "POWER", delayMs = 300),
-                MacroStep(remoteId = 99, buttonName = "TEMP_UP", delayMs = 425),
+                MacroStep(DeviceKey("tv", "Sony", "sony_tv"), "POWER", 300),
+                MacroStep(DeviceKey("ac", "Gree", "gree_ac"), "TEMP_UP", 425),
             ),
         ),
     )
@@ -42,7 +44,7 @@ class BackupCodecTest {
             SavedDevice(1, "TV \"Main\"\nLiving \\", "B\\rand", "tv/\"", 10, roomSlug = "a\tb"),
         )
         val trickyMacros = listOf(
-            Macro(2, "Go / ☃", listOf(MacroStep(1, "VOL+\n\u001b", 0))),
+            Macro(2, "Go / ☃", listOf(MacroStep(DeviceKey("tv", "Sony", "sony_tv"), "VOL+\n\u001B", 0))),
         )
 
         val backup = success(BackupCodec.decode(BackupCodec.encode(trickyDevices, trickyMacros)))
@@ -106,10 +108,13 @@ class BackupCodecTest {
 
     @Test
     fun unsupportedVersionReturnsMigrationMessage() {
-        val result = BackupCodec.decode("{\"version\":2,\"devices\":[],\"macros\":[]}")
+        // Issue #83: v1 and v2 are both readable now (a v1 file simply has no
+        // stores), so the ceiling under test must be a version this build
+        // genuinely cannot read.
+        val result = BackupCodec.decode("{\"version\":${BACKUP_VERSION + 1},\"devices\":[],\"macros\":[]}")
 
         val error = result as? BackupDecodeResult.Error
-        assertTrue(error?.message?.contains("version 2") == true)
+        assertTrue(error?.message?.contains("version ${BACKUP_VERSION + 1}") == true)
     }
 
     private fun success(result: BackupDecodeResult): BackupData =

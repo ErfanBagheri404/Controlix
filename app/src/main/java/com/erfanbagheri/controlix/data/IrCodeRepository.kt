@@ -46,8 +46,13 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
          */
         private val FUNCTION_HINTS: Map<String, List<String>> = mapOf(
             "power" to listOf("%power%", "%on/off%", "%standby%", "%on_off%"),
+            "power_off" to listOf("%power%", "%off%"),
             "volume" to listOf("%vol%"),
+            "vol_up" to listOf("%vol%"),
+            "vol_down" to listOf("%vol%"),
             "channel" to listOf("%ch%", "%channel%"),
+            "ch_up" to listOf("%ch%", "%channel%"),
+            "ch_down" to listOf("%ch%", "%channel%"),
             "mute" to listOf("%mute%"),
             "play_pause" to listOf("%play%"),
             "source" to listOf("%input%", "%source%"),
@@ -69,7 +74,7 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
             // Parsed layout: [protoId(1), rsvd(3 all-zero), addr(4), cmd(4)].
             // The rsvd-byte check keeps 12-byte RAW blobs (small durations)
             // from being misread as parsed frames.
-            if (blob.size == 12 && blob[0].toInt() in 1..20 &&
+            if (blob.size == 12 && blob[0].toInt() in 1..35 &&
                 blob[1].toInt() == 0 && blob[2].toInt() == 0 && blob[3].toInt() == 0
             ) {
                 val protoId = blob[0].toInt() and 0xFF
@@ -95,6 +100,23 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
                         16 -> Aiwa.encode(addr and 0xFF, (addr shr 8) and 0x1F, cmd and 0xFF)
                         17 -> SharpDenon.encodeSharp(addr and 0x1F, cmd and 0xFF)
                         18 -> SharpDenon.encodeDenon(addr and 0x1F, cmd and 0xFF)
+                        19 -> DenonK.encode(addr, cmd)
+                        20 -> Jerrold.encode(cmd)
+                        21 -> Gi4dtv.encode(addr and 0xFF, cmd and 0xFF)
+                        22 -> Lumagen.encode(addr and 0xF, cmd and 0x7F)
+                        23 -> Samsung20.encode(addr and 0xFFF, cmd and 0xFF)
+                        24 -> TeacK.encode(addr and 0xFFF, cmd and 0xFF)
+                        25 -> DishPlayer.encode(addr and 0x3FF, cmd and 0x3F)
+                        26 -> Xmp.encode(addr and 0xFFFF, cmd and 0x3FF)
+                        27 -> Bose.encode(cmd and 0xFF)
+                        28 -> PaceMss.encode(0, addr and 0x1, cmd and 0xFF)
+                        29 -> Gxb.encode(addr and 0xF, cmd and 0xFF)
+                        30 -> Logitech.encode(addr and 0xF, cmd and 0xFF)
+                        31 -> Grundig16.encode(addr and 0x7F, cmd and 0xFF, 0)
+                        32 -> Grundig1630.encode(addr and 0x7F, cmd and 0xFF, 0)
+                        33 -> Nrc16.encode(addr and 0x7F, cmd and 0xFF)
+                        34 -> Zaptor56.encode(addr and 0xFF, (addr shr 8) and 0x7F, cmd and 0x7F)
+                        35 -> SharpDvd.encode(addr and 0xF, (addr shr 4) and 0xFF, cmd and 0xFF)
                         else -> null
                     }
                 } catch (e: Exception) {
@@ -322,6 +344,24 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
     fun brandIdOf(remoteId: Int): Int? =
         db.rawQuery("SELECT brand_id FROM remote WHERE id = ?", arrayOf(remoteId.toString())).use { c ->
             if (c.moveToFirst()) c.getInt(0) else null
+        }
+
+    /**
+     * Everything a missing-code report needs about a remote (issue #79):
+     * brand name, category slug and model/file name in one join, so the pad
+     * never has to stitch three lookups together and can prefill the form
+     * from whatever it already knows. Null when the remote is gone.
+     */
+    fun reportIdentity(remoteId: Int): Triple<String, String, String>? =
+        db.rawQuery(
+            """SELECT b.name, cat.slug, COALESCE(NULLIF(TRIM(r.model_name), ''), r.file_name)
+               FROM remote r
+               JOIN brand b ON b.id = r.brand_id
+               JOIN category cat ON cat.id = b.category_id
+               WHERE r.id = ?""",
+            arrayOf(remoteId.toString()),
+        ).use { c ->
+            if (c.moveToFirst()) Triple(c.getString(0), c.getString(1), c.getString(2)) else null
         }
 
     /**

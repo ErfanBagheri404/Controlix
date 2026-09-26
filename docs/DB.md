@@ -208,6 +208,40 @@ Maintainer JSON shape (`format: controlix-contribution-v1`):
 Validation bounds follow the bundled DB: carrier 20k–60k Hz (observed
 31,886–58,382), even element count ≥ 4, durations 10µs–60s.
 
+## Known-empty brands: why they stay
+
+Ten brands carry no remotes or buttons. This is a hardware limit, not a
+data gap, and the rows are kept so the coverage checklist stays honest.
+
+**Not transmittable by an IR LED at all** — the remotes are RF, serial, or
+virtual devices:
+
+| Brand | Device | Why no phone can send it |
+|-------|--------|--------------------------|
+| Atiusb | ATI Remote Wonder | 433 MHz RF, works through walls (AMD install guide) |
+| X10 | MouseRemote mk19a, MP3 Anywhere UR81A | X10 310/433 MHz RF into a serial-port receiver |
+| Shannon | Se Jin SWK-8630 IR keyboard | 1200-baud serial protocol, no consumer-IR waveform |
+| Devinput | — | not a device: Linux input-event numbers, no waveform exists |
+
+**Genuine IR, hardware-decoded on receive** — the conf publishes only
+scancodes, never a pulse/space table, so there is nothing to encode:
+
+| Brand | Device | Published data |
+|-------|--------|----------------|
+| Bestbuy | Easy TV (BT848/BT878) tuner remote | 5-bit scancodes, `one 0 0` |
+| Chronos | Video Shuttle II (BTTV id 0x23) | 5-bit scancodes, no timing lines at all |
+| Hercules | SmartTV Stereo (lirc_i2c PV951) | 16-bit `0x61D6`+key, timing undocumented |
+| Kanam Accent | IR-100 | 1200 8N1 serial frames, not IR framing |
+| Knc One | Anubis Typhoon TView | 8-bit scancodes, `one 0 0` |
+| Tekram | M230 (Mach64) | conf states "commands are hardware-decoded" |
+
+`one 0 0` in an lirc conf means the receiver chip or a kernel driver decodes
+the signal and lircd is only told the resulting code. There is no waveform to
+transmit, so importing one would mean inventing timings that cannot work.
+
+The fix, if it ever comes, is user-supplied codes through the contribute flow
+above — not a fabricated table.
+
 ## Legal note
 
 Only permissively licensed sources go in this database. Flipper-IRDB and irdb

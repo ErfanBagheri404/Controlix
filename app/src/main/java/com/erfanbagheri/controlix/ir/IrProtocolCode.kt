@@ -1,6 +1,13 @@
 package com.erfanbagheri.controlix.ir
 
 import com.erfanbagheri.controlix.ir.protocols.Aiwa
+import com.erfanbagheri.controlix.ir.protocols.DenonK
+import com.erfanbagheri.controlix.ir.protocols.DishPlayer
+import com.erfanbagheri.controlix.ir.protocols.Gi4dtv
+import com.erfanbagheri.controlix.ir.protocols.Jerrold
+import com.erfanbagheri.controlix.ir.protocols.Lumagen
+import com.erfanbagheri.controlix.ir.protocols.Samsung20
+import com.erfanbagheri.controlix.ir.protocols.TeacK
 import com.erfanbagheri.controlix.ir.protocols.Jvc
 import com.erfanbagheri.controlix.ir.protocols.Kaseikyo
 import com.erfanbagheri.controlix.ir.protocols.Nec
@@ -14,6 +21,16 @@ import com.erfanbagheri.controlix.ir.protocols.Rca
 import com.erfanbagheri.controlix.ir.protocols.Samsung32
 import com.erfanbagheri.controlix.ir.protocols.SharpDenon
 import com.erfanbagheri.controlix.ir.protocols.Sirc
+import com.erfanbagheri.controlix.ir.protocols.Grundig16
+import com.erfanbagheri.controlix.ir.protocols.Grundig1630
+import com.erfanbagheri.controlix.ir.protocols.Nrc16
+import com.erfanbagheri.controlix.ir.protocols.SharpDvd
+import com.erfanbagheri.controlix.ir.protocols.Zaptor56
+import com.erfanbagheri.controlix.ir.protocols.Xmp
+import com.erfanbagheri.controlix.ir.protocols.Bose
+import com.erfanbagheri.controlix.ir.protocols.Gxb
+import com.erfanbagheri.controlix.ir.protocols.Logitech
+import com.erfanbagheri.controlix.ir.protocols.PaceMss
 
 /**
  * Bridges the public file-format spelling of a protocol ("NEC", "SIRC15",
@@ -56,6 +73,34 @@ internal object IrProtocolCode {
                 SharpDenon.CARRIER_HZ to SharpDenon.encodeSharp(address and 0x1F, command and 0xFF)
             "DENON" ->
                 SharpDenon.CARRIER_HZ to SharpDenon.encodeDenon(address and 0x1F, command and 0xFF)
+            "DENONK" -> DenonK.CARRIER_HZ to DenonK.encode(address, command)
+            "JERROLD" -> Jerrold.CARRIER_HZ to Jerrold.encode(command)
+            "GI4DTV" -> Gi4dtv.CARRIER_HZ to Gi4dtv.encode(address and 0xFF, command and 0xFF)
+            "LUMAGEN" -> Lumagen.CARRIER_HZ to Lumagen.encode(address and 0xF, command and 0x7F)
+            "SAMSUNG20" -> Samsung20.CARRIER_HZ to Samsung20.encode(address and 0xFFF, command and 0xFF)
+            "TEACK" -> TeacK.CARRIER_HZ to TeacK.encode(address and 0xFFF, command and 0xFF)
+            "DISHPLAYER", "DISHPLAYERNETWORK" ->
+                DishPlayer.CARRIER_HZ to DishPlayer.encode(address and 0x3FF, command and 0x3F)
+            "XMP", "XMP1", "XMP2" ->
+                Xmp.CARRIER_HZ to Xmp.encode(address and 0xFFFF, command and 0x3FF)
+            "GRUNDIG16" ->
+                Grundig16.CARRIER_HZ to Grundig16.encode(address and 0x7F, command and 0xFF, 0)
+            "GRUNDIG1630" ->
+                Grundig1630.CARRIER_HZ to Grundig1630.encode(address and 0x7F, command and 0xFF, 0)
+            "NRC16" ->
+                Nrc16.CARRIER_HZ to Nrc16.encode(address and 0x7F, command and 0xFF)
+            "ZAPTOR56" ->
+                Zaptor56.CARRIER_HZ to Zaptor56.encode(
+                    address and 0xFF, (address shr 8) and 0x7F, command and 0x7F
+                )
+            "SHARPDVD" ->
+                SharpDvd.CARRIER_HZ to SharpDvd.encode(
+                    address and 0xF, (address shr 4) and 0xFF, command and 0xFF
+                )
+            "BOSE" -> Bose.CARRIER_HZ to Bose.encode(command and 0xFF)
+            "PACEMSS" -> PaceMss.CARRIER_HZ to PaceMss.encode(0, address and 0x1, command and 0xFF)
+            "GXB" -> Gxb.CARRIER_HZ to Gxb.encode(address and 0xF, command and 0xFF)
+            "LOGITECH" -> Logitech.CARRIER_HZ to Logitech.encode(address and 0xF, command and 0xFF)
             else -> null
         }
     }

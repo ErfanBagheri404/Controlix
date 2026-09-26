@@ -1,6 +1,9 @@
 package com.erfanbagheri.controlix.feature
 
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.Macro
+import com.erfanbagheri.controlix.data.MacroStep
+import com.erfanbagheri.controlix.data.RemoteIndex
 
 /** A favorite stores identity, never a pattern — the real code is resolved at fire time. */
 data class Favorite(val remoteId: Int, val key: String)
@@ -165,10 +168,12 @@ object SceneModel {
 /**
  * Author a scene from an existing macro — the macro store stays the editor.
  * MacroStep.delayMs is the wait AFTER its step; a trailing delay is dropped.
+ * Scenes resolve by the current remote id (issue #70), so a migrated
+ * key-based step needs the same key→id lookup the pad uses.
  */
-fun sceneFromMacro(macro: Macro, id: Int): Scene =
+fun sceneFromMacro(macro: Macro, id: Int, index: RemoteIndex? = null): Scene =
     Scene(id, macro.name, macro.steps.flatMapIndexed { i, step ->
-        val key: SceneStep = SceneStep.DeviceKey(step.remoteId, step.buttonName)
+        val key: SceneStep = SceneStep.DeviceKey(step.remoteIdOr(index), step.buttonName)
         if (i < macro.steps.lastIndex && step.delayMs > 0) listOf(key, SceneStep.Delay(step.delayMs))
         else listOf(key)
     })
