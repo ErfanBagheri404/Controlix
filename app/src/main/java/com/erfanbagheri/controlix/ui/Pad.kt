@@ -45,9 +45,11 @@ import com.erfanbagheri.controlix.data.CopiedButtons
 import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.FreeLayout
 import com.erfanbagheri.controlix.data.FreeLayout.Slot
+import com.erfanbagheri.controlix.data.GlobalFavorite
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.ManualKeys
 import com.erfanbagheri.controlix.data.MediaLayout
+import com.erfanbagheri.controlix.data.RemoteIdentity
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.Gold
@@ -224,8 +226,18 @@ fun PadScreen(
     }
 
     fun toggleFavorite(key: String) {
-        val wasFavorite = favoritesModel.favorites.any { it.remoteId == remoteId && it.key == key }
-        favoritesModel.toggleFavorite(remoteId, key)
+        // Issue #71: pinning works on any remote in the DB, saved or not —
+        // the identity comes from the saved device, or from the index for a
+        // remote that was never saved. Impossible only for a row outside the DB.
+        val device = saved.key.takeIf { saved.fileName.isNotEmpty() }
+            ?: runCatching { repo?.remoteIndex()?.let { RemoteIdentity.row(remoteId, it)?.key } }.getOrNull()
+        if (device == null) {
+            toast.show("This remote has no stable identity to pin against.")
+            return
+        }
+        val favorite = GlobalFavorite(device, key, key.prettify())
+        val wasFavorite = favoritesModel.favorites.any { it.device == favorite.device && it.button == favorite.button }
+        favoritesModel.toggleFavorite(favorite)
         toast.show(
             if (wasFavorite) "${key.replace('_', ' ')} removed from favorites"
             else "${key.replace('_', ' ')} added to favorites"
@@ -354,9 +366,16 @@ fun PadScreen(
     }
 
     if (favoritesOpen) {
+        // Global favourites (issue #71): the check-state is this remote's keys,
+        // but the row on Home is shared with every remote.
+        val mine = remember(remoteId, saved.key, repo) {
+            saved.key.takeIf { saved.fileName.isNotEmpty() }
+                ?: runCatching { repo?.remoteIndex()?.let { RemoteIdentity.row(remoteId, it)?.key } }.getOrNull()
+                ?: saved.key
+        }
         FavoriteKeysSheet(
             keys = effective.map { it.key }.distinct().sorted(),
-            favoriteKeys = favoritesModel.favorites.filter { it.remoteId == remoteId }.map { it.key }.toSet(),
+            favoriteKeys = favoritesModel.favorites.filter { it.device == mine }.map { it.button }.toSet(),
             onToggle = ::toggleFavorite,
             onDismiss = { favoritesOpen = false },
         )
