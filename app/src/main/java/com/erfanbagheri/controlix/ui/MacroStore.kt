@@ -7,8 +7,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import com.erfanbagheri.controlix.feature.Favorite
-import com.erfanbagheri.controlix.feature.FavoriteModel
+import com.erfanbagheri.controlix.data.GlobalFavorite
+import com.erfanbagheri.controlix.data.GlobalFavorites
+import com.erfanbagheri.controlix.data.RemoteIdentity
+import com.erfanbagheri.controlix.data.RemoteIndex
 import com.erfanbagheri.controlix.feature.FavoritesScenesCodec
 import com.erfanbagheri.controlix.feature.Macro
 import com.erfanbagheri.controlix.feature.MacroStep
@@ -72,19 +74,37 @@ fun rememberMacroModel(context: Context = LocalContext.current): MacroModel {
 }
 
 /**
- * Favorites + scenes in SharedPreferences through the pure codec.
- * A favorite stores (remoteId, semantic key) only — the wire pattern is
- * resolved from the IR database at fire time, so a DB refresh can never
- * resurrect a stale pattern.
+ * Favorites + scenes in SharedPreferences through the pure codecs.
+ * A favorite stores (DeviceKey, button, label) — a DB refresh re-resolves it
+ * through the stable key instead of leaving a dead remoteId behind; the wire
+ * pattern is resolved from the IR database at fire time.
  */
-class FavoritesScenesStore(context: Context) {
+class FavoritesScenesStore(context: Context, private val index: RemoteIndex? = null) {
     private val prefs = context.getSharedPreferences("favorites_scenes", Context.MODE_PRIVATE)
 
-    fun loadFavorites(): List<Favorite> =
-        FavoritesScenesCodec.decodeFavorites(prefs.getString("favorites", null))
+    fun loadFavorites(): List<GlobalFavorite> {
+        val raw = prefs.getString("favorites", null)
+        if (raw != null && raw.startsWith("1~")) migrateLegacy(raw)
+        return GlobalFavorites.decode(prefs.getString("favorites", null))
+    }
 
-    fun saveFavorites(favorites: List<Favorite>) {
-        prefs.edit().putString("favorites", FavoritesScenesCodec.encodeFavorites(favorites)).apply()
+    fun saveFavorites(favorites: List<GlobalFavorite>) {
+        prefs.edit().putString("favorites", GlobalFavorites.encode(favorites)).apply()
+    }
+
+    /**
+     * One-time upgrade of the v1 (remoteId, key) rows: the volatile id is
+     * re-keyed against the current DB. A row whose remote is gone cannot be
+     * re-addressed at all, so it is dropped here — the only place a favorite
+     * ever disappears.
+     */
+    private fun migrateLegacy(raw: String) {
+        val legacy = FavoritesScenesCodec.decodeFavorites(raw)
+        val upgraded = legacy.mapNotNull { old ->
+            index?.let { RemoteIdentity.row(old.remoteId, it) }?.key
+                ?.let { GlobalFavorite(it, old.key, old.key.prettify()) }
+        }
+        saveFavorites(upgraded)
     }
 
     fun loadScenes(): List<Scene> =
@@ -95,26 +115,31 @@ class FavoritesScenesStore(context: Context) {
     }
 }
 
+/** `volume_up` → `Volume up`, the label every add path writes by default. */
+fun String.prettify(): String =
+    replace('_', ' ').replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+
 class FavoritesModel(private val store: FavoritesScenesStore) {
-    var favorites: List<Favorite> by mutableStateOf(store.loadFavorites())
+    var favorites: List<GlobalFavorite> by mutableStateOf(store.loadFavorites())
         private set
     var scenes: List<Scene> by mutableStateOf(store.loadScenes())
         private set
 
-    fun replaceFavorites(favorites: List<Favorite>) {
+    fun replaceFavorites(favorites: List<GlobalFavorite>) {
         store.saveFavorites(favorites)
         this.favorites = store.loadFavorites()
     }
 
-    /** Long-press on a pad key toggles its favorite; identity is exact. */
-    fun toggleFavorite(remoteId: Int, key: String) {
-        val favorite = Favorite(remoteId, key)
-        val exists = favorites.any { it.remoteId == favorite.remoteId && it.key == favorite.key }
-        replaceFavorites(
-            if (exists) FavoriteModel.remove(favorites, remoteId, key)
-            else FavoriteModel.add(favorites, favorite)
-        )
-    }
+    /** From a pad key or the key list; identity is (device, button), exact. */
+    fun toggleFavorite(favorite: GlobalFavorite) =
+        replaceFavorites(GlobalFavorites.toggle(favorites, favorite))
+
+    fun removeFavorite(favorite: GlobalFavorite) =
+        replaceFavorites(GlobalFavorites.remove(favorites, favorite))
+
+    /** Drag reorder on Home; persisted on every move. */
+    fun moveFavorite(from: Int, to: Int) =
+        replaceFavorites(GlobalFavorites.move(favorites, from, to))
 
     /** Scenes are projections of the existing macro store — no second editor. */
     fun replaceScenes(scenes: List<Scene>) {
@@ -129,6 +154,9 @@ class FavoritesModel(private val store: FavoritesScenesStore) {
 }
 
 @Composable
-fun rememberFavoritesModel(context: Context = LocalContext.current): FavoritesModel {
-    return remember { FavoritesModel(FavoritesScenesStore(context)) }
+fun rememberFavoritesModel(
+    context: Context = LocalContext.current,
+    index: RemoteIndex? = null,
+): FavoritesModel {
+    return remember(index) { FavoritesModel(FavoritesScenesStore(context, index)) }
 }
