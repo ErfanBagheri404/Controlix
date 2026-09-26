@@ -1,6 +1,8 @@
 package com.erfanbagheri.controlix.widget
 
 import com.erfanbagheri.controlix.data.ButtonNames
+import com.erfanbagheri.controlix.data.Macro
+import com.erfanbagheri.controlix.data.MacroRunResult
 
 /**
  * Pure decision logic for the home-screen widgets, kept free of Android types
@@ -104,4 +106,35 @@ object WidgetBinding {
     val NO_TARGET = "Tap to open Controlix"
     val NO_DEVICE = "Remote deleted"
     val NO_IR = "No IR blaster"
+
+    // Macro widget (issue #82): one widget instance runs one macro, bound by
+    // the macro's stable id — never its list position, so reordering the
+    // macro list cannot retarget a widget. Stored per appWidgetId as
+    // "macro:<id>", alongside the legacy single-button target.
+
+    /** Parses a "macro:<id>" binding, or null when this is not one. */
+    fun macroId(raw: String?): Int? {
+        val s = raw?.trim().orEmpty()
+        if (!s.startsWith("macro:")) return null
+        return s.removePrefix("macro:").toIntOrNull()?.takeIf { it >= 0 }
+    }
+
+    fun serializeMacro(macroId: Int): String = "macro:$macroId"
+
+    /** The bound macro by stable id; null covers deleted and never-set. */
+    fun findMacro(macros: List<Macro>, macroId: Int?): Macro? =
+        if (macroId == null) null else macros.firstOrNull { it.id == macroId }
+
+    /** A widget whose macro was deleted degrades instead of crashing. */
+    fun macroAlive(macros: List<Macro>, macroId: Int?): Boolean = findMacro(macros, macroId) != null
+
+    /** Result copy after a tap-run — same wording as the in-app runner. */
+    fun macroRunStatus(result: MacroRunResult): String = when (result) {
+        is MacroRunResult.Complete -> "All ${result.sent} sent"
+        is MacroRunResult.Failed -> "Stopped \u2014 ${result.reason}"
+    }
+
+    val MACRO_DELETED = "Macro deleted"
+    val MACRO_UNSET = "Pick a macro"
+    val TAP_TO_RUN = "Tap to run"
 }
