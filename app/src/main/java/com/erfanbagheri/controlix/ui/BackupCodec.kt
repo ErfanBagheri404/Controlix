@@ -3,10 +3,36 @@ package com.erfanbagheri.controlix.ui
 import com.erfanbagheri.controlix.feature.Macro
 import com.erfanbagheri.controlix.feature.MacroStep
 
-/** Bump only alongside a migration branch in [BackupCodec.decode]. */
-const val BACKUP_VERSION = 1
+/**
+ * Bump only alongside a migration branch in [BackupCodec.decode].
+ *
+ * v1 = devices + macros only. v2 (issue #83) adds every store that lives
+ * outside them, captured wholesale by [BackupStores] so the next store added
+ * is covered by adding one line rather than a new field here.
+ * [BackupCodec.decode] still reads a v1 file — it decodes with empty
+ * new stores, never as a failure.
+ */
+const val BACKUP_VERSION = 2
 
-data class BackupData(val devices: List<SavedDevice>, val macros: List<Macro>)
+/** First version that carries stores outside devices/macros. */
+private const val FIRST_STORE_VERSION = 2
+
+data class BackupData(
+    val devices: List<SavedDevice>,
+    val macros: List<Macro>,
+    /**
+     * Raw per-store payloads, keyed by SharedPreferences file name
+     * (issue #83). Everything a restore needs, for every store [BackupStores]
+     * knows about, without this file having to know a field per store.
+     */
+    val stores: Map<String, String> = emptyMap(),
+    /**
+     * Stores this backup carried that this build cannot restore, by human
+     * name. A restore that reports success while silently dropping one of
+     * these is exactly the failure #83 exists to stop, so [Nav] shows them.
+     */
+    val unreadableStores: List<String> = emptyList(),
+)
 
 sealed interface BackupDecodeResult {
     data class Success(val backup: BackupData) : BackupDecodeResult
@@ -14,13 +40,19 @@ sealed interface BackupDecodeResult {
 }
 
 /**
- * Backup file = one JSON object: `{"version":1,"devices":[...],"macros":[...]}`.
+ * Backup file = one JSON object:
+ * `{"version":1,"devices":[...],"macros":[...]}` (v1), or the same plus
+ * `"stores":{...}` (v2).
  * Hand-rolled writer/parser — no JSON dependency (app ships zero of those).
- * [decode] is a trust boundary: every malformed input returns [BackupDecodeResult.Error],
- * never an exception.
+ * [decode] is a trust boundary: every malformed input returns
+ * [BackupDecodeResult.Error], never an exception.
  */
 object BackupCodec {
-    fun encode(devices: List<SavedDevice>, macros: List<Macro>): String = buildString {
+    fun encode(
+        devices: List<SavedDevice>,
+        macros: List<Macro>,
+        stores: Map<String, String> = emptyMap(),
+    ): String = buildString {
         append("{\"version\":").append(BACKUP_VERSION).append(",\"devices\":[")
         devices.forEachIndexed { index, d ->
             if (index > 0) append(',')
@@ -49,7 +81,12 @@ object BackupCodec {
             }
             append("]}")
         }
-        append("]}")
+        append("],\"stores\":{")
+        stores.entries.forEachIndexed { index, (name, payload) ->
+            if (index > 0) append(',')
+            append(quoted(name)).append(':').append(quoted(payload))
+        }
+        append("}}")
     }
 
     fun decode(json: String): BackupDecodeResult {
@@ -59,19 +96,51 @@ object BackupCodec {
             return BackupDecodeResult.Error("Not a valid backup file")
         }
         if (root !is JsonValue.Obj) return BackupDecodeResult.Error("Backup must be a JSON object")
-        if (root.values.keys != ROOT_FIELDS) return BackupDecodeResult.Error("Backup contains unknown or missing top-level fields")
 
         val versionNumber = (root.values["version"] as? JsonValue.Num)?.value
         val version = (versionNumber as? Int) ?: return BackupDecodeResult.Error("Backup version must be a number")
-        if (version != BACKUP_VERSION) {
+        if (version < 1 || version > BACKUP_VERSION) {
             return BackupDecodeResult.Error("Backup version $version is not supported — this app reads version $BACKUP_VERSION")
+        }
+        // A v1 file has no "stores" key at all. That is not damage: the stores
+        // did not exist when it was written, so nothing was lost and the
+        // restore proceeds with empty stores. Unknown extra keys are ignored
+        // for the same reason — a newer build's field is not a reason to
+        // refuse the devices and macros this build does understand.
+        val unknown = root.values.keys - (ROOT_FIELDS + "stores")
+        if (unknown.isNotEmpty()) {
+            return BackupDecodeResult.Error("Backup contains unknown top-level fields: ${unknown.sorted().joinToString()}")
+        }
+        val missingRequired = ROOT_FIELDS - root.values.keys
+        if (missingRequired.isNotEmpty()) {
+            return BackupDecodeResult.Error("Backup is missing fields: ${missingRequired.sorted().joinToString()}")
         }
 
         return try {
+            val stores = when (val raw = root.values["stores"]) {
+                null -> emptyMap<String, String>()
+                is JsonValue.Obj -> {
+                    val m = LinkedHashMap<String, String>()
+                    for (entry in raw.values) {
+                        val value = entry.value as? JsonValue.Str ?: continue
+                        m[entry.key] = value.value
+                    }
+                    m
+                }
+                else -> throw IllegalArgumentException("stores must be an object")
+            }
+            // #83: a store this build cannot restore is named, never dropped
+            // in silence. A store registered but absent is a v1 file, not a
+            // loss, so only unknown keys land here.
+            val unreadable = stores.keys.filterNot { it in BackupStores.KNOWN }
+                .map { it.replace('_', ' ') }
+                .sorted()
             BackupDecodeResult.Success(
                 BackupData(
                     devices = array(root, "devices", "devices").mapIndexed { i, v -> device(v, i) },
                     macros = array(root, "macros", "macros").mapIndexed { i, v -> macro(v, i) },
+                    stores = stores,
+                    unreadableStores = unreadable,
                 )
             )
         } catch (e: Exception) {
