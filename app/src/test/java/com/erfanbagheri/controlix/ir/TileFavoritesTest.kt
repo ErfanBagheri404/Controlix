@@ -11,18 +11,20 @@ import com.erfanbagheri.controlix.feature.ResolvedKey
 import com.erfanbagheri.controlix.quicksettings.TileFavorites
 import com.erfanbagheri.controlix.quicksettings.TileTap
 import com.erfanbagheri.controlix.quicksettings.TileTarget
+import com.erfanbagheri.controlix.quicksettings.TileTargetCodec
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
  * Issue #81 — a pinned favourite on the Quick Settings tile.
  *
- * The tile's row of choices must BE the home row's row, and firing must go
- * through the same resolution: one function ([FavoriteFire]), the same stable
- * device key, the same unavailable answer. Two DB snapshots with different
- * rowids prove the pin is not a stored remoteId.
+ * A favourite IS a (DeviceKey, key) pair, which is what [TileTarget] is
+ * (#78), so there is no second target type and no second encoder. The tile's
+ * list must BE the home row's list, and firing must go through the same
+ * resolution: one function ([FavoriteFire]), the same stable device key, the
+ * same unavailable answer. Two DB snapshots with different rowids prove the
+ * pin is not a stored remoteId.
  */
 class TileFavoritesTest {
 
@@ -45,11 +47,8 @@ class TileFavoritesTest {
 
     /** Codes by (rowid, key); a key absent from here is unavailable. */
     private class FakeResolver(private val codes: Map<Pair<Int, String>, ResolvedKey>) : KeyResolver {
-        val calls = mutableListOf<Pair<Int, String>>()
-        override fun resolve(remoteId: Int, key: String): Resolution {
-            calls += remoteId to key
-            return codes[remoteId to key]?.let { Resolution.Found(it) } ?: Resolution.Unsupported
-        }
+        override fun resolve(remoteId: Int, key: String): Resolution =
+            codes[remoteId to key]?.let { Resolution.Found(it) } ?: Resolution.Unsupported
 
         override fun deviceExists(remoteId: Int): Boolean = codes.keys.any { it.first == remoteId }
     }
@@ -75,10 +74,10 @@ class TileFavoritesTest {
 
     @Test
     fun `pinned favourite survives a db rebuild that reassigns every remote id`() {
-        val pinned = TileTarget.Favourite(fav(tv, "mute", "Mute"))
+        val pinned = TileTarget(tv, "mute")
 
-        // Pinned before the rebuild; fired after it, against a resolver keyed on
-        // the NEW rowid. Only the DeviceKey can get here.
+        // Pinned before the rebuild; fired after it, against a resolver keyed
+        // on the NEW rowid. Only the DeviceKey can get here.
         val afterFav = TileFavorites.toFire(pinned, listOf(fav(tv, "mute", "Mute")))
         assertEquals(tv, afterFav!!.device)
         val tap = TileFavorites.decide(afterFav, after, FakeResolver(mapOf((14 to "mute") to samsungMute)))
@@ -106,19 +105,19 @@ class TileFavoritesTest {
     @Test
     fun `picker lists favourites first in home row order then devices`() {
         val row = listOf(fav(bar, "power", "Bar power"), fav(tv, "mute", "Mute"), fav(tv, "vol+", "Volume up"))
-        val device = TileTarget.Device(DeviceKey("acs", "Admiral", "admiral.ir"), "power", "AC power")
+        val device = TileTarget(DeviceKey("acs", "Admiral", "admiral.ir"), "power")
 
         assertEquals(
-            row.map { TileTarget.Favourite(it) } + device,
+            row.map { TileTarget(it.device, it.button) } + device,
             TileFavorites.picker(row, listOf(device)),
         )
     }
 
     @Test
-    fun `pinned favourite follows a reorder or rename in the home row`() {
+    fun `pinned target follows a reorder or rename in the home row`() {
         val a = fav(bar, "power", "Bar power")
         val b = fav(tv, "mute", "Mute")
-        val pinned = TileTarget.Favourite(b)
+        val pinned = TileTarget(b.device, b.button)
         val reordered = listOf(b, a)
         val renamed = GlobalFavorite(b.device, b.button, "TV mute")
 
@@ -126,20 +125,18 @@ class TileFavoritesTest {
         assertEquals(renamed, TileFavorites.toFire(pinned, listOf(renamed, a)))
     }
 
-    // ---- no second writer, no stored copy ----
+    // ---- one codec, one slot ----
 
     @Test
-    fun `the pin is a device key pointer that round-trips`() {
-        val pinned = fav(tv, "mute", "Mute")
-        val raw = TileFavorites.encode(TileTarget.Favourite(pinned))
-
+    fun `the pin carries identity through the shared tile codec`() {
+        val raw = TileTargetCodec.encode(TileTarget(tv, "mute"))
         // The pin carries identity, not a copy of the row: the label lives in
         // GlobalFavorites and is re-read from there at fire time.
         assertTrue("no label in the pin", "Mute" !in raw)
-        val decoded = TileFavorites.decode(raw) as TileTarget.Favourite
-        assertEquals(tv, decoded.favorite.device)
-        assertEquals("mute", decoded.favorite.button)
-        assertEquals(pinned, TileFavorites.toFire(decoded, listOf(pinned)))
+        val decoded = TileTargetCodec.decode(raw)!!
+        assertEquals(tv, decoded.device)
+        assertEquals("mute", decoded.key)
+        assertEquals(fav(tv, "mute", "Mute"), TileFavorites.toFire(decoded, listOf(fav(tv, "mute", "Mute"))))
     }
 
     @Test
@@ -147,6 +144,5 @@ class TileFavoritesTest {
         val row = listOf(fav(bar, "power", "Bar power"), fav(tv, "mute", "Mute"))
         assertEquals(row.first(), TileFavorites.toFire(null, row))
         assertEquals(TileTap.Nothing, TileFavorites.decide(null, before, FakeResolver(emptyMap())))
-        assertNull(TileFavorites.decode(""))
     }
 }

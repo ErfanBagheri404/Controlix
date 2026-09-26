@@ -82,6 +82,7 @@ private sealed interface Route {
     data object Macros : Route
     data object Builder : Route
     data object DbHealth : Route
+    data object TileTarget : Route
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -216,6 +217,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                     },
                     onMissingCode = { scope.launch { drawerState.close() }; route = Route.MissingCode() },
                     onDbHealth = { scope.launch { drawerState.close() }; route = Route.DbHealth },
+                    onTileTarget = { scope.launch { drawerState.close() }; route = Route.TileTarget },
                 )
             },
         ) {
@@ -325,8 +327,9 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         // System back from a cold-start-restored pad returns Home, never traps.
                         BackHandler { route = Route.Home }
                         val saved = model.devices.firstOrNull { it.remoteId == r.remoteId }
-                        // The tile fires this remote's power code.
-                        LaunchedEffect(r.remoteId) { TileStore(ctx).rememberRemoteId(r.remoteId) }
+                        // Issue #78: the tile fires a *pinned* target, not
+                        // whichever pad was opened last. Opening a pad no longer
+                        // writes the tile's slot; the picker is its only writer.
                         // AC remotes are stateful: their pad is a separate climate
                         // layout. Every other category keeps the normal TV pad.
                         if (saved?.isAc() == true) {
@@ -398,6 +401,12 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         repo = repo,
                         onBack = { route = Route.Home },
                     )
+                    is Route.TileTarget -> TileTargetScreen(
+                        devices = model.devices,
+                        repo = repo,
+                        toast = toast,
+                        onBack = { route = Route.Home },
+                    )
                 }
             }
         }
@@ -444,6 +453,7 @@ private fun MenuDrawer(
     onImport: () -> Unit,
     onMissingCode: () -> Unit,
     onDbHealth: () -> Unit,
+    onTileTarget: () -> Unit,
 ) {
     ModalDrawerSheet(
         drawerContainerColor = MaterialTheme.colorScheme.background,
@@ -498,6 +508,7 @@ private fun MenuDrawer(
                 )
             }
             DrawerRow(ActionIcon.Gauge, "Database health", onDbHealth)
+            DrawerRow(ActionIcon.QrScan, "Tile target", onTileTarget)
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Settings")
