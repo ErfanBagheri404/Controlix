@@ -108,14 +108,25 @@ fun PadScreen(
     // Custom remotes carry negative ids: their buttons are recipe
     // references resolved from the DB at fire time, never stored codes.
     val context = LocalContext.current
-    val recipe = remember(remoteId) {
-        if (remoteId >= 0) null
+    // A QR-shared remote (#56) also has a negative id, but owns its codes
+    // outright — the recipe store is the wrong place to look for it, so it
+    // is checked first and short-circuits the builder path.
+    val shared = remember(remoteId) {
+        if (remoteId >= 0) null else SharedRemoteStore(context).load(remoteId)
+    }
+    val recipe = remember(remoteId, shared) {
+        if (remoteId >= 0 || shared != null) null
         else BuilderStore(context).load(remoteId)
             .validate { rid, n -> runCatching { repo?.buttonByName(rid, n) != null }.getOrDefault(false) }
     }
-    val buttons = remember(remoteId, recipe) {
-        if (recipe == null) runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
-        else recipe.buttons.mapNotNull { e ->
+    val buttons = remember(remoteId, recipe, shared) {
+        if (shared != null) {
+            shared.buttons.map {
+                IrCodeRepository.Button(it.name, it.carrierHz, it.pattern, null, remoteId)
+            }
+        } else if (recipe == null) {
+            runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
+        } else recipe.buttons.mapNotNull { e ->
             runCatching { repo?.buttonByName(e.remoteId, e.sourceName) }.getOrNull()
                 ?.copy(remoteId = e.remoteId)
         }
@@ -124,16 +135,19 @@ fun PadScreen(
     // this remote lacks. Used when the remote's own buttons fall short.
     // Custom remotes resolve against their own set only — the recipe is
     // exactly what the user picked; borrowing would override their choices.
-    val siblings = remember(remoteId, recipe) {
-        if (recipe != null) emptyList()
+    val siblings = remember(remoteId, recipe, shared) {
+        if (recipe != null || shared != null) emptyList()
         else {
             val brand = runCatching { repo?.brandIdOf(remoteId) }.getOrNull()
             if (brand == null) emptyList()
             else runCatching { repo?.brandButtons(brand) }.getOrNull().orEmpty()
         }
     }
-    val effective = remember(remoteId, recipe, buttons, siblings, borrowMemory) {
-        if (recipe != null) EffectiveButtons.resolve(remoteId, buttons, buttons)
+    val effective = remember(remoteId, recipe, shared, buttons, siblings, borrowMemory) {
+        // A shared remote owns exactly the codes that were shared; like a
+        // recipe it must not borrow siblings, or the pad would quietly send
+        // buttons the sender never had.
+        if (recipe != null || shared != null) EffectiveButtons.resolve(remoteId, buttons, buttons)
         else if (siblings.isEmpty()) emptyList()
         else EffectiveButtons.resolve(remoteId, buttons, siblings, borrowMemory)
     }
