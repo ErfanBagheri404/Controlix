@@ -81,6 +81,8 @@ fun PadScreen(
     onSwitchDevice: (SavedDevice) -> Unit,
     onEdit: (SavedDevice) -> Unit,
     onShare: (SavedDevice) -> Unit,
+    /** Open the signal analyzer scoped to this remote (issue #55). */
+    onInspectSignals: (Int) -> Unit,
     onBack: () -> Unit,
 ) {
     var lastSent by remember(remoteId) { mutableStateOf<String?>(null) }
@@ -350,6 +352,7 @@ fun PadScreen(
                 { sheetOpen = false; copiedOpen = true }
             },
             onFavorites = { sheetOpen = false; favoritesOpen = true },
+            onInspectSignals = { sheetOpen = false; onInspectSignals(remoteId) },
         )
     }
 

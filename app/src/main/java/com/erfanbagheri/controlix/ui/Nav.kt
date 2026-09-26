@@ -84,6 +84,14 @@ private sealed interface Route {
     data object Macros : Route
     data object Builder : Route
     data object DbHealth : Route
+    /** Button picker for the analyzer; null remote = every saved device. */
+    data class Analyzer(val remoteId: Int? = null) : Route
+    data class SignalAnalyzer(
+        val buttonName: String,
+        val carrierHz: Int,
+        val pattern: IntArray,
+        val protocol: String?,
+    ) : Route
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -188,6 +196,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                     onMacros = { scope.launch { drawerState.close() }; route = Route.Macros },
                     onSweep = { scope.launch { drawerState.close() }; route = Route.Sweep },
                     onSelfTest = { scope.launch { drawerState.close() }; route = Route.SelfTest },
+                    onAnalyzer = { scope.launch { drawerState.close() }; route = Route.Analyzer() },
                     onUpdateDb = onUpdateDb,
                     dbChangelog = (refreshState as? RefreshState.Checked)?.let {
                         DbChangelog.format(dbCounts.first, dbCounts.second, it.manifest.remoteCount, it.manifest.buttonCount)
@@ -351,6 +360,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             onSwitchDevice = { openPad(it.remoteId) },
                             onEdit = { route = Route.Edit(it.remoteId) },
                             onShare = { route = Route.Share(it.remoteId) },
+                            onInspectSignals = { route = Route.Analyzer(it) },
                             onBack = { route = Route.Home },
                         )
                     }
@@ -397,6 +407,24 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         repo = repo,
                         onBack = { route = Route.Home },
                     )
+                    is Route.Analyzer -> AnalyzerPickerScreen(
+                        repo = repo,
+                        devices = model.devices,
+                        remoteId = r.remoteId,
+                        onPick = { s -> route = Route.SignalAnalyzer(s.buttonName, s.carrierHz, s.pattern, s.protocol) },
+                        onBack = { route = Route.Home },
+                    )
+                    is Route.SignalAnalyzer -> {
+                        BackHandler { route = Route.Home }
+                        SignalAnalyzerScreen(
+                            buttonName = r.buttonName,
+                            carrierHz = r.carrierHz,
+                            pattern = r.pattern,
+                            protocol = r.protocol,
+                            transmitter = ir,
+                            onBack = { route = Route.Home },
+                        )
+                    }
                 }
             }
         }
@@ -436,6 +464,7 @@ private fun MenuDrawer(
     onMacros: () -> Unit,
     onSweep: () -> Unit,
     onSelfTest: () -> Unit,
+    onAnalyzer: () -> Unit,
     onUpdateDb: () -> Unit,
     dbChangelog: String?,
     dbState: String?,
@@ -481,6 +510,7 @@ private fun MenuDrawer(
             DrawerRow(ActionIcon.Macros, "Macros", onMacros)
             DrawerRow(ActionIcon.Sweep, "TV-B-Gone", onSweep)
             DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)
+            DrawerRow(ActionIcon.Waveform, "Signal analyzer", onAnalyzer)
             DrawerRow(ActionIcon.Database, "Update code database", onUpdateDb)
             if (dbChangelog != null) {
                 Text(
