@@ -7,49 +7,36 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.erfanbagheri.controlix.data.Macro
+import com.erfanbagheri.controlix.data.MacroCodec
+import com.erfanbagheri.controlix.data.RemoteIndex
+import com.erfanbagheri.controlix.data.migrateMacro
 import com.erfanbagheri.controlix.feature.Favorite
 import com.erfanbagheri.controlix.feature.FavoriteModel
 import com.erfanbagheri.controlix.feature.FavoritesScenesCodec
-import com.erfanbagheri.controlix.feature.Macro
-import com.erfanbagheri.controlix.feature.MacroStep
 import com.erfanbagheri.controlix.feature.Scene
 
 /**
  * Persisted macro list, same SharedPreferences shape as DeviceStore.
- * Format: each macro is `id~name~step1|step2|...`; steps are `remoteId:buttonName:delayMs`.
- * Macros survive DB updates because steps reference (remoteId, buttonName), not indices.
+ *
+ * Issue #70: a step is (device, button, delay) so one macro can span saved
+ * devices, and the device is the stable `DeviceKey`, not a volatile
+ * `remote.id` that a DB rebuild reassigns. Encoding, validation and decoding
+ * are pure in [MacroCodec]; this class only owns the pref key.
+ *
+ * A record written before #70 still decodes and is migrated on read —
+ * re-creating a macro is never asked of the user.
  */
 class MacroStore(context: Context) {
     private val prefs = context.getSharedPreferences("macros", Context.MODE_PRIVATE)
 
-    fun load(): List<Macro> {
-        val raw = prefs.getString("macros", "") ?: ""
-        if (raw.isBlank()) return emptyList()
-        return raw.split(";;").filter { it.isNotBlank() }.mapNotNull { runCatching { parseMacro(it) }.getOrNull() }
+    fun load(index: RemoteIndex? = null): List<Macro> {
+        val rows = runCatching { index?.all() }.getOrNull().orEmpty()
+        return MacroCodec.decode(prefs.getString("macros", null)).map { migrateMacro(it, rows) }
     }
 
     fun save(macros: List<Macro>) {
-        prefs.edit().putString("macros", macros.joinToString(";;") { serializeMacro(it) }).apply()
-    }
-
-    private fun parseMacro(s: String): Macro {
-        val parts = s.split("~")
-        val id = parts[0].toInt()
-        val name = parts[1]
-        val steps = if (parts.size > 2 && parts[2].isNotBlank()) {
-            parts[2].split("|").mapNotNull { runCatching { parseStep(it) }.getOrNull() }
-        } else emptyList()
-        return Macro(id, name, steps)
-    }
-
-    private fun parseStep(s: String): MacroStep {
-        val f = s.split(":")
-        return MacroStep(remoteId = f[0].toInt(), buttonName = f[1], delayMs = f[2].toLongOrNull() ?: 350)
-    }
-
-    private fun serializeMacro(m: Macro): String {
-        val steps = m.steps.joinToString("|") { "${it.remoteId}:${it.buttonName}:${it.delayMs}" }
-        return "${m.id}~${m.name}~$steps"
+        prefs.edit().putString("macros", MacroCodec.encode(macros)).apply()
     }
 
     fun nextId(macros: List<Macro>): Int = (macros.maxOfOrNull { it.id } ?: 0) + 1
@@ -60,7 +47,12 @@ class MacroModel(private val store: MacroStore) {
         private set
 
     fun save(macros: List<Macro>) { store.save(macros); this.macros = store.load() }
-    fun add(macro: Macro) { save(macros + macro) }
+
+    /** Refuses a macro that is not saveable, so an empty one never lands. */
+    fun add(macro: Macro): String? = MacroCodec.saveError(macro) ?: run { addMacro(macro); null }
+
+    private fun addMacro(macro: Macro) { save(macros + macro) }
+
     fun remove(id: Int) { save(macros.filterNot { it.id == id }) }
     fun update(macro: Macro) { save(macros.map { if (it.id == macro.id) macro else it }) }
     fun reload() { macros = store.load() }
