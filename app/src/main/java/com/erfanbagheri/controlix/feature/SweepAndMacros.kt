@@ -1,6 +1,15 @@
 package com.erfanbagheri.controlix.feature
 
+import com.erfanbagheri.controlix.data.DeviceKey
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.Macro
+import com.erfanbagheri.controlix.data.MacroRunResult
+import com.erfanbagheri.controlix.data.NO_DEVICE_ID
+import com.erfanbagheri.controlix.data.RemoteIdentity
+import com.erfanbagheri.controlix.data.RemoteIndex
+import com.erfanbagheri.controlix.data.RemoteRow
+import com.erfanbagheri.controlix.data.migrateMacro
+import com.erfanbagheri.controlix.data.runMacro
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,23 +73,54 @@ class PowerOffSweep(
 }
 
 /**
- * Macro: a named sequence of buttons with a delay between steps.
- * Buttons are referenced by (remoteId, buttonName) so macros survive DB updates.
+ * Plays a macro across devices (issue #70). The step model, validation,
+ * migration and run loop live pure in [com.erfanbagheri.controlix.data];
+ * only resolution against the live DB and the transmit touch anything else.
+ *
+ * A step that cannot send aborts the run with its index — it is never
+ * skipped, because a half-run macro leaves devices in an unknown state.
  */
-data class MacroStep(val remoteId: Int, val buttonName: String, val delayMs: Long = 350)
-data class Macro(val id: Int, val name: String, val steps: List<MacroStep>)
-
 class MacroPlayer(
     private val repo: IrCodeRepository,
     private val transmitter: IrTransmitter
 ) {
-    suspend fun play(macro: Macro): Int {
-        var sent = 0
+    private val index: RemoteIndex? = runCatching { repo.remoteIndex() }.getOrNull()
+
+    /** Saved devices the DB can still see, for on-read key migration. */
+    private val rows: List<RemoteRow> = runCatching { index?.all() }.getOrNull().orEmpty()
+
+    /** Migrates pre-#70 id-only steps the moment a macro leaves the store. */
+    fun migrate(macro: Macro): Macro = migrateMacro(macro, rows)
+
+    suspend fun play(raw: Macro): MacroRunResult {
+        val macro = migrate(raw)
+        val byKey = HashMap<DeviceKey, Int>()
         for (step in macro.steps) {
-            val btn = repo.buttonByName(step.remoteId, step.buttonName) ?: continue
-            if (transmitter.transmitButton(btn.carrierHz, btn.pattern)) sent++
-            delay(step.delayMs)
+            val key = step.key ?: continue
+            val remoteId = byKey.getOrPut(key) {
+                // Cached per key: -1 means "gone", which must not be re-queried
+                // mid-run, and it keeps a 50-step macro to one lookup per device.
+                index?.let { RemoteIdentity.resolve(key, it)?.remoteId } ?: NO_DEVICE_ID
+            }
+            if (remoteId == NO_DEVICE_ID) {
+                val position = macro.steps.indexOf(step) + 1
+                return MacroRunResult.Failed(
+                    sent = position - 1,
+                    stoppedAt = position - 1,
+                    reason = "Step $position: device is no longer available.",
+                )
+            }
         }
-        return sent
+        return runMacro(
+            macro = macro,
+            deviceExists = { step -> step.key != null || step.legacyRemoteId != NO_DEVICE_ID },
+            send = { step ->
+                val remoteId = step.remoteIdOr(index)
+                val btn = if (remoteId == NO_DEVICE_ID) null
+                else runCatching { repo.buttonByName(remoteId, step.buttonName) }.getOrNull()
+                btn != null && transmitter.transmitButton(btn.carrierHz, btn.pattern)
+            },
+            sleep = { kotlinx.coroutines.delay(it) },
+        )
     }
 }
