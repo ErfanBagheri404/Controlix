@@ -82,6 +82,7 @@ private sealed interface Route {
     data object Macros : Route
     data object Builder : Route
     data object DbHealth : Route
+    data object RecentSends : Route
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,6 +93,8 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
     val favoritesModel = rememberFavoritesModel()
     val ctx = LocalContext.current
     val copiedModel = rememberCopiedButtonModel()
+    // Issue #68: one shared history — pads append, Recent sends reads it.
+    val sendLogModel = rememberSendLogModel()
     // Cold start only: a cold launch restores the last-used pad; Activity
     // recreation (rotation, savedInstanceState != null) lands on Home —
     // route is plain remember, not saveable. Pad back still returns
@@ -213,6 +216,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                     },
                     onMissingCode = { scope.launch { drawerState.close() }; route = Route.MissingCode() },
                     onDbHealth = { scope.launch { drawerState.close() }; route = Route.DbHealth },
+                    onRecentSends = { scope.launch { drawerState.close() }; route = Route.RecentSends },
                 )
             },
         ) {
@@ -333,6 +337,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                                 repo = repo,
                                 transmitter = ir,
                                 toast = toast,
+                                sendLog = sendLogModel,
                                 onBack = { route = Route.Home },
                             )
                         } else PadScreen(
@@ -346,6 +351,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             favoritesModel = favoritesModel,
                             copied = copiedModel,
                             toast = toast,
+                            sendLog = sendLogModel,
                             onSwitchDevice = { openPad(it.remoteId) },
                             onEdit = { route = Route.Edit(it.remoteId) },
                             onShare = { route = Route.Share(it.remoteId) },
@@ -395,6 +401,12 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         repo = repo,
                         onBack = { route = Route.Home },
                     )
+                    is Route.RecentSends -> RecentSendsScreen(
+                        model = sendLogModel,
+                        transmitter = ir,
+                        toast = toast,
+                        onBack = { route = Route.Home },
+                    )
                 }
             }
         }
@@ -441,6 +453,7 @@ private fun MenuDrawer(
     onImport: () -> Unit,
     onMissingCode: () -> Unit,
     onDbHealth: () -> Unit,
+    onRecentSends: () -> Unit,
 ) {
     ModalDrawerSheet(
         drawerContainerColor = MaterialTheme.colorScheme.background,
@@ -495,6 +508,7 @@ private fun MenuDrawer(
                 )
             }
             DrawerRow(ActionIcon.Gauge, "Database health", onDbHealth)
+            DrawerRow(ActionIcon.History, "Recent sends", onRecentSends)
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Settings")

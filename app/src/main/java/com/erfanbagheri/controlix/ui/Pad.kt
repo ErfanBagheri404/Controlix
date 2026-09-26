@@ -48,6 +48,8 @@ import com.erfanbagheri.controlix.data.FreeLayout.Slot
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.ManualKeys
 import com.erfanbagheri.controlix.data.MediaLayout
+import com.erfanbagheri.controlix.data.SendLog
+import com.erfanbagheri.controlix.data.SentEntry
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.Gold
@@ -78,6 +80,7 @@ fun PadScreen(
     copied: CopiedButtonModel,
     favoritesModel: FavoritesModel,
     toast: ToastState,
+    sendLog: SendLogModel,
     onSwitchDevice: (SavedDevice) -> Unit,
     onEdit: (SavedDevice) -> Unit,
     onShare: (SavedDevice) -> Unit,
@@ -145,7 +148,15 @@ fun PadScreen(
     }
 
     fun sendResolved(resolved: EffectiveButtons.Resolved) {
-        if (transmitter.transmitButton(resolved.carrierHz, resolved.pattern)) {
+        // Issue #68: log the one real transmit here, not beside it — success
+        // and silently-dropped sends both land in Recent sends.
+        val name = deviceName ?: "Remote"
+        val result = transmitter.transmitButtonResult(resolved.carrierHz, resolved.pattern)
+        sendLog.record(
+            if (result is SendResult.Sent) SentEntry(name, resolved.name, resolved.carrierHz, resolved.pattern, System.currentTimeMillis())
+            else SendLog.nothingSent(name, resolved.name, sendFailureReason(result), System.currentTimeMillis()),
+        )
+        if (result is SendResult.Sent) {
             lastSent = "Sent: ${resolved.name}"
             emitKey = Any()
         } else {
@@ -200,10 +211,23 @@ fun PadScreen(
         Feedback.press(view, name)
         val code = codeFor(name)
         if (code == null) {
+            // Issue #68: a key with no code is the case most worth seeing.
+            sendLog.record(
+                SendLog.nothingSent(
+                    deviceName ?: "Remote", name,
+                    "this remote has no ${name.replace('_', ' ')} code",
+                    System.currentTimeMillis(),
+                ),
+            )
             toast.show("This remote has no ${name.replace('_', ' ')} code.")
             return
         }
-        if (transmitter.transmitButton(code.carrierHz, code.pattern)) {
+        val result = transmitter.transmitButtonResult(code.carrierHz, code.pattern)
+        sendLog.record(
+            if (result is SendResult.Sent) SentEntry(deviceName ?: "Remote", code.name, code.carrierHz, code.pattern, System.currentTimeMillis())
+            else SendLog.nothingSent(deviceName ?: "Remote", code.name, sendFailureReason(result), System.currentTimeMillis()),
+        )
+        if (result is SendResult.Sent) {
             lastSent = "Sent: ${code.name}"
             emitKey = Any()
         } else {
@@ -376,7 +400,13 @@ fun PadScreen(
                 localCopies = copied.local(remoteId)
             },
             onSend = { btn ->
-                if (transmitter.transmitButton(btn.carrierHz, btn.pattern)) {
+                // Issue #68: same log, same path — a pasted code is a real send.
+                val res = transmitter.transmitButtonResult(btn.carrierHz, btn.pattern)
+                sendLog.record(
+                    if (res is SendResult.Sent) SentEntry(deviceName ?: "Remote", btn.name, btn.carrierHz, btn.pattern, System.currentTimeMillis())
+                    else SendLog.nothingSent(deviceName ?: "Remote", btn.name, sendFailureReason(res), System.currentTimeMillis()),
+                )
+                if (res is SendResult.Sent) {
                     lastSent = "Sent: ${btn.name}"
                     emitKey = Any()
                 } else {
