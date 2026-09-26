@@ -139,7 +139,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
         ActivityResultContracts.CreateDocument("application/json"),
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        val json = BackupCodec.encode(model.devices, macroModel.macros)
+        val json = BackupCodec.encode(model.devices, macroModel.macros, BackupStoreIo.capture(context))
         runCatching {
             val output = context.contentResolver.openOutputStream(uri, "wt")
                 ?: error("Backup stream unavailable")
@@ -163,13 +163,24 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
             is BackupDecodeResult.Error -> toast.show(result.message)
             is BackupDecodeResult.Success -> {
                 val backup = result.backup
-                toast.show(
-                    "Replace with ${backup.devices.size} devices, ${backup.macros.size} macros?",
-                    actionLabel = "Import",
-                ) {
+                // Issue #83: a restore that drops a store must say which one,
+                // rather than reporting success over a partial state.
+                val lost = backup.unreadableStores
+                val label = when {
+                    lost.isEmpty() ->
+                        "Replace with ${backup.devices.size} devices, ${backup.macros.size} macros?"
+                    lost.size == 1 -> "Lost ${lost[0]} — import the rest?"
+                    else -> "Lost ${lost.size} stores (${lost.joinToString()}) — import the rest?"
+                }
+                toast.show(label, actionLabel = "Import") {
                     model.replaceAll(backup.devices)
                     macroModel.save(backup.macros)
-                    toast.show("Backup restored")
+                    val unreadable = BackupStoreIo.restore(context, backup.stores)
+                    val stillLost = (lost + unreadable).distinct()
+                    toast.show(
+                        if (stillLost.isEmpty()) "Backup restored"
+                        else "Restored, but couldn't read: ${stillLost.joinToString()}",
+                    )
                 }
             }
         }
