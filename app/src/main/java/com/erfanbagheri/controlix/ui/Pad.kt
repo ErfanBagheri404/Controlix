@@ -37,12 +37,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.CopiedButton
 import com.erfanbagheri.controlix.data.CopiedButtons
 import com.erfanbagheri.controlix.data.EffectiveButtons
+import com.erfanbagheri.controlix.data.FontScale
 import com.erfanbagheri.controlix.data.FreeLayout
 import com.erfanbagheri.controlix.data.FreeLayout.Slot
 import com.erfanbagheri.controlix.data.IrCodeRepository
@@ -646,7 +648,7 @@ private fun ExpandedKeys(
     )
     Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         rows.forEach { row ->
-            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth().weight(1f, fill = false), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEach { key ->
                     KeyTile(key, Modifier.weight(1f).fillMaxHeight(), borrowedKeys[key] != null,
                         onLongClick = { copy(key) },
@@ -654,7 +656,7 @@ private fun ExpandedKeys(
                 }
             }
         }
-        Row(Modifier.fillMaxWidth().height(52.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 52.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["power"] != null,
                 onLongClick = { copy("power") },
                 onProvenance = onProvenance?.let { p -> { p("power") } }) { fire("power") }
@@ -751,7 +753,7 @@ private fun KeyboardGrid(
                 row.forEach { key ->
                     KeyTile(
                         label = key,
-                        modifier = Modifier.weight(1f).height(46.dp),
+                        modifier = Modifier.weight(1f).heightIn(min = 46.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)),
                     ) { fire(key) }
                 }
                 // Nav strips can carry 4 keys — never negative-fill.
@@ -869,7 +871,7 @@ private fun MediaLayoutBody(
                     row.forEach { key ->
                         KeyTile(
                             label = key,
-                            modifier = Modifier.weight(1f).height(46.dp),
+                            modifier = Modifier.weight(1f).heightIn(min = 46.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)),
                         ) { fire(key) }
                     }
                     // Nav strips can carry 4 keys — never negative-fill.
@@ -890,12 +892,16 @@ private fun KeyTile(
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    Box(modifier) {
+    // Issue #69: a key is text in a box — keep the caller's sizing, but never
+    // let a 2.0x system font scale clip the label: the minimum height grows
+    // with the scale instead.
+    val scale = LocalDensity.current.fontScale
+    Box(modifier.heightIn(min = 48.dp * FontScale.heightMultiplier(scale))) {
         Box(
             Modifier.fillMaxSize().bgTile(20.dp).combinedPressable(
                 onClick = onClick,
                 onLongClick = onLongClick ?: onProvenance,
-            ),
+            ).padding(vertical = 6.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(label.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium)

@@ -1,5 +1,7 @@
 package com.erfanbagheri.controlix.ui
 
+import com.erfanbagheri.controlix.data.FontScale
+import androidx.compose.ui.platform.LocalDensity
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -566,7 +568,11 @@ private fun DrawerRow(icon: ActionIcon, label: String, onClick: () -> Unit) {
     ) {
         ActionIconView(icon, 22.dp, MaterialTheme.colorScheme.onSurface)
         Spacer(Modifier.width(16.dp))
-        Text(label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        // Issue #69: a drawer row is text — let a large scale wrap it rather
+        // than clip against the sheet edge.
+        Text(label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
+            maxLines = if (FontScale.allowWrap(LocalDensity.current.fontScale)) 2 else 1,
+            overflow = TextOverflow.Ellipsis)
     }
 }
 

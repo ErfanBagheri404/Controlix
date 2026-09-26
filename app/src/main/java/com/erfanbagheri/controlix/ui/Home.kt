@@ -1,5 +1,8 @@
 package com.erfanbagheri.controlix.ui
 
+import com.erfanbagheri.controlix.data.FontScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -191,7 +194,10 @@ fun HomeScreen(
                 Text("No remotes in this room. Choose All to see your devices.", Modifier.padding(24.dp))
             }
             androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-                columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(2),
+                // Issue #69: one column at the largest font scale instead of squeezing.
+                columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(
+                    FontScale.deviceColumns(LocalDensity.current.fontScale)
+                ),
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -317,7 +323,7 @@ private fun DeviceTile(
     val glyph = remember(device.categorySlug) { LucideCategoryIcons.forCategory(device.categorySlug) }
     Box {
         Column(
-            Modifier.fillMaxWidth().height(150.dp).bgTile(20.dp)
+            Modifier.fillMaxWidth().heightIn(min = 150.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)).bgTile(20.dp)
                 .combinedPressable(onClick = onClick, onLongClick = onLongClick)
                 .padding(14.dp),
             verticalArrangement = Arrangement.SpaceBetween,
@@ -328,8 +334,10 @@ private fun DeviceTile(
                 }
             }
             Column(Modifier.graphicsLayer { alpha = enabledAlpha }) {
+                val scale = LocalDensity.current.fontScale
                 Text(device.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    maxLines = if (FontScale.allowWrap(scale)) 2 else 1,
+                    overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(2.dp))
                 Text(
                     buildString {
