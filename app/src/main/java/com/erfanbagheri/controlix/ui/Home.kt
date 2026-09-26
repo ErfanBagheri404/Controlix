@@ -3,6 +3,7 @@ package com.erfanbagheri.controlix.ui
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +37,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.Rooms
 import com.erfanbagheri.controlix.feature.Favorite
 import com.erfanbagheri.controlix.feature.FavoriteModel
 import com.erfanbagheri.controlix.feature.RepoKeyResolver
@@ -64,7 +69,6 @@ fun HomeScreen(
     toast: ToastState,
 ) {
     var sheetDevice by remember { mutableStateOf<SavedDevice?>(null) }
-    var selectedRoom by remember { mutableStateOf<String?>(null) }
     val devices = model.devices
     val scope = rememberCoroutineScope()
     val resolver = remember(repo) { repo?.let(::RepoKeyResolver) }
@@ -176,40 +180,37 @@ fun HomeScreen(
                 )
             }
             Spacer(Modifier.height(20.dp))
-            val rooms = devices.map { Room.fromSlug(it.roomSlug) }.distinct()
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
-                val tabs = listOf(null to "All") + rooms.map { it.slug to it.display }
-                tabs.forEach { (slug, label) ->
-                    Text(label, style = MaterialTheme.typography.titleSmall,
-                        color = if (selectedRoom == slug) Accent else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.pressable { selectedRoom = slug }.padding(horizontal = 12.dp, vertical = 16.dp))
-                }
-            }
-            ContentSwap(selectedRoom, Modifier.weight(1f)) { room ->
-            val shown = devices.filter { room == null || Room.fromSlug(it.roomSlug).slug == room }
-            if (shown.isEmpty()) {
-                Text("No remotes in this room. Choose All to see your devices.", Modifier.padding(24.dp))
-            }
-            androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-                columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(2),
+            // Issue #66: group into room sections. With no room set anywhere the
+            // pure grouping returns a single Unassigned section and the grid
+            // renders exactly the flat list it did before — no empty header.
+            val sections = remember(devices) { Rooms.group(devices) }
+            val showHeaders = sections.size > 1
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                contentPadding = PaddingValues(
                     start = 24.dp, end = 24.dp, top = 4.dp,
                     bottom = (ScreenChrome.BOTTOM_SPACE_DP + 16).dp,
                 ),
             ) {
-                items(shown, key = { it.remoteId }) { dev ->
-                    DeviceTile(
-                        device = dev,
-                        repo = repo,
-                        transmitter = transmitter,
-                        onClick = { if (dev.enabled) onOpenDevice(dev) else toast.show("Remote disabled. Long-press to edit it.") },
-                        onLongClick = { sheetDevice = dev },
-                    )
+                sections.forEach { section ->
+                    if (showHeaders) {
+                        item(key = "head:${section.slug}", span = { GridItemSpan(maxLineSpan) }) {
+                            SectionHead(section.title, Modifier.padding(top = 6.dp, bottom = 2.dp))
+                        }
+                    }
+                    items(section.devices, key = { it.remoteId }) { dev ->
+                        DeviceTile(
+                            device = dev,
+                            repo = repo,
+                            transmitter = transmitter,
+                            onClick = { if (dev.enabled) onOpenDevice(dev) else toast.show("Remote disabled. Long-press to edit it.") },
+                            onLongClick = { sheetDevice = dev },
+                        )
+                    }
                 }
-            }
             }
         }
     }
