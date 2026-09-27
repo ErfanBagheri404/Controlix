@@ -241,9 +241,6 @@ fun PadScreen(
                     System.currentTimeMillis(),
                 ),
             )
-<<<<<<< HEAD
-            toast.show("This remote has no ${name.replace('_', ' ')} code.")
-=======
             // Issue #79: the user holds the exact context here — which key
             // died, on whose remote. Queue it so the report form opens
             // prefilled instead of relying on memory.
@@ -256,7 +253,6 @@ fun PadScreen(
             } else {
                 toast.show("This remote has no ${name.replace('_', ' ')} code.")
             }
->>>>>>> origin/main
             return
         }
         val result = transmitter.transmitButtonResult(code.carrierHz, code.pattern)
