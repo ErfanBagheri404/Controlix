@@ -1,5 +1,7 @@
 package com.erfanbagheri.controlix.ui
 
+import com.erfanbagheri.controlix.data.FontScale
+import androidx.compose.ui.platform.LocalDensity
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -106,7 +108,10 @@ private sealed interface Route {
 fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean = true) {
     val model = rememberDeviceModel(repo)
     val macroModel = rememberMacroModel()
-    val favoritesModel = rememberFavoritesModel()
+    // The index re-keys stored favourites and lets the pad pin keys, so the
+    // model is built once the DB is open (issue #71).
+    val remoteIndex = remember(repo) { runCatching { repo?.remoteIndex() }.getOrNull() }
+    val favoritesModel = rememberFavoritesModel(index = remoteIndex)
     val ctx = LocalContext.current
     val copiedModel = rememberCopiedButtonModel()
     // Issue #68: one shared history — pads append, Recent sends reads it.
@@ -757,7 +762,11 @@ private fun DrawerRow(icon: ActionIcon, label: String, onClick: () -> Unit) {
     ) {
         ActionIconView(icon, 22.dp, MaterialTheme.colorScheme.onSurface)
         Spacer(Modifier.width(16.dp))
-        Text(label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        // Issue #69: a drawer row is text — let a large scale wrap it rather
+        // than clip against the sheet edge.
+        Text(label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
+            maxLines = if (FontScale.allowWrap(LocalDensity.current.fontScale)) 2 else 1,
+            overflow = TextOverflow.Ellipsis)
     }
 }
 

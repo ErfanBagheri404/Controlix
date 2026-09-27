@@ -1,16 +1,20 @@
 package com.erfanbagheri.controlix.quicksettings
 
 import android.content.Context
+import com.erfanbagheri.controlix.data.GlobalFavorite
 
 /**
- * Persists what the Quick Settings tile fires at.
+ * Persists what the Quick Settings tile fires at (issues #78 and #81).
  *
- * Before issue #78 the pad wrote the last-opened remote id into this one
- * slot, so opening a pad to check the time silently retargeted the tile.
- * Now the only writer is the tile-target picker: the slot holds a
- * `tile2|...` pinned line ([TileTargetCodec]). The old int form is still
- * read — read-only — for pre-#78 installs, and is re-pinned the next time
- * the user picks a target.
+ * One slot, one codec, one writer: the picker. Before #78 the pad wrote the
+ * last-opened remote id into this slot, so opening a pad to check the time
+ * silently retargeted the tile. The slot now holds a `tile2|...` pinned line
+ * ([TileTargetCodec]); the old int form is still read — read-only — for
+ * pre-#78 installs, and is re-pinned the next time the user picks a target.
+ *
+ * A pinned favourite is the *same* type as a pinned device key: both are a
+ * (DeviceKey, key) pair (#81), so there is no second store and no second
+ * encoder to drift apart.
  */
 class TileStore(context: Context) {
     private val prefs = context.applicationContext
@@ -45,6 +49,15 @@ class TileStore(context: Context) {
      */
     fun readLegacyRemoteId(): Int? =
         readRaw()?.takeUnless(TileTargetCodec::isTileTargetLine)?.trim()?.toIntOrNull()
+
+    /**
+     * What the tile fires, reduced to one [GlobalFavorite] so it goes through
+     * the same resolution as the home row: the explicit picker choice (#78)
+     * always wins; with nothing pinned, the first of the home row — the
+     * user's declared most-used key.
+     */
+    fun targetOrDefault(favorites: List<GlobalFavorite>): GlobalFavorite? =
+        TileFavorites.toFire(target(), favorites)
 
     companion object {
         private const val PREFS = "controlix_tile"

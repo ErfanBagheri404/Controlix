@@ -37,20 +37,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.CopiedButton
 import com.erfanbagheri.controlix.data.CopiedButtons
 import com.erfanbagheri.controlix.data.EffectiveButtons
+import com.erfanbagheri.controlix.data.FontScale
 import com.erfanbagheri.controlix.data.FreeLayout
 import com.erfanbagheri.controlix.data.FreeLayout.Slot
+import com.erfanbagheri.controlix.data.GlobalFavorite
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.KeyRepeat
 import com.erfanbagheri.controlix.data.ManualKeys
 import com.erfanbagheri.controlix.data.MediaLayout
 import com.erfanbagheri.controlix.data.SendLog
 import com.erfanbagheri.controlix.data.SentEntry
+import com.erfanbagheri.controlix.data.RemoteIdentity
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.Gold
@@ -265,8 +269,18 @@ fun PadScreen(
     }
 
     fun toggleFavorite(key: String) {
-        val wasFavorite = favoritesModel.favorites.any { it.remoteId == remoteId && it.key == key }
-        favoritesModel.toggleFavorite(remoteId, key)
+        // Issue #71: pinning works on any remote in the DB, saved or not —
+        // the identity comes from the saved device, or from the index for a
+        // remote that was never saved. Impossible only for a row outside the DB.
+        val device = saved.key.takeIf { saved.fileName.isNotEmpty() }
+            ?: runCatching { repo?.remoteIndex()?.let { RemoteIdentity.row(remoteId, it)?.key } }.getOrNull()
+        if (device == null) {
+            toast.show("This remote has no stable identity to pin against.")
+            return
+        }
+        val favorite = GlobalFavorite(device, key, key.prettify())
+        val wasFavorite = favoritesModel.favorites.any { it.device == favorite.device && it.button == favorite.button }
+        favoritesModel.toggleFavorite(favorite)
         toast.show(
             if (wasFavorite) "${key.replace('_', ' ')} removed from favorites"
             else "${key.replace('_', ' ')} added to favorites"
@@ -396,9 +410,16 @@ fun PadScreen(
     }
 
     if (favoritesOpen) {
+        // Global favourites (issue #71): the check-state is this remote's keys,
+        // but the row on Home is shared with every remote.
+        val mine = remember(remoteId, saved.key, repo) {
+            saved.key.takeIf { saved.fileName.isNotEmpty() }
+                ?: runCatching { repo?.remoteIndex()?.let { RemoteIdentity.row(remoteId, it)?.key } }.getOrNull()
+                ?: saved.key
+        }
         FavoriteKeysSheet(
             keys = effective.map { it.key }.distinct().sorted(),
-            favoriteKeys = favoritesModel.favorites.filter { it.remoteId == remoteId }.map { it.key }.toSet(),
+            favoriteKeys = favoritesModel.favorites.filter { it.device == mine }.map { it.button }.toSet(),
             onToggle = ::toggleFavorite,
             onDismiss = { favoritesOpen = false },
         )
@@ -694,7 +715,7 @@ private fun ExpandedKeys(
     )
     Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         rows.forEach { row ->
-            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth().weight(1f, fill = false), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEach { key ->
                     KeyTile(key, Modifier.weight(1f).fillMaxHeight(), borrowedKeys[key] != null,
                         onLongClick = { copy(key) },
@@ -702,7 +723,7 @@ private fun ExpandedKeys(
                 }
             }
         }
-        Row(Modifier.fillMaxWidth().height(52.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 52.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["power"] != null,
                 onLongClick = { copy("power") },
                 onProvenance = onProvenance?.let { p -> { p("power") } }) { fire("power") }
@@ -799,7 +820,7 @@ private fun KeyboardGrid(
                 row.forEach { key ->
                     KeyTile(
                         label = key,
-                        modifier = Modifier.weight(1f).height(46.dp),
+                        modifier = Modifier.weight(1f).heightIn(min = 46.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)),
                     ) { fire(key) }
                 }
                 // Nav strips can carry 4 keys — never negative-fill.
@@ -917,7 +938,7 @@ private fun MediaLayoutBody(
                     row.forEach { key ->
                         KeyTile(
                             label = key,
-                            modifier = Modifier.weight(1f).height(46.dp),
+                            modifier = Modifier.weight(1f).heightIn(min = 46.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)),
                         ) { fire(key) }
                     }
                     // Nav strips can carry 4 keys — never negative-fill.
@@ -938,12 +959,16 @@ private fun KeyTile(
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    Box(modifier) {
+    // Issue #69: a key is text in a box — keep the caller's sizing, but never
+    // let a 2.0x system font scale clip the label: the minimum height grows
+    // with the scale instead.
+    val scale = LocalDensity.current.fontScale
+    Box(modifier.heightIn(min = 48.dp * FontScale.heightMultiplier(scale))) {
         Box(
             Modifier.fillMaxSize().bgTile(20.dp).combinedPressable(
                 onClick = onClick,
                 onLongClick = onLongClick ?: onProvenance,
-            ),
+            ).padding(vertical = 6.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(label.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium)

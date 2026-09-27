@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.EffectiveButtons
+import com.erfanbagheri.controlix.data.prefKey
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.quicksettings.TileDevice
 import com.erfanbagheri.controlix.quicksettings.TileStore
@@ -145,7 +146,10 @@ fun TileTargetScreen(
             } ?: emptyList()
         }
         val shown = remember(devices, available) { devices.filter { it.key in available } }
-        if (shown.isEmpty()) {
+        // Issue #81: favourites first, in home-row order, then the devices.
+        // Same list the home row renders, so the two can never drift.
+        val favorites = remember { FavoritesScenesStore(ctx).loadFavorites() }
+        if (favorites.isEmpty() && shown.isEmpty()) {
             Text(
                 "No saved remote can be pinned yet. Add a device first.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -154,7 +158,32 @@ fun TileTargetScreen(
             )
         }
         LazyColumn(Modifier.weight(1f)) {
-            items(shown, key = { it.remoteId }) { dev ->
+            if (favorites.isNotEmpty()) {
+                item(key = "head:fav") { SectionHead("Favorites") }
+            }
+            items(favorites, key = { "f:${it.device.prefKey()}:${it.button}" }) { fav ->
+                Row(
+                    Modifier.fillMaxWidth().pressable {
+                        val t = TileTarget(fav.device, fav.button)
+                        store.pin(t)
+                        pinned = t
+                        toast.show("Tile fires ${fav.display}")
+                    }.padding(vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        fav.display,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (pinned?.device == fav.device && pinned?.lookupKey == fav.button.lowercase())
+                            Accent else MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                SheetDivider()
+            }
+            if (shown.isNotEmpty()) {
+                item(key = "head:dev") { SectionHead("Remotes") }
+            }
+            items(shown, key = { "d:${it.remoteId}" }) { dev ->
                 Row(
                     Modifier.fillMaxWidth().pressable { pickDevice = dev }.padding(vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
