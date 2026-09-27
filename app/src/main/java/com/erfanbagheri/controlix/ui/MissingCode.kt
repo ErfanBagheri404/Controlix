@@ -53,10 +53,12 @@ fun MissingCodeScreen(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
-    var brand by remember { mutableStateOf(initialBrand) }
-    var category by remember { mutableStateOf(initialCategory) }
-    var remote by remember { mutableStateOf(initialRemote) }
-    var button by remember { mutableStateOf(initialButton) }
+    val reportStore = remember { MissingCodeReportStore(context) }
+    val pending = remember { reportStore.pending() }
+    var brand by remember { mutableStateOf(initialBrand.ifBlank { pending.firstOrNull()?.brand ?: "" }) }
+    var category by remember { mutableStateOf(initialCategory.ifBlank { pending.firstOrNull()?.category ?: "" }) }
+    var remote by remember { mutableStateOf(initialRemote.ifBlank { pending.firstOrNull()?.remote ?: "" }) }
+    var button by remember { mutableStateOf(initialButton.ifBlank { pending.firstOrNull()?.button ?: "" }) }
     var carrier by remember { mutableStateOf("") }
     var pattern by remember { mutableStateOf("") }
     var provenance by remember { mutableStateOf("") }
@@ -87,6 +89,17 @@ fun MissingCodeScreen(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // Issue #79: what the pad already collected. Prefilled fields are
+        // visible above; this states where the report goes before it does.
+        pending.firstOrNull()?.let { p ->
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "From the pad: ${p.brand}${if (p.remote.isNotBlank()) " ${p.remote}" else ""} · " +
+                    (if (p.wholeRemote) "no supported keys on this remote" else "no \"${p.button}\" code"),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Spacer(Modifier.height(20.dp))
 
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
@@ -118,15 +131,35 @@ fun MissingCodeScreen(
             Spacer(Modifier.height(20.dp))
         }
 
-        BigPressButton("Share with maintainer", ActionIcon.Share) {
+        // Issue #79: nothing is shared until the user confirms the
+        // destination. First tap arms the button, second tap shares.
+        var armed by remember { mutableStateOf(false) }
+        if (armed) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Tapping share opens your apps — the report leaves the device only through the chooser " +
+                    "you pick. Nothing is uploaded in the background.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        BigPressButton(
+            if (armed) "Confirm — open share sheet" else "Share with maintainer",
+            ActionIcon.Share,
+        ) {
             if (reasons.isNotEmpty()) {
                 showAll = true
                 shareError = "Fix the ${reasons.size} flagged ${if (reasons.size == 1) "field" else "fields"} first."
-            } else {
-                val bundle = ContributionBundle(listOf(draft))
-                shareError = if (shareContribution(context, bundle)) null
-                else "No app available to share. Copy the JSON manually."
+                return@BigPressButton
             }
+            if (!armed) {
+                armed = true
+                return@BigPressButton
+            }
+            val bundle = ContributionBundle(listOf(draft))
+            shareError = if (shareContribution(context, bundle)) null
+            else "No app available to share. Copy the JSON manually."
+            if (shareError == null) reportStore.clear()
         }
         shareError?.let {
             Spacer(Modifier.height(8.dp))
