@@ -3,4 +3,6 @@
     <string name="app_name">Controlix</string>
     <string name="widget_description">Fires one stored remote button from your home screen.</string>
     <string name="widget_label">Controlix button</string>
+    <string name="widget_macro_description">Runs one macro from your home screen.</string>
+    <string name="widget_macro_label">Controlix macro</string>
 </resources>
