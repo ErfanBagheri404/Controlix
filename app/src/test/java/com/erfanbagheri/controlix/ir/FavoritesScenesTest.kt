@@ -3,8 +3,6 @@ package com.erfanbagheri.controlix.ir
 import com.erfanbagheri.controlix.feature.Favorite
 import com.erfanbagheri.controlix.feature.FavoriteModel
 import com.erfanbagheri.controlix.feature.FavoritesScenesCodec
-import com.erfanbagheri.controlix.feature.Macro
-import com.erfanbagheri.controlix.feature.MacroStep
 import com.erfanbagheri.controlix.feature.Resolution
 import com.erfanbagheri.controlix.feature.ResolvedKey
 import com.erfanbagheri.controlix.feature.Scene

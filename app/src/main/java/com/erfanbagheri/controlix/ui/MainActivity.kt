@@ -8,6 +8,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.feature.AutomationState
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.ControlixTheme
 import com.erfanbagheri.controlix.ui.theme.ThemeState
@@ -27,6 +28,7 @@ class MainActivity : ComponentActivity() {
             }
             androidx.compose.runtime.LaunchedEffect(Unit) {
                 Feedback.init(ctx); ThemeState.init(ctx); OrientationState.init(ctx)
+                AutomationState.init(ctx)
             }
             androidx.compose.runtime.LaunchedEffect(OrientationState.mode) {
                 (ctx as? Activity)?.requestedOrientation = Orientation.resolve(OrientationState.mode)

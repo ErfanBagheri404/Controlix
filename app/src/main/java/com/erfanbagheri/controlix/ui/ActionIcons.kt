@@ -70,4 +70,6 @@ fun actionVector(icon: ActionIcon) = when (icon) {
     ActionIcon.Info -> Lucide.Info
     ActionIcon.Database -> Lucide.Disc
     ActionIcon.Gauge -> Lucide.Gauge
+    // Waveform: the analyzer's mark/space strip.
+    ActionIcon.Waveform -> Lucide.AudioLines
 }

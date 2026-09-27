@@ -159,7 +159,84 @@ PROTO_MAP = {
     'F12':       (1, 38000, 0xFF, 0xFF),
     'Zenith':    (1, 38000, 0xFF, 0xFF),
     '48-NEC1':   (3, 38000, 0x1FFF, 0xFF),        # Nec42
+    # === Batch 1: MakeHex IRP transcriptions ===
+    'Denon-K':      (19, 37000, 0xFF, 0xFFF),    # D:4 S:4 F:12 C:8
+    'Jerrold':      (20, 38000, 0x00, 0x1F),     # F:5, no address
+    'G.I.4DTV':     (21, 37700, 0xFF, 0xFF),     # B=D*64+F
+    'Lumagen':      (22, 38000, 0x0F, 0x7F),     # D:4 F:7, MSB
+    'Samsung20':    (23, 38400, 0xFFF, 0xFF),    # D:6 S:6 F:8
+    'Teac-K':       (24, 37900, 0xFFF, 0xFF),    # D:4 S:8 F:8
+    'Dishplayer':   (25, 57600, 0x3FF, 0x3F),    # S:5 D:5 F:6
+    'DishPlayer_Network': (25, 57600, 0x3FF, 0x3F),
+    'XMP':       (26, 38000, 0xFFFF, 0x3FF),   # D:8 S:8, F 0..512
+    'XMP-1':     (26, 38000, 0xFFFF, 0x3FF),
+    'XMP-2':     (26, 38000, 0xFFFF, 0x3FF),
+    # === Batch 2: IrpTransmogrifier-verified encoders ===
+    'Bose':      (27, 38000, 0x00, 0xFF),     # F:8 only, no address
+    'PaceMSS':   (28, 38000, 0x01, 0xFF),     # T:1 D:1 F:8; T fixed 0 (irdb has no T column)
+    'GXB':       (29, 38300, 0x0F, 0xFF),     # D:4 F:8; P = 1 - popcount(F)%2 derived
+    'Logitech':  (30, 38000, 0x0F, 0xFF),     # D:4 F:8, LSB-first
+    # === Batch 3 (final 5): the last five empty remotes, ids 31-35 ===
+    'Grundig16':    (31, 35700, 0x7F, 0xFF),   # D:7 F:8, T:1 fixed 0 (irdb has no T column)
+    'Grundig16-30': (32, 30300, 0x7F, 0xFF),   # same framing, 30.3 kHz carrier
+    'NRC16':        (33, 38000, 0x7F, 0xFF),   # D:7 F:8
+    'Zaptor-56':    (34, 56000, 0x7FFF, 0x7F), # D:8 low, S:7 above, F:7
+    'SharpDVD':     (35, 38000, 0xFFF, 0xFF),  # D:4 low, S:8 above, F:8
 }
+
+
+IRD_COLUMNS = ['functionname', 'protocol', 'device', 'subdevice', 'function']
+
+
+def read_irdb_csv(path):
+    """Rows of an irdb CSV, whether or not the file carries a header line.
+
+    Most irdb CSVs start with a `functionname,protocol,device,subdevice,function`
+    header, but a sizeable minority are headerless — feeding those to
+    csv.DictReader silently promotes the first data row to the header, so
+    every lookup of 'protocol'/'function' misses and the whole remote ends up
+    with zero buttons. Sniff the first row: a header only if cell 0 is the
+    literal 'functionname'.
+    """
+    with open(path, encoding='utf-8', errors='ignore') as f:
+        text = f.read()
+    if not text.strip():
+        return []
+    first = text.split('\n', 1)[0]
+    if first.split(',')[0].strip().strip('"').lower() == 'functionname':
+        return list(csv.DictReader(text.splitlines()))
+    return list(csv.DictReader(text.splitlines(), fieldnames=IRD_COLUMNS))
+
+
+def sibling_or_synth_name(csv_path, function, protocol, device, subdevice):
+    """Label for a row whose functionname cell is blank.
+
+    irdb uses blank names for single-row address markers and rows a
+    contributor left unnamed. The same (protocol, device, subdevice,
+    function) tuple in a sibling file of the same manufacturer is the same
+    button, so reuse that label; otherwise return None and the caller
+    synthesizes one. Never drops the row.
+    """
+    manufacturer = os.path.dirname(os.path.dirname(csv_path))
+    wanted = (function, protocol, device, subdevice)
+    for sib in sorted(glob.glob(os.path.join(manufacturer, '*', '*.csv'))):
+        if sib == csv_path:
+            continue
+        try:
+            rows = read_irdb_csv(sib)
+        except OSError:
+            continue
+        for row in rows:
+            key = ((row.get('function') or '').strip(),
+                   (row.get('protocol') or '').strip(),
+                   (row.get('device') or '').strip(),
+                   (row.get('subdevice') or '').strip())
+            if key != wanted:
+                continue
+            name = (row.get('functionname') or '').strip()
+            if name:
+                return name
+    return None
 
 
 def encode_parsed_12(proto_id, address, command):
@@ -221,6 +298,38 @@ def irdb_to_blob(protocol, device_str, subdevice_str, function_str):
         addr = (device & 0xFF) | ((subdevice & 0x1F) << 8)
     elif proto_id in (17, 18):  # Sharp / Denon — 5-bit address
         addr = device & 0x1F
+    elif proto_id in (19,):  # Denon-K — D:4 low, S:4 above
+        addr = (device & 0xF) | ((subdevice & 0xF) << 4)
+    elif proto_id in (20,):  # Jerrold — function-only frame
+        addr = 0
+    elif proto_id in (21,):  # G.I.4DTV — B = D*64+F
+        addr = device & 0xFF
+    elif proto_id in (22,):  # Lumagen — 4-bit address, MSB-first
+        addr = device & 0xF
+    elif proto_id in (23,):  # Samsung20 — D:6 low, S:6 above
+        addr = (device & 0x3F) | ((subdevice & 0x3F) << 6)
+    elif proto_id in (24,):  # Teac-K — D:4 low, S:8 above
+        addr = (device & 0xF) | ((subdevice & 0xFF) << 4)
+    elif proto_id in (25,):  # DishPlayer — D:5 low, S:5 above
+        addr = (device & 0x1F) | ((subdevice & 0x1F) << 5)
+    elif proto_id in (26,):  # XMP — D:8 low, S:8 above
+        addr = (device & 0xFF) | ((subdevice & 0xFF) << 8)
+    elif proto_id in (31, 32):  # Grundig16 / Grundig16-30 — D:7 only
+        addr = device & 0x7F
+    elif proto_id in (33,):  # NRC16 — D:7 only
+        addr = device & 0x7F
+    elif proto_id in (34,):  # Zaptor-56 — D:8 low, S:7 above
+        addr = (device & 0xFF) | ((subdevice & 0x7F) << 8)
+    elif proto_id in (35,):  # SharpDVD — D:4 low, S:8 above
+        addr = (device & 0xF) | ((subdevice & 0xFF) << 4)
+    elif proto_id in (27,):  # Bose — function-only frame, address unused
+        addr = 0
+    elif proto_id in (28,):  # PaceMSS — T:1 above D:1
+        addr = (device & 0x1)
+    elif proto_id in (29,):  # GXB — 4-bit address
+        addr = device & 0xF
+    elif proto_id in (30,):  # Logitech — 4-bit address
+        addr = device & 0xF
     else:  # NEC1, Samsung32, etc
         addr = device & 0xFF
 
@@ -354,8 +463,7 @@ def main():
 
         # Read CSV
         try:
-            with open(csv_path, encoding='utf-8', errors='ignore') as f:
-                rows = list(csv.DictReader(f))
+            rows = read_irdb_csv(csv_path)
         except Exception:
             skipped_empty += 1
             continue
@@ -386,6 +494,7 @@ def main():
 
         # Convert buttons
         btn_count = 0
+        unnamed_idx = 0
         for row in rows:
             func_name = (row.get('functionname') or '').strip()
             protocol = (row.get('protocol') or '').strip()
@@ -393,9 +502,16 @@ def main():
             subdevice = (row.get('subdevice') or '').strip()
             function = (row.get('function') or '').strip()
 
-            if not func_name or not function:
+            if not function:
                 skipped_empty += 1
                 continue
+            if not func_name:
+                # Single-row address markers + unnamed rows: derive a label
+                # from a sibling row's name at the same function slot,
+                # else synthesize "<device> <function>" — never drop them.
+                func_name = (sibling_or_synth_name(csv_path, function, protocol, device, subdevice)
+                             or f"{model_name} {function}")
+                unnamed_idx += 1
 
             result = irdb_to_blob(protocol, device, subdevice, function)
             if result is None:

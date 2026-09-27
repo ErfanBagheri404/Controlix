@@ -88,16 +88,49 @@ object RemoteSearch {
         return i == q.length && q.length >= 2
     }
 
-    /** Function words the parser understands → canonical ButtonNames keys. */
-    private val FUNCTION_WORDS: Map<String, String> = mapOf(
-        "power" to "power", "vol" to "volume", "volume" to "volume",
-        "ch" to "channel", "channel" to "channel", "mute" to "mute",
-        "play" to "play_pause", "pause" to "play_pause",
-        "up" to "up", "down" to "down", "left" to "left", "right" to "right",
-        "ok" to "ok", "home" to "home", "back" to "back", "exit" to "exit",
-        "guide" to "guide", "menu" to "menu", "info" to "info",
-        "source" to "source", "input" to "source",
-    )
+    /**
+     * Function words the parser understands → canonical ButtonNames keys.
+     *
+     * Keys are pre-normalized the same way as the query word ([wordKey]): fold
+     * case, drop everything but letters and digits. So "vol+" arrives as "vol",
+     * "ch+" as "ch" and "tv/av" as "tvav".
+     *
+     * The DB holds 19,743 distinct labels written by three different communities
+     * (`POWER_OFF`, `STANDBY`, `Standby`, `pwr`). [ButtonNames] already resolves
+     * that label side — this table only has to recognize the *query* side, so a
+     * user typing "standby" or "pwr" is understood as asking for power.
+     */
+    private val FUNCTION_WORDS: Map<String, String> = buildMap {
+        fun alias(key: String, vararg words: String) = words.forEach { put(it, key) }
+
+        alias("power", "power", "pwr", "standby", "onoff", "poweron", "sleep")
+        alias("power_off", "poweroff", "off")
+        alias("volume", "vol", "volume")
+        alias("channel", "ch", "channel")
+        alias("mute", "mute", "muting", "soundmute", "muteon", "silence")
+        alias("play_pause", "play", "pause", "playpause")
+        alias("up", "up")
+        alias("down", "down")
+        alias("left", "left")
+        alias("right", "right")
+        alias("ok", "ok", "okay", "enter", "select", "sel", "confirm")
+        alias("home", "home")
+        alias("back", "back", "return", "prev", "previous")
+        alias("exit", "exit", "quit")
+        alias("guide", "guide", "epg")
+        alias("menu", "menu", "settings", "setup", "options")
+        alias("info", "info")
+        alias("source", "source", "input", "av", "ext", "hdmi", "inputselect", "tvav")
+        // Directional forms must be registered AFTER their symmetric parents,
+        // so a signed "vol+" never collapses to the plain "vol" key.
+        alias("vol_up", "volup", "volumeup", "vup")
+        alias("vol_down", "voldown", "volumedown", "vdown")
+        alias("ch_up", "chup", "channelup", "pageup")
+        alias("ch_down", "chdown", "channeldown", "pagedown")
+    }
+
+    /** Query-word key: fold case, keep only letters and digits. */
+    private fun wordKey(w: String): String = w.lowercase().filter { it.isLetterOrDigit() }
 
     /** A parsed user query: which name tokens to match, which functions required. */
     data class Query(val nameTokens: List<String>, val functions: Set<String>)
@@ -108,10 +141,25 @@ object RemoteSearch {
         val functions = LinkedHashSet<String>()
         val names = ArrayList<String>(words.size)
         for (w in words) {
-            val f = FUNCTION_WORDS[w]
+            // Match on the normalized key but keep the original word as a name
+            // token when it is not a function, so "UE55NU7100" still searches.
+            // A sign is checked FIRST: it is the only thing that separates
+            // "vol" from "vol+", and normalization would drop it.
+            val f = signedFunction(w) ?: FUNCTION_WORDS[wordKey(w)]
             if (f == null) names += w else functions += f
         }
         return Query(names, functions)
+    }
+
+    /**
+     * Signed one-glyph queries arrive before normalization strips the sign:
+     * "vol+" asks for the up key specifically, so a remote carrying only
+     * "Vol-" must not pass. Unsigned handling stays in [FUNCTION_WORDS].
+     */
+    private fun signedFunction(word: String): String? = when (wordKey(word)) {
+        "vol" -> if (word.contains('-')) "vol_down" else if (word.contains('+')) "vol_up" else null
+        "ch", "channel", "page" -> if (word.contains('-')) "ch_down" else if (word.contains('+')) "ch_up" else null
+        else -> null
     }
 
     /**
@@ -119,14 +167,25 @@ object RemoteSearch {
      * Empty [required] always passes.
      */
     fun covers(buttonNames: List<String>, required: Set<String>): Boolean =
-        required.all { key ->
-            buttonNames.any { n -> checkFor(key, n) }
-        }
+        required.all { key -> buttonNames.any { n -> checkFor(key, n) } }
 
+    /**
+     * Route a function key to its predicate. Besides the symmetric keys, a key
+     * may be directional (`vol_up`, `ch_down`, `power_off`) — added because
+     * "vol+" and "vol-" are what users actually type, and a remote carrying
+     * only a down key must not pass a "vol+" search. [IrCodeRepository] passes
+     * these through unhinted, which just widens its SQL pre-filter.
+     */
     private fun checkFor(key: String, name: String): Boolean = when (key) {
         "power" -> ButtonNames.power(name)
         "volume" -> ButtonNames.volUp(name) || ButtonNames.volDown(name)
         "channel" -> ButtonNames.chUp(name) || ButtonNames.chDown(name)
+        "vol_up" -> ButtonNames.volUp(name)
+        "vol_down" -> ButtonNames.volDown(name)
+        "ch_up" -> ButtonNames.chUp(name)
+        "ch_down" -> ButtonNames.chDown(name)
+        "power_on" -> ButtonNames.power(name) && !ButtonNames.powerOff(name)
+        "power_off" -> ButtonNames.powerOff(name)
         "mute" -> ButtonNames.mute(name)
         "play_pause" -> ButtonNames.playPause(name)
         "up" -> ButtonNames.up(name)

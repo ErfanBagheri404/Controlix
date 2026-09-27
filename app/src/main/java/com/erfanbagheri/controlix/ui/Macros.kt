@@ -25,17 +25,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.erfanbagheri.controlix.data.DeviceKey
 import com.erfanbagheri.controlix.data.IrCodeRepository
-import com.erfanbagheri.controlix.feature.Macro
+import com.erfanbagheri.controlix.data.Macro
+import com.erfanbagheri.controlix.data.MacroRunResult
+import com.erfanbagheri.controlix.data.MacroStep
+import com.erfanbagheri.controlix.data.NO_DEVICE_ID
+import com.erfanbagheri.controlix.data.RemoteIdentity
+import com.erfanbagheri.controlix.data.RemoteIndex
 import com.erfanbagheri.controlix.feature.MacroPlayer
-import com.erfanbagheri.controlix.feature.MacroStep
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import kotlinx.coroutines.launch
 
 /**
- * Macro list screen: named button sequences (TV on → AVR input → lights off).
- * Steps are (remoteId, buttonName) so macros survive DB updates.
- * Create flow: pick one of the saved devices, then tick buttons into the sequence.
+ * Macro list screen: named button sequences (TV on → soundbar on → HDMI).
+ * Issue #70: each step carries its own device, so a macro spans remotes.
+ * Steps are keyed by [DeviceKey], which survives a DB rebuild.
  */
 @Composable
 fun MacrosScreen(
@@ -58,7 +63,7 @@ fun MacrosScreen(
         Text("Macros", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Named sequences of buttons. One tap runs the whole chain.",
+            "Sequences that span your devices. One tap runs the whole chain.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -69,6 +74,8 @@ fun MacrosScreen(
                 devices = devices,
                 repo = repo,
                 onDone = { name, steps ->
+                    // add() refuses an empty macro and returns why; the
+                    // builder blocks that path, this is the hard backstop.
                     model.add(Macro((model.macros.maxOfOrNull { it.id } ?: 0) + 1, name, steps))
                     creating = false
                 },
@@ -79,14 +86,17 @@ fun MacrosScreen(
                 items(model.macros, key = { it.id }) { macro ->
                     MacroRow(
                         macro = macro,
+                        devices = devices,
                         playing = playing == macro.id,
                         onPlay = {
                             if (playing != null) return@MacroRow
                             playing = macro.id
                             playResult = null
                             scope.launch {
-                                val sent = player.play(macro)
-                                playResult = if (sent == macro.steps.size) "All ${sent} sent" else "$sent of ${macro.steps.size} sent"
+                                playResult = when (val r = player.play(macro)) {
+                                    is MacroRunResult.Complete -> "All ${r.sent} sent"
+                                    is MacroRunResult.Failed -> "Stopped — ${r.reason}"
+                                }
                                 playing = null
                             }
                         },
@@ -122,6 +132,7 @@ fun MacrosScreen(
 @Composable
 private fun MacroRow(
     macro: Macro,
+    devices: List<SavedDevice>,
     playing: Boolean,
     onPlay: () -> Unit,
     onDelete: () -> Unit,
@@ -133,7 +144,12 @@ private fun MacroRow(
         Column(Modifier.weight(1f)) {
             Text(macro.name, style = MaterialTheme.typography.titleMedium)
             Text(
-                "${macro.steps.size} steps",
+                // Step 1 = TV power · 2 = Soundbar power — the cross-device
+                // story is what distinguishes this from a button list.
+                macro.steps.take(3)
+                    .mapIndexed { i, s -> "${i + 1} · ${s.deviceLabel(devices)} ${s.buttonName}" }
+                    .joinToString("  →  ")
+                    .let { if (macro.steps.size > 3) "$it → +${macro.steps.size - 3}" else it },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
@@ -166,8 +182,9 @@ private fun MacroRow(
 }
 
 /**
- * Inline builder: name is derived from the chosen steps count unless the user
- * types one; steps are appended in order from any saved device.
+ * Inline builder: steps are appended in order, and each one remembers the
+ * device it was picked from — that is what lets a single macro span devices.
+ * A step is stored with the device's stable [DeviceKey], never its remote id.
  */
 @Composable
 private fun MacroBuilder(
@@ -177,42 +194,45 @@ private fun MacroBuilder(
     onCancel: () -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
-    var pickedRemote by remember { mutableStateOf(devices.first().remoteId) }
+    var picked by remember { mutableStateOf(devices.first()) }
     var steps by remember { mutableStateOf<List<MacroStep>>(emptyList()) }
     val context = LocalContext.current
-    // Custom remotes (negative ids) expose recipe references, not DB rows.
-    val recipe = remember(pickedRemote) {
-        if (pickedRemote >= 0) null else BuilderStore(context).load(pickedRemote)
+    val recipe = remember(picked.remoteId) {
+        // Custom remotes (negative ids) expose recipe references, not DB rows.
+        if (picked.remoteId < 0) BuilderStore(context).load(picked.remoteId) else null
     }
     // Each choice pairs the button shown with the step that fires it: for a
-    // custom remote that is the original (remoteId, sourceName) reference.
-    val choices = remember(pickedRemote, recipe) {
+    // custom remote that is the original (remoteId, sourceName) reference
+    // backed by the custom device's own key.
+    val choices = remember(picked.remoteId, recipe) {
+        val key = picked.key
         if (recipe != null) {
             recipe.buttons.mapNotNull { e ->
                 runCatching { repo.buttonByName(e.remoteId, e.sourceName) }.getOrNull()
-                    ?.let { b -> b.copy(remoteId = e.remoteId) to MacroStep(e.remoteId, e.sourceName) }
+                    ?.let { b -> b.copy(remoteId = e.remoteId) to MacroStep(key, e.sourceName) }
             }
         } else {
-            runCatching { repo.buttons(pickedRemote) }.getOrElse { emptyList() }
-                .map { it to MacroStep(pickedRemote, it.name) }
+            runCatching { repo.buttons(picked.remoteId) }.getOrElse { emptyList() }
+                .map { it to MacroStep(key, it.name) }
         }
     }
 
     Column(Modifier.fillMaxSize()) {
         Text(
-            "Name your macro, then tick buttons below in order.",
+            "Tick buttons in order. Each step keeps the device it came from.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(16.dp))
 
-        // device picker
+        // device picker — switch devices freely; each switch changes only the
+        // source of the NEXT step, so a macro can name three devices.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             devices.forEach { dev ->
-                val selected = dev.remoteId == pickedRemote
+                val selected = dev.key == picked.key
                 Row(
                     Modifier
-                        .pressable { pickedRemote = dev.remoteId }
+                        .pressable { picked = dev }
                         .border(
                             1.dp,
                             if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
@@ -233,7 +253,7 @@ private fun MacroBuilder(
         // step list
         if (steps.isNotEmpty()) {
             Text(
-                steps.mapIndexed { i, s -> "${i + 1}. ${s.buttonName}" }.joinToString("  →  "),
+                steps.mapIndexed { i, s -> "${i + 1}. ${s.deviceLabel(devices)} ${s.buttonName}" }.joinToString("  →  "),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -251,7 +271,7 @@ private fun MacroBuilder(
                     ActionIconView(ActionIcon.Add, 16.dp, MaterialTheme.colorScheme.outline)
                     Spacer(Modifier.width(12.dp))
                     Text(btn.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                    if (steps.any { it.remoteId == step.remoteId && it.buttonName == step.buttonName }) {
+                    if (steps.any { it.key == step.key && it.buttonName == step.buttonName }) {
                         Text(
                             "✓",
                             style = MaterialTheme.typography.labelLarge,
@@ -275,4 +295,14 @@ private fun MacroBuilder(
         }
         Spacer(Modifier.height(28.dp))
     }
+}
+
+/** Display name of the device this step belongs to, or the raw id when gone. */
+fun MacroStep.deviceLabel(devices: List<SavedDevice>): String {
+    val key = this.key
+    val dev = devices.find {
+        if (key != null) it.key == key
+        else it.remoteId == legacyRemoteId
+    }
+    return dev?.name ?: if (legacyRemoteId != NO_DEVICE_ID) "#$legacyRemoteId" else "unknown"
 }

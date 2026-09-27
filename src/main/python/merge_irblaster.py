@@ -89,16 +89,21 @@ def load_dump(path):
 
 
 def nec_frame(hexcode):
-    """Validate iodn NEC frame -> (address, command) or None."""
+    """Validate iodn NEC frame -> (address, command) or None.
+
+    Most iodn NEC rows are the plain 4-byte addr,~addr,cmd,~cmd frame, but a
+    minority (e.g. ROMTELECOM DOLCE) carry a two-byte preamble in front of an
+    otherwise standard NEC pair — 12 24 30 CF. Accept both: try the whole
+    value, then the trailing pair.
+    """
     try:
         raw = bytes.fromhex(hexcode)
     except ValueError:
         return None
-    if len(raw) != 4:
-        return None
-    if raw[1] != (raw[0] ^ 0xFF) or raw[3] != (raw[2] ^ 0xFF):
-        return None
-    return raw[0], raw[2]
+    for cand in (raw, raw[-4:] if len(raw) == 6 else raw):
+        if len(cand) == 4 and cand[1] == (cand[0] ^ 0xFF) and cand[3] == (cand[2] ^ 0xFF):
+            return cand[0], cand[2]
+    return None
 
 
 # --- per-protocol decode gates, all verified against iodn's dart encoders ---
@@ -248,9 +253,19 @@ def merge(sql_path, controlix_path):
         n_remote += 1
 
         seen_labels = set()
+        # A remote whose every label is junk ('??') still holds real codes —
+        # LUNEAU's whole remote is unlabeled RC5. Rather than ship an empty
+        # remote, name those buttons by their protocol and command number, and
+        # let the UI's own "Button N" convention carry the rest.
+        usable = [r for r in rows if r[0].strip() and r[0].strip() not in JUNK_LABELS]
+        fallback = not usable
         for label, carrier, blob, name in rows:
             lab = label.strip()
-            if not lab or lab in JUNK_LABELS or lab in seen_labels:
+            if not lab or lab in JUNK_LABELS:
+                if not fallback:
+                    continue
+                lab = f"{name} {blob[8] | (blob[9] << 8)}"
+            if lab in seen_labels:
                 continue
             seen_labels.add(lab)
             c.execute("INSERT INTO button(remote_id,name,carrier_hz,pattern,protocol) VALUES(?,?,?,?,?)",
