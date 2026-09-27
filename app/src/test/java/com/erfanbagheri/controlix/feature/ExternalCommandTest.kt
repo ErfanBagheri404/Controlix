@@ -214,4 +214,31 @@ class PickButtonTest {
         assertNull(pickButton(buttons, "frobnicate"))
         assertNull(pickButton(emptyList(), "power"))
     }
+
+    // Issue #95 — the exported receiver's shared-secret gate.
+
+    @Test
+    fun `empty expected token keeps the pre-95 open behaviour`() {
+        assertTrue(ExternalCommand.tokenMatches("", "anything"))
+        assertTrue(ExternalCommand.tokenMatches("", null))
+    }
+
+    @Test
+    fun `matching token is accepted`() {
+        assertTrue(ExternalCommand.tokenMatches("abc123", "abc123"))
+    }
+
+    @Test
+    fun `wrong or missing token is refused`() {
+        assertFalse(ExternalCommand.tokenMatches("abc123", "abc124"))
+        assertFalse(ExternalCommand.tokenMatches("abc123", ""))
+        assertFalse(ExternalCommand.tokenMatches("abc123", null))
+    }
+
+    @Test
+    fun `token comparison is not length-leaking`() {
+        // A prefix of the right token must not be accepted.
+        assertFalse(ExternalCommand.tokenMatches("abc123", "abc12"))
+        assertFalse(ExternalCommand.tokenMatches("abc123", "abc1234"))
+    }
 }

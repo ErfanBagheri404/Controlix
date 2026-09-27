@@ -41,8 +41,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.DbChangelog
@@ -673,13 +675,31 @@ private fun MenuDrawer(
                 AutomationState.enabled,
             ) { AutomationState.setEnabled(automationCtx, it) }
             if (AutomationState.enabled) {
-                Text(
-                    "Tasker / Home Assistant can fire codes:\n" +
-                        "adb shell am broadcast -a ${ExternalCommand.ACTION} \\\n" +
-                        "  --es remote_name \"TV\" --es button power",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                val clipboard = LocalClipboardManager.current
+                if (AutomationState.token.isEmpty()) {
+                    DrawerRow(ActionIcon.Info, "Set a broadcast token (recommended)") {
+                        AutomationState.setToken(automationCtx, AutomationState.newToken())
+                        clipboard.setText(AnnotatedString(AutomationState.token))
+                    }
+                    Text(
+                        "No token: any app on this phone can fire codes. Setting one " +
+                            "copies it to the clipboard — add --es token <value> to each task.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    DrawerRow(ActionIcon.Info, "Rotate token (copies new value)") {
+                        AutomationState.setToken(automationCtx, AutomationState.newToken())
+                        clipboard.setText(AnnotatedString(AutomationState.token))
+                    }
+                    Text(
+                        "Token: ${AutomationState.token}\n" +
+                            "adb shell am broadcast -a ${ExternalCommand.ACTION} \\\n" +
+                            "  --es remote_name \"TV\" --es button power --es token ${AutomationState.token}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             Spacer(Modifier.height(32.dp))

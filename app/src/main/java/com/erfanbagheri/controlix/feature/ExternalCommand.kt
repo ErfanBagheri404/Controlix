@@ -94,6 +94,25 @@ data class ExternalCommand(
         const val EXTRA_CARRIER_HZ = "carrier_hz"
         const val EXTRA_PATTERN = "pattern"
         const val EXTRA_REPEAT = "repeat"
+        const val EXTRA_TOKEN = "token"
+
+        /**
+         * Issue #95 — the receiver is exported, so a gate any app can reach is
+         * no gate at all. When the user sets a token, every broadcast must
+         * carry it. An empty expected token keeps the pre-#95 behaviour, so
+         * existing Tasker tasks keep working until the user opts in.
+         *
+         * Compared via [java.security.MessageDigest.isEqual] (constant time) so
+         * a wrong guess leaks nothing about the right token. Pure: unit-tested
+         * off-device.
+         */
+        fun tokenMatches(expected: String, supplied: String?): Boolean =
+            expected.isEmpty() ||
+                (supplied != null &&
+                    java.security.MessageDigest.isEqual(
+                        expected.toByteArray(Charsets.UTF_8),
+                        supplied.toByteArray(Charsets.UTF_8),
+                    ))
 
         /** Even count of on/off pairs, all strictly positive, length capped. */
         fun isValidPattern(pattern: IntArray?): Boolean =

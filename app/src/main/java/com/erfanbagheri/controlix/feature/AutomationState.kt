@@ -15,13 +15,22 @@ import androidx.compose.runtime.setValue
 object AutomationState {
     private const val PREFS = "controlix_automation"
     private const val KEY = "external_broadcasts"
+    private const val TOKEN_KEY = "broadcast_token"
 
     /** Drawer-facing mirror of the stored value; [init] loads it. */
     var enabled by mutableStateOf(false)
         private set
 
+    /**
+     * Issue #95: mirror of the stored token. A Compose mirror (not `remember`)
+     * so setting or rotating it recomposes the drawer on its own.
+     */
+    var token by mutableStateOf("")
+        private set
+
     fun init(ctx: Context) {
         enabled = isEnabled(ctx)
+        token = readToken(ctx)
     }
 
     /** The receiver's gate. Reads prefs directly, so a cold process works. */
@@ -36,4 +45,22 @@ object AutomationState {
             .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putBoolean(KEY, value).apply()
     }
+
+    /** The expected shared secret; empty = pre-#95 open mode. */
+    fun token(context: Context): String = readToken(context)
+
+    fun setToken(context: Context, value: String) {
+        token = value
+        context.applicationContext
+            .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putString(TOKEN_KEY, value).apply()
+    }
+
+    /** A fresh 32-char token from the platform CSPRNG, not `random()`. */
+    fun newToken(): String = java.util.UUID.randomUUID().toString().replace("-", "")
+
+    private fun readToken(context: Context): String =
+        context.applicationContext
+            .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(TOKEN_KEY, "") ?: ""
 }

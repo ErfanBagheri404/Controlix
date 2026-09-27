@@ -36,6 +36,14 @@ class ExternalReceiver : BroadcastReceiver() {
             Log.w(TAG, "dropped: external broadcasts are disabled in the Controlix menu")
             return
         }
+        if (!ExternalCommand.tokenMatches(
+                AutomationState.token(context),
+                intent.getStringExtra(ExternalCommand.EXTRA_TOKEN),
+            )
+        ) {
+            Log.w(TAG, "dropped: missing or wrong broadcast token")
+            return
+        }
         val command = ExternalCommand.parse(intent)
         if (command == null) {
             Log.w(TAG, "dropped: unparseable TRANSMIT extras")
