@@ -72,4 +72,6 @@ fun actionVector(icon: ActionIcon) = when (icon) {
     ActionIcon.Gauge -> Lucide.Gauge
     // Waveform: the analyzer's mark/space strip.
     ActionIcon.Waveform -> Lucide.AudioLines
+    // History: clock face, rewind hand.
+    ActionIcon.History -> Lucide.Undo
 }

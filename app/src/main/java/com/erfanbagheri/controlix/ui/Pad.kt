@@ -49,6 +49,8 @@ import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.KeyRepeat
 import com.erfanbagheri.controlix.data.ManualKeys
 import com.erfanbagheri.controlix.data.MediaLayout
+import com.erfanbagheri.controlix.data.SendLog
+import com.erfanbagheri.controlix.data.SentEntry
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.Gold
@@ -79,6 +81,7 @@ fun PadScreen(
     copied: CopiedButtonModel,
     favoritesModel: FavoritesModel,
     toast: ToastState,
+    sendLog: SendLogModel,
     onSwitchDevice: (SavedDevice) -> Unit,
     onEdit: (SavedDevice) -> Unit,
     onShare: (SavedDevice) -> Unit,
@@ -108,14 +111,25 @@ fun PadScreen(
     // Custom remotes carry negative ids: their buttons are recipe
     // references resolved from the DB at fire time, never stored codes.
     val context = LocalContext.current
-    val recipe = remember(remoteId) {
-        if (remoteId >= 0) null
+    // A QR-shared remote (#56) also has a negative id, but owns its codes
+    // outright — the recipe store is the wrong place to look for it, so it
+    // is checked first and short-circuits the builder path.
+    val shared = remember(remoteId) {
+        if (remoteId >= 0) null else SharedRemoteStore(context).load(remoteId)
+    }
+    val recipe = remember(remoteId, shared) {
+        if (remoteId >= 0 || shared != null) null
         else BuilderStore(context).load(remoteId)
             .validate { rid, n -> runCatching { repo?.buttonByName(rid, n) != null }.getOrDefault(false) }
     }
-    val buttons = remember(remoteId, recipe) {
-        if (recipe == null) runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
-        else recipe.buttons.mapNotNull { e ->
+    val buttons = remember(remoteId, recipe, shared) {
+        if (shared != null) {
+            shared.buttons.map {
+                IrCodeRepository.Button(it.name, it.carrierHz, it.pattern, null, remoteId)
+            }
+        } else if (recipe == null) {
+            runCatching { repo?.buttons(remoteId) }.getOrNull() ?: emptyList()
+        } else recipe.buttons.mapNotNull { e ->
             runCatching { repo?.buttonByName(e.remoteId, e.sourceName) }.getOrNull()
                 ?.copy(remoteId = e.remoteId)
         }
@@ -124,16 +138,19 @@ fun PadScreen(
     // this remote lacks. Used when the remote's own buttons fall short.
     // Custom remotes resolve against their own set only — the recipe is
     // exactly what the user picked; borrowing would override their choices.
-    val siblings = remember(remoteId, recipe) {
-        if (recipe != null) emptyList()
+    val siblings = remember(remoteId, recipe, shared) {
+        if (recipe != null || shared != null) emptyList()
         else {
             val brand = runCatching { repo?.brandIdOf(remoteId) }.getOrNull()
             if (brand == null) emptyList()
             else runCatching { repo?.brandButtons(brand) }.getOrNull().orEmpty()
         }
     }
-    val effective = remember(remoteId, recipe, buttons, siblings, borrowMemory) {
-        if (recipe != null) EffectiveButtons.resolve(remoteId, buttons, buttons)
+    val effective = remember(remoteId, recipe, shared, buttons, siblings, borrowMemory) {
+        // A shared remote owns exactly the codes that were shared; like a
+        // recipe it must not borrow siblings, or the pad would quietly send
+        // buttons the sender never had.
+        if (recipe != null || shared != null) EffectiveButtons.resolve(remoteId, buttons, buttons)
         else if (siblings.isEmpty()) emptyList()
         else EffectiveButtons.resolve(remoteId, buttons, siblings, borrowMemory)
     }
@@ -148,7 +165,15 @@ fun PadScreen(
     }
 
     fun sendResolved(resolved: EffectiveButtons.Resolved) {
-        if (transmitter.transmitButton(resolved.carrierHz, resolved.pattern)) {
+        // Issue #68: log the one real transmit here, not beside it — success
+        // and silently-dropped sends both land in Recent sends.
+        val name = deviceName ?: "Remote"
+        val result = transmitter.transmitButtonResult(resolved.carrierHz, resolved.pattern)
+        sendLog.record(
+            if (result is SendResult.Sent) SentEntry(name, resolved.name, resolved.carrierHz, resolved.pattern, System.currentTimeMillis())
+            else SendLog.nothingSent(name, resolved.name, sendFailureReason(result), System.currentTimeMillis()),
+        )
+        if (result is SendResult.Sent) {
             lastSent = "Sent: ${resolved.name}"
             emitKey = Any()
         } else {
@@ -203,10 +228,23 @@ fun PadScreen(
         Feedback.press(view, name)
         val code = codeFor(name)
         if (code == null) {
+            // Issue #68: a key with no code is the case most worth seeing.
+            sendLog.record(
+                SendLog.nothingSent(
+                    deviceName ?: "Remote", name,
+                    "this remote has no ${name.replace('_', ' ')} code",
+                    System.currentTimeMillis(),
+                ),
+            )
             toast.show("This remote has no ${name.replace('_', ' ')} code.")
             return
         }
-        if (transmitter.transmitButton(code.carrierHz, code.pattern)) {
+        val result = transmitter.transmitButtonResult(code.carrierHz, code.pattern)
+        sendLog.record(
+            if (result is SendResult.Sent) SentEntry(deviceName ?: "Remote", code.name, code.carrierHz, code.pattern, System.currentTimeMillis())
+            else SendLog.nothingSent(deviceName ?: "Remote", code.name, sendFailureReason(result), System.currentTimeMillis()),
+        )
+        if (result is SendResult.Sent) {
             lastSent = "Sent: ${code.name}"
             emitKey = Any()
         } else {
@@ -380,7 +418,13 @@ fun PadScreen(
                 localCopies = copied.local(remoteId)
             },
             onSend = { btn ->
-                if (transmitter.transmitButton(btn.carrierHz, btn.pattern)) {
+                // Issue #68: same log, same path — a pasted code is a real send.
+                val res = transmitter.transmitButtonResult(btn.carrierHz, btn.pattern)
+                sendLog.record(
+                    if (res is SendResult.Sent) SentEntry(deviceName ?: "Remote", btn.name, btn.carrierHz, btn.pattern, System.currentTimeMillis())
+                    else SendLog.nothingSent(deviceName ?: "Remote", btn.name, sendFailureReason(res), System.currentTimeMillis()),
+                )
+                if (res is SendResult.Sent) {
                     lastSent = "Sent: ${btn.name}"
                     emitKey = Any()
                 } else {

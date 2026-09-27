@@ -45,9 +45,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.DbChangelog
 import com.erfanbagheri.controlix.data.DbRefresh
+import com.erfanbagheri.controlix.data.AppUpdateCheck
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.feature.AutomationState
 import com.erfanbagheri.controlix.feature.ExternalCommand
+import com.erfanbagheri.controlix.data.ReleaseInfo
+import com.erfanbagheri.controlix.data.SemVer
+import com.erfanbagheri.controlix.data.UpdateCheckState
+import com.erfanbagheri.controlix.data.WhatsNewStore
+import com.erfanbagheri.controlix.data.RemoteShareCodec
 import com.erfanbagheri.controlix.feature.sceneFromMacro
 import com.erfanbagheri.controlix.data.RefreshState
 import com.erfanbagheri.controlix.data.RepeatSettings
@@ -59,6 +65,7 @@ import com.erfanbagheri.controlix.quicksettings.TileStore
 import com.erfanbagheri.controlix.ui.theme.ThemeState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 /** Every screen. Sealed route list, no nav library — app is 4 levels deep max. */
@@ -90,6 +97,8 @@ private sealed interface Route {
         val pattern: IntArray,
         val protocol: String?,
     ) : Route
+    data object RecentSends : Route
+    data object TileTarget : Route
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,6 +109,8 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
     val favoritesModel = rememberFavoritesModel()
     val ctx = LocalContext.current
     val copiedModel = rememberCopiedButtonModel()
+    // Issue #68: one shared history — pads append, Recent sends reads it.
+    val sendLogModel = rememberSendLogModel()
     // Cold start only: a cold launch restores the last-used pad; Activity
     // recreation (rotation, savedInstanceState != null) lands on Home —
     // route is plain remember, not saveable. Pad back still returns
@@ -177,6 +188,37 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
         route = Route.Pad(remoteId)
     }
 
+    // App update check (issue #51). Fires once per launch off the main thread
+    // and only writes into the drawer's status line; a manual tap on the row
+    // re-runs it. Never blocks first paint and never opens a dialog by itself.
+    var updateState by remember { mutableStateOf<UpdateCheckState>(UpdateCheckState.Idle) }
+    var whatsNewRelease by remember { mutableStateOf<ReleaseInfo?>(null) }
+    var whatsNewVersion by remember { mutableStateOf<String?>(null) }
+
+    fun installedVersion(): String = runCatching {
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName
+    }.getOrNull() ?: "unknown"
+
+    suspend fun runUpdateCheck() {
+        updateState = UpdateCheckState.Checking
+        val installed = installedVersion()
+        val release = withContext(Dispatchers.IO) { AppUpdateCheck.fetchLatest() }
+        updateState = AppUpdateCheck.evaluate(installed, release)
+        // "What's new" (issue #52) rides the same single fetch, no second request.
+        // Only fire when the version we are RUNNING is the release itself, so the
+        // notes always describe the build the user actually installed.
+        val running = SemVer.parse(installed)
+        val released = release?.let { SemVer.parse(it.tagName) }
+        if (release != null && running != null && running == released &&
+            WhatsNewStore.shouldShow(installed)
+        ) {
+            whatsNewVersion = installed
+            whatsNewRelease = release
+        }
+    }
+
+    LaunchedEffect(Unit) { runUpdateCheck() }
+
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         if (repo == null) {
             MissingDb()
@@ -222,6 +264,16 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                     },
                     onMissingCode = { scope.launch { drawerState.close() }; route = Route.MissingCode() },
                     onDbHealth = { scope.launch { drawerState.close() }; route = Route.DbHealth },
+                    onCheckUpdate = { scope.launch { runUpdateCheck() } },
+                    updateStateLabel = when (val s = updateState) {
+                        UpdateCheckState.Idle -> null
+                        UpdateCheckState.Checking -> "Checking…"
+                        is UpdateCheckState.UpToDate -> "Up to date (${s.currentVersion})"
+                        is UpdateCheckState.UpdateAvailable -> "${s.release.tagName} available"
+                        is UpdateCheckState.Failed -> s.reason
+                    },
+                    onRecentSends = { scope.launch { drawerState.close() }; route = Route.RecentSends },
+                    onTileTarget = { scope.launch { drawerState.close() }; route = Route.TileTarget },
                 )
             },
         ) {
@@ -267,13 +319,28 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
 
                     is Route.Scan -> ScanScreen(
                         onResult = { text ->
-                            // controlix://remote/{id}/{name}/{brand}/{catSlug}
+                            // New format (issue #56): the QR carries the buttons
+                            // themselves, so no shared database is needed. The
+                            // remote is stored on this phone with a negative id.
+                            if (RemoteShareCodec.isCompact(text)) {
+                                val shared = SharedRemoteImport.fromPayload(text)
+                                if (shared != null) {
+                                    val saved = SharedRemoteStore(context).save(shared)
+                                    toast.show("Imported ${saved.name} · ${saved.buttons.size} buttons")
+                                    route = Route.Pad(saved.remoteId)
+                                } else {
+                                    toast.show("That QR code is not a Controlix remote")
+                                    route = Route.AddDevice
+                                }
+                                return@ScanScreen
+                            }
+                            // Legacy: controlix://remote/{id}/{name}/{brand}/{catSlug}
                             val m = Regex("""controlix://remote/(\d+)/([^/]*)/([^/]*)/([^/]*)""").find(text)
                             if (m != null && repo != null) {
                                 val (id, name, brand, slug) = m.destructured
                                 val rid = id.toIntOrNull() ?: -1
                                 if (repo.buttons(rid).isNotEmpty()) {
-                                    val decodedName = java.net.URLDecoder.decode(name, "UTF-8").ifBlank { brand }
+                                    val decodedName = legacyShareName(name, brand)
                                     model.saveById(
                                         remoteId = rid,
                                         name = decodedName,
@@ -331,8 +398,9 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         // System back from a cold-start-restored pad returns Home, never traps.
                         BackHandler { route = Route.Home }
                         val saved = model.devices.firstOrNull { it.remoteId == r.remoteId }
-                        // The tile fires this remote's power code.
-                        LaunchedEffect(r.remoteId) { TileStore(ctx).rememberRemoteId(r.remoteId) }
+                        // Issue #78: the tile fires a *pinned* target, not
+                        // whichever pad was opened last. Opening a pad no longer
+                        // writes the tile's slot; the picker is its only writer.
                         // AC remotes are stateful: their pad is a separate climate
                         // layout. Every other category keeps the normal TV pad.
                         if (saved?.isAc() == true) {
@@ -342,6 +410,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                                 repo = repo,
                                 transmitter = ir,
                                 toast = toast,
+                                sendLog = sendLogModel,
                                 onBack = { route = Route.Home },
                             )
                         } else PadScreen(
@@ -355,6 +424,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             favoritesModel = favoritesModel,
                             copied = copiedModel,
                             toast = toast,
+                            sendLog = sendLogModel,
                             onSwitchDevice = { openPad(it.remoteId) },
                             onEdit = { route = Route.Edit(it.remoteId) },
                             onShare = { route = Route.Share(it.remoteId) },
@@ -380,6 +450,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         if (dev != null) {
                             ShareScreen(
                                 device = dev,
+                                repo = repo,
                                 onBack = { route = Route.Home },
                             )
                         }
@@ -423,6 +494,18 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             onBack = { route = Route.Home },
                         )
                     }
+                    is Route.RecentSends -> RecentSendsScreen(
+                        model = sendLogModel,
+                        transmitter = ir,
+                        toast = toast,
+                        onBack = { route = Route.Home },
+                    )
+                    is Route.TileTarget -> TileTargetScreen(
+                        devices = model.devices,
+                        repo = repo,
+                        toast = toast,
+                        onBack = { route = Route.Home },
+                    )
                 }
             }
         }
@@ -434,6 +517,21 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
             // Steps resolve by stable key, so the projection needs the index.
             favoritesModel.replaceScenes(
                 macroModel.macros.map { sceneFromMacro(it, it.id, runCatching { repo?.remoteIndex() }.getOrNull()) },
+            )
+        }
+        // What's-new modal (issue #52). Hosted here, not in a route, so it floats
+        // over whatever screen the user is on when the release is detected.
+        val whatsNew = whatsNewRelease
+        val whatsNewAt = whatsNewVersion
+        if (whatsNew != null && whatsNewAt != null) {
+            WhatsNewDialog(
+                version = whatsNewAt,
+                notes = whatsNew.body.orEmpty(),
+                onDismiss = {
+                    WhatsNewStore.markSeen(whatsNewAt)
+                    whatsNewRelease = null
+                    whatsNewVersion = null
+                },
             )
         }
     }
@@ -473,6 +571,10 @@ private fun MenuDrawer(
     onImport: () -> Unit,
     onMissingCode: () -> Unit,
     onDbHealth: () -> Unit,
+    onCheckUpdate: () -> Unit,
+    updateStateLabel: String?,
+    onRecentSends: () -> Unit,
+    onTileTarget: () -> Unit,
 ) {
     ModalDrawerSheet(
         drawerContainerColor = MaterialTheme.colorScheme.background,
@@ -528,6 +630,8 @@ private fun MenuDrawer(
                 )
             }
             DrawerRow(ActionIcon.Gauge, "Database health", onDbHealth)
+            DrawerRow(ActionIcon.History, "Recent sends", onRecentSends)
+            DrawerRow(ActionIcon.QrScan, "Tile target", onTileTarget)
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Settings")
@@ -536,6 +640,14 @@ private fun MenuDrawer(
                 effectiveResumeEnabled(ResumeState.explicit, hasDevices),
                 ResumeState::setEnabled,
             )
+            DrawerRow(ActionIcon.Down, "Check for app update", onCheckUpdate)
+            if (updateStateLabel != null) {
+                Text(
+                    updateStateLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             Spacer(Modifier.height(32.dp))
             SectionHead("Automation")
