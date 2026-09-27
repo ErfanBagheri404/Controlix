@@ -1,5 +1,8 @@
 package com.erfanbagheri.controlix.ui
 
+import com.erfanbagheri.controlix.data.FontScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,6 +32,8 @@ import com.erfanbagheri.controlix.data.AcSelection
 import com.erfanbagheri.controlix.data.ButtonNames
 import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.SendLog
+import com.erfanbagheri.controlix.data.SentEntry
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
@@ -53,6 +58,7 @@ fun AcPadScreen(
     repo: IrCodeRepository?,
     transmitter: IrTransmitter,
     toast: ToastState,
+    sendLog: SendLogModel,
     onBack: () -> Unit,
 ) {
     // Own codes only. No sibling borrow: stateful AC patterns are per-remote.
@@ -82,7 +88,13 @@ fun AcPadScreen(
     var lastSent by remember(remoteId) { mutableStateOf<String?>(null) }
 
     fun transmit(button: EffectiveButtons.Resolved, label: String) {
-        if (transmitter.transmitButton(button.carrierHz, button.pattern)) {
+        // Issue #68: same log as the pad — an AC tap is a real send.
+        val result = transmitter.transmitButtonResult(button.carrierHz, button.pattern)
+        sendLog.record(
+            if (result is SendResult.Sent) SentEntry(deviceName ?: "Remote", button.name, button.carrierHz, button.pattern, System.currentTimeMillis())
+            else SendLog.nothingSent(deviceName ?: "Remote", button.name, sendFailureReason(result), System.currentTimeMillis()),
+        )
+        if (result is SendResult.Sent) {
             Feedback.send(view)
             lastSent = "Sent: ${button.name}"
         } else {
@@ -130,7 +142,7 @@ fun AcPadScreen(
         SectionHead("Target")
         Hairline()
         Row(
-            Modifier.fillMaxWidth().height(76.dp), verticalAlignment = Alignment.CenterVertically,
+            Modifier.fillMaxWidth().heightIn(min = 76.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), verticalAlignment = Alignment.CenterVertically,
         ) {
             FlatKey("−", enabled = target > (temps.firstOrNull() ?: target)) {
                 val idx = temps.indexOf(target)
@@ -190,7 +202,7 @@ fun AcPadScreen(
         // ── Power ────────────────────────────────────────────────────────
         SectionHead("Power")
         Hairline()
-        Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), verticalAlignment = Alignment.CenterVertically) {
             FlatKey("On", enabled = powerOnKey != null) {
                 powerOnKey?.let { transmit(it, "power") }
                     ?: toast.show(explainPower(available, on = true))
@@ -231,7 +243,7 @@ fun AcPadScreen(
         if (swingKey != null) {
             SectionHead("Swing")
             Hairline()
-            Row(Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), verticalAlignment = Alignment.CenterVertically) {
                 FlatKey(swingKey.name) { transmit(swingKey, "swing") }
             }
             Hairline()

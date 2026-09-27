@@ -16,20 +16,47 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.BarcodeEncoder
+import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.RemoteShareCodec
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
 
 /**
- * Share screen: device name + QR code encoding the remote data
- * (format: "controlix://remote/{id}/{name}/{brand}/{catSlug}").
- * Users can point another phone's camera at it to "scan" the remote.
+ * Share screen: device name + a QR code that carries the remote's **buttons**,
+ * so the receiving phone can import it even with a different (or older) code
+ * database — see [RemoteShareCodec] (issue #56).
+ *
+ * The previous format was a bare remote id, which only worked when both phones
+ * shipped the exact same database.
  */
 @Composable
 fun ShareScreen(
     device: SavedDevice,
+    repo: IrCodeRepository?,
     onBack: () -> Unit,
 ) {
-    val payload = "controlix://remote/${device.remoteId}/${device.name}/${device.brand}/${device.categorySlug}"
+    // Read the buttons once; this must not run on every recomposition.
+    val payload = remember(device.remoteId, device.key) {
+        val buttons = runCatching { repo?.buttons(device.remoteId) }.getOrNull().orEmpty()
+        if (buttons.isEmpty()) {
+            // Nothing to carry (custom remote): fall back to the id form so the
+            // code still scans on a phone that happens to have the same DB.
+            legacyShareUri(device.remoteId, device.name, device.brand, device.categorySlug)
+        } else {
+            RemoteShareCodec.encode(
+                brand = device.brand,
+                model = device.name,
+                categorySlug = device.categorySlug,
+                buttons = buttons.map {
+                    RemoteShareCodec.SharedButton(it.name, it.carrierHz, it.pattern)
+                },
+                remoteId = device.remoteId,
+            )
+        }
+    }
     val bitmap = rememberQrBitmap(payload, sizeDp = 240)
+    val buttonCount = remember(device.remoteId, device.key) {
+        runCatching { repo?.buttons(device.remoteId) }.getOrNull()?.size ?: 0
+    }
 
     Column(
         Modifier.fillMaxSize().applyTopInset().padding(horizontal = 24.dp),
@@ -51,7 +78,11 @@ fun ShareScreen(
         }
         Spacer(Modifier.height(24.dp))
         Text(
-            "Scan with another Controlix app to import this remote.",
+            if (buttonCount > 0) {
+                "This code carries all $buttonCount buttons, so any Controlix phone can import it."
+            } else {
+                "Scan with another Controlix app to import this remote."
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

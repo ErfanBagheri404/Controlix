@@ -36,6 +36,23 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".widget.ControlixMacroWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_macro_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/controlix_macro_widget_info" />
+        </receiver>
+
+        <activity
+            android:name=".ui.WidgetMacroConfigureActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Controlix" />
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
