@@ -303,42 +303,6 @@ fun PadScreen(
         Modifier.fillMaxSize().applyTopInset().applyBottomInset().padding(horizontal = 24.dp),
     ) {
         Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            ActionIconView(
-                ActionIcon.Back, 26.dp, MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.pressable(onBack).padding(9.dp),
-            )
-            Spacer(Modifier.weight(1f))
-            Row(
-                Modifier
-                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(24.dp))
-                    .pressable { switcherOpen = true }
-                    .padding(horizontal = 14.dp, vertical = 9.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
-                    EmitPulse(emitKey, Modifier.size(20.dp))
-                    androidx.compose.foundation.Canvas(Modifier.size(8.dp)) { drawCircle(Accent) }
-                }
-                Text(deviceName ?: "Remote", style = MaterialTheme.typography.titleMedium)
-            }
-            if (media.hasMediaKeys) {
-                Text(
-                    if (mediaMode) "PAD" else "MEDIA",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (mediaMode) Accent else PaperFaint,
-                    modifier = Modifier.pressable { mediaMode = !mediaMode }.padding(horizontal = 8.dp, vertical = 9.dp),
-                )
-            }
-            Spacer(Modifier.weight(1f))
-            ActionIconView(
-                ActionIcon.Dots, 26.dp, MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.pressable { sheetOpen = true }.padding(9.dp),
-            )
-        }
-
-        Spacer(Modifier.height(20.dp))
 
         if (mediaMode) {
             // Media pad replaces both default regions; keyboard mode lives inside it.
