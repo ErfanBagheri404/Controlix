@@ -691,7 +691,7 @@ private fun ExpandedKeys(
     )
     Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         rows.forEach { row ->
-            Row(Modifier.fillMaxWidth().weight(1f, fill = false), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEach { key ->
                     KeyTile(key, Modifier.weight(1f).fillMaxHeight(), borrowedKeys[key] != null,
                         onLongClick = { copy(key) },
