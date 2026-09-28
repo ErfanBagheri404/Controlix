@@ -949,7 +949,6 @@ private fun KeyTile(
         ) {
             Text(label.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium)
         }
-        if (borrowed) Box(Modifier.align(Alignment.TopEnd).padding(6.dp)) { BorrowedBadge() }
     }
 }
 
@@ -1008,7 +1007,6 @@ private fun RockerKey(
         ) {
             ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
         }
-        if (borrowed) Box(Modifier.align(Alignment.TopEnd)) { BorrowedBadge() }
     }
 }
 
@@ -1037,7 +1035,6 @@ private fun PadBtn(
         ) {
             ActionIconView(icon, 24.dp, MaterialTheme.colorScheme.onSurface)
         }
-        if (borrowed) Box(Modifier.align(Alignment.TopEnd).padding(5.dp)) { BorrowedBadge() }
     }
 }
 

@@ -99,10 +99,7 @@ internal fun BorrowedCodeConfirmSheet(
         Column(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 24.dp, vertical = 20.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                BorrowedBadge(8.dp)
-                Text("Borrowed code", style = MaterialTheme.typography.titleMedium)
-            }
+            Text("Borrowed code", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(16.dp))
             Text(
                 "$keyLabel came from $source. ${pending.resolved.votes} " +
@@ -137,16 +134,4 @@ private fun ChoiceButton(label: String, modifier: Modifier = Modifier, primary: 
     ) {
         Text(label, style = MaterialTheme.typography.titleMedium, color = color)
     }
-}
-
-/** Small corner marker; only borrowed keys receive it. */
-@Composable
-internal fun BorrowedBadge(size: Dp = 7.dp) {
-    Box(
-        Modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(Gold.copy(alpha = 0.95f))
-            .semantics { contentDescription = "Borrowed code" },
-    )
 }
