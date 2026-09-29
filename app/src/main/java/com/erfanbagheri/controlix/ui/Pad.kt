@@ -699,7 +699,9 @@ private fun ExpandedKeys(
                 }
             }
         }
-        Row(Modifier.fillMaxWidth().heightIn(min = 52.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Exact height, scale-aware: heightIn would let fillMaxHeight children
+        // claim the whole column and starve the digit rows above.
+        Row(Modifier.fillMaxWidth().height(52.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PadBtn(ActionIcon.Power, Modifier.weight(1f).fillMaxHeight(), borrowed = borrowedKeys["power"] != null,
                 onLongClick = { copy("power") },
                 onProvenance = onProvenance?.let { p -> { p("power") } }) { fire("power") }

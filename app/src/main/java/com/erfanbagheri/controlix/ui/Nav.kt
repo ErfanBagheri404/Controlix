@@ -15,6 +15,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -598,7 +600,13 @@ private fun MenuDrawer(
         drawerContainerColor = MaterialTheme.colorScheme.background,
         modifier = Modifier.width(300.dp),
     ) {
-        Column(Modifier.fillMaxSize().applyTopInset().padding(horizontal = 24.dp)) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .applyTopInset()
+                .padding(horizontal = 24.dp),
+        ) {
             Spacer(Modifier.height(16.dp))
             Text("Menu", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(32.dp))
