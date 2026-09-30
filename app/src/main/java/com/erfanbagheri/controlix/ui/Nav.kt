@@ -636,10 +636,16 @@ private fun MenuDrawer(
 
             SectionHead("Tools")
             DrawerRow(ActionIcon.Add, "Build remote", onBuild)
-            DrawerRow(ActionIcon.Macros, "Macros", onMacros)
-            DrawerRow(ActionIcon.Sweep, "TV-B-Gone", onSweep)
             DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)
+            DrawerRow(ActionIcon.Macros, "Macros", onMacros)
+            DrawerRow(ActionIcon.History, "Recent sends", onRecentSends)
             DrawerRow(ActionIcon.Waveform, "Signal analyzer", onAnalyzer)
+            DrawerRow(ActionIcon.Sweep, "TV-B-Gone", onSweep)
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead("Database")
+            DrawerRow(ActionIcon.Gauge, "Database health", onDbHealth)
+            DrawerRow(ActionIcon.Info, "Missing a code?", onMissingCode)
             DrawerRow(ActionIcon.Database, "Update code database", onUpdateDb)
             if (dbChangelog != null) {
                 Text(
@@ -651,25 +657,6 @@ private fun MenuDrawer(
             if (dbState != null) {
                 Text(
                     dbState,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            DrawerRow(ActionIcon.Gauge, "Database health", onDbHealth)
-            DrawerRow(ActionIcon.History, "Recent sends", onRecentSends)
-            DrawerRow(ActionIcon.QrScan, "Tile target", onTileTarget)
-
-            Spacer(Modifier.height(32.dp))
-            SectionHead("Settings")
-            DrawerToggle(
-                "Resume last remote",
-                effectiveResumeEnabled(ResumeState.explicit, hasDevices),
-                ResumeState::setEnabled,
-            )
-            DrawerRow(ActionIcon.Down, "Check for app update", onCheckUpdate)
-            if (updateStateLabel != null) {
-                Text(
-                    updateStateLabel,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -719,14 +706,27 @@ private fun MenuDrawer(
             DrawerRow(ActionIcon.Share, "Export backup", onExport)
             DrawerRow(ActionIcon.Down, "Import backup", onImport)
 
-            SectionHead("Contribute")
-            DrawerRow(ActionIcon.Info, "Missing a code?", onMissingCode)
-
             Spacer(Modifier.height(32.dp))
             SectionHead("Appearance")
             DrawerToggle("Dark mode", ThemeState.isDark, ThemeState::toggleDark)
             DrawerToggle("Animations", Feedback.animationsOn, Feedback::setAnimations)
-            OrientationChoice()
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead("Settings")
+            DrawerToggle(
+                "Resume last remote",
+                effectiveResumeEnabled(ResumeState.explicit, hasDevices),
+                ResumeState::setEnabled,
+            )
+            DrawerRow(ActionIcon.QrScan, "Tile target", onTileTarget)
+            DrawerRow(ActionIcon.Down, "Check for app update", onCheckUpdate)
+            if (updateStateLabel != null) {
+                Text(
+                    updateStateLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             Spacer(Modifier.height(24.dp))
             SectionHead("Feedback")
@@ -806,46 +806,6 @@ private fun DrawerRow(icon: ActionIcon, label: String, onClick: () -> Unit) {
         Text(label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
             maxLines = if (FontScale.allowWrap(LocalDensity.current.fontScale)) 2 else 1,
             overflow = TextOverflow.Ellipsis)
-    }
-}
-
-/**
- * Screen-orientation choice. Flat rows, hairline separators, no stock toggle:
- * three labelled options cycle on tap; the current one is the accent.
- */
-@Composable
-private fun OrientationChoice() {
-    val view = LocalView.current
-    val activity = view.context as? Activity
-    Text(
-        "Orientation",
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 2.dp, top = 18.dp, bottom = 4.dp),
-    )
-    Orientation.Mode.entries.forEach { option ->
-        val selected = OrientationState.mode == option
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .pressable {
-                    Feedback.tap(view)
-                    activity?.requestedOrientation = OrientationState.set(option)
-                }
-                .padding(vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                Orientation.label(option),
-                style = MaterialTheme.typography.titleMedium,
-                color = if (selected) com.erfanbagheri.controlix.ui.theme.Accent
-                else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
-            if (selected) {
-                ActionIconView(ActionIcon.Check, 20.dp, com.erfanbagheri.controlix.ui.theme.Accent)
-            }
-        }
     }
 }
 
