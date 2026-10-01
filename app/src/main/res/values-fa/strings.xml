@@ -1,0 +1,563 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Controlix — فارسی (fa). ترجمهٔ کامل همهٔ رشته‌های رابط کاربری.
+     ترتیب و شمارهٔ آرگومان‌های قالب باید دقیقاً با values/strings.xml یکسان بماند. -->
+<resources>
+    <string name="app_name">Controlix</string>
+    <string name="widget_description">یک دکمهٔ ریموت ذخیره‌شده را از صفحهٔ اصلی شلیک می‌کند.</string>
+    <string name="widget_label">دکمهٔ Controlix</string>
+    <string name="widget_macro_description">یک ماکرو را از صفحهٔ اصلی شما اجرا می‌کند.</string>
+    <string name="widget_macro_label">ماکروی Controlix</string>
+
+    <!-- Home -->
+    <string name="home_title">Controlix</string>
+    <string name="home_no_devices">هنوز دستگاهی نیست</string>
+    <string name="home_tap_to_add">برای افزودن اولین ریموتتان بزنید.</string>
+    <string name="home_favorites">علاقه‌مندی‌ها</string>
+    <string name="home_scenes">صحنه‌ها</string>
+    <string name="home_unavailable">در دسترس نیست</string>
+    <string name="home_favorite_unavailable">%1$s روی این ریموت در دسترس نیست.</string>
+    <string name="home_favorite_removed">%1$s از علاقه‌مندی‌ها حذف شد</string>
+    <string name="home_remote_disabled">ریموت غیرفعال است. برای ویرایش، روی آن فشار طولانی بزنید.</string>
+    <string name="home_remote_removed">%1$s حذف شد</string>
+    <string name="home_undo">بازگردانی</string>
+
+    <!-- Drawer -->
+    <string name="menu">منو</string>
+    <string name="menu_air_conditioning">کولر و اسپلیت</string>
+    <string name="menu_tools">ابزارها</string>
+    <string name="menu_build_remote">ساخت ریموت</string>
+    <string name="menu_ir_self_test">تست مادون قرمز</string>
+    <string name="menu_macros">ماکروها</string>
+    <string name="menu_recent_sends">ارسال‌های اخیر</string>
+    <string name="menu_signal_analyzer">تحلیلگر سیگنال</string>
+    <string name="menu_tv_b_gone">TV-B-Gone</string>
+    <string name="menu_database">پایگاه داده</string>
+    <string name="menu_database_health">سلامت پایگاه داده</string>
+    <string name="menu_missing_code">کد کم دارید؟</string>
+    <string name="menu_update_code_database">به‌روزرسانی پایگاه کدها</string>
+    <string name="menu_automation">خودکارسازی</string>
+    <string name="menu_allow_external_broadcasts">اجازهٔ پخش‌های خارجی</string>
+    <string name="menu_set_broadcast_token">تنظیم توکن پخش (پیشنهادی)</string>
+    <string name="menu_token_warning">بدون توکن، هر برنامه‌ای روی این گوشی می‌تواند کد بفرستد. با تنظیم توکن، آن در کلیپ‌بورد کپی می‌شود — در هر تسک، ‎--es token ‎&lt;value&gt; را اضافه کنید.</string>
+    <string name="menu_rotate_token">نوسازی توکن (کپی مقدار جدید)</string>
+    <string name="menu_token_command">توکن: %1$s\n  --es remote_name &quot;TV&quot; --es button power --es token %2$s</string>
+    <string name="menu_transmitter">فرستنده</string>
+    <string name="menu_backup">پشتیبان</string>
+    <string name="menu_export_backup">برون‌بری پشتیبان</string>
+    <string name="menu_import_backup">درون‌ریزی پشتیبان</string>
+    <string name="menu_appearance">ظاهر</string>
+    <string name="menu_dark_mode">حالت تاریک</string>
+    <string name="menu_animations">انیمیشن‌ها</string>
+    <string name="menu_settings">تنظیمات</string>
+    <string name="menu_resume_last_remote">ادامهٔ آخرین ریموت</string>
+    <string name="menu_tile_target">هدف کاشی</string>
+    <string name="menu_check_for_app_update">بررسی به‌روزرسانی برنامه</string>
+    <string name="menu_qr_not_controlix">این کد QR متعلق به Controlix نیست</string>
+    <string name="menu_brand_added">%1$s اضافه شد</string>
+    <string name="menu_remote_updated">ریموت به‌روز شد</string>
+    <string name="menu_feedback">بازخورد</string>
+    <string name="menu_haptics">لرزش</string>
+    <string name="menu_rocker_repeat">تکرار چرخاننده</string>
+    <string name="menu_hold_vol_ch_to_repeat">نگه داشتن صدا/کانال برای تکرار</string>
+    <string name="menu_hold_delay">تأخیر نگه‌داشتن</string>
+    <string name="menu_repeat_interval">بازهٔ تکرار</string>
+    <string name="menu_pace">%1$d میلی‌ثانیه · %2$s</string>
+
+    <!-- Transmitter choices -->
+    <string name="transmitter_internal">فرستندهٔ داخلی</string>
+    <string name="transmitter_usb_dongle">dongle USB</string>
+    <string name="transmitter_ble_blaster">فرستندهٔ BLE</string>
+
+    <!-- Backup / restore -->
+    <string name="backup_exported">پشتیبان برون‌بری شد</string>
+    <string name="backup_couldnt_write">نوشتن فایل پشتیبان ممکن نشد</string>
+    <string name="backup_couldnt_read">خواندن آن فایل ممکن نشد</string>
+    <string name="backup_import">درون‌ریزی</string>
+    <string name="backup_replace_confirm">با %1$d دستگاه و %2$d ماکرو جایگزین شود؟</string>
+    <string name="backup_lost_one">%1$s از دست رفت — بقیه درون‌ریزی شود؟</string>
+    <string name="backup_lost_many">%1$d مخزن از دست رفت (%2$s) — بقیه درون‌ریزی شود؟</string>
+    <string name="backup_restored">پشتیبان بازیابی شد</string>
+    <string name="backup_restored_partial">بازیابی شد، اما خواندنی نبود: %1$s</string>
+    <string name="backup_not_valid">فایل پشتیبان معتبر نیست</string>
+    <string name="backup_must_be_json">پشتیبان باید یک شیء JSON باشد</string>
+    <string name="backup_version_number">نسخهٔ پشتیبان باید عدد باشد</string>
+    <string name="backup_version_unsupported">نسخهٔ پشتیبان %1$d پشتیبانی نمی‌شود — این برنامه نسخهٔ %2$d را می‌خواند</string>
+    <string name="backup_macro_step">ماکروی %1$d گام %2$d</string>
+    <string name="backup_imported">درون‌ریزی شد: %1$s · %2$d دکمه</string>
+
+    <!-- Database refresh / update check -->
+    <string name="db_update_available">به‌روزرسانی موجود است</string>
+    <string name="db_downloading">در حال دریافت…</string>
+    <string name="db_verifying">در حال تأیید…</string>
+    <string name="db_applying">در حال اعمال…</string>
+    <string name="db_updated_restart">پایگاه داده به‌روز شد — برای بارگذاری، برنامه را دوباره باز کنید</string>
+    <string name="db_rolled_back">بازگردانده شد: %1$s — پایگاه دادهٔ قبلی نگه داشته شد</string>
+    <string name="db_no_source">منبع به‌روزرسانی پیکربندی نشده است — flavor به‌روزرسانی هنوز ساخته نشده</string>
+    <string name="db_manifest_unavailable">مانیفست به‌روزرسانی در دسترس نیست — پایگاه دادهٔ قبلی نگه داشته شد</string>
+    <string name="db_download_failed">دریافت ناموفق بود — پایگاه دادهٔ قبلی نگه داشته شد</string>
+    <string name="db_not_loaded">پایگاه دادهٔ کدها بارگذاری نشد. برنامه را دوباره نصب کنید — پایگاه داده درون APK عرضه می‌شود.</string>
+    <string name="update_checking">در حال بررسی…</string>
+    <string name="update_up_to_date">به‌روز است (%1$s)</string>
+    <string name="update_available_version">نسخهٔ %1$s موجود است</string>
+    <string name="update_check_failed">بررسی ناموفق بود - دسترسی به GitHub ممکن نشد</string>
+
+    <!-- Database health -->
+    <string name="dbhealth_title">سلامت پایگاه داده</string>
+    <string name="dbhealth_intro">ممیزی فقط‌خواندنی از پایگاه دادهٔ کدهای داخل برنامه. هر ردیف پایین دقیقاً همان چیزی است که هست — چیزی حذف یا پنهان نمی‌شود.</string>
+    <string name="dbhealth_reading">در حال خواندن پایگاه داده…</string>
+    <string name="dbhealth_unusable">کدهای غیرقابل استفاده</string>
+    <string name="dbhealth_empty">ریموت‌های خالی</string>
+    <string name="dbhealth_protocols">پروتکل‌های موجود</string>
+    <string name="dbhealth_remotes">ریموت‌ها</string>
+    <string name="dbhealth_buttons">دکمه‌ها</string>
+    <string name="dbhealth_brands">برندها</string>
+    <string name="dbhealth_sources">منابع</string>
+    <string name="dbhealth_protocols_note">شامل فریم‌های خام به‌عنوان ورودی جداگانه</string>
+    <string name="dbhealth_pattern_cannot_expand">الگو قابل گسترش نیست</string>
+
+    <!-- Add device -->
+    <string name="add_what_adding">چه چیزی اضافه می‌کنید؟</string>
+    <string name="add_who_made">%1$s. سازنده کیست؟</string>
+    <string name="add_search_brands">جست‌وجوی برند یا مدل — مثل \'ue55\' یا \'samsung vol ch\'</string>
+    <string name="add_remote_count">%1$d %2$s</string>
+    <string name="add_remote_one">ریموت</string>
+    <string name="add_remote_many">ریموت</string>
+
+    <!-- Builder -->
+    <string name="builder_title">ساخت ریموت</string>
+    <string name="builder_remote_name">نام ریموت</string>
+    <string name="builder_search_remotes">جست‌وجوی ریموت‌ها</string>
+    <string name="builder_buttons_count">دکمه‌ها (%1$d)</string>
+    <string name="builder_search_below">پایین جست‌وجو کنید، یک ریموت بردارید و دکمه‌هایش را بزنید.</string>
+    <string name="builder_source_remote">ریموت مبدأ</string>
+    <string name="builder_all_remotes">همهٔ ریموت‌ها</string>
+    <string name="builder_no_mappable">این ریموت هیچ دکمه‌ای برای چیدمان در پد ندارد.</string>
+    <string name="builder_step_index">%1$d</string>
+    <string name="builder_entry_source">%1$s · ریموت %2$d</string>
+    <string name="builder_name_first">اول نام ریموت را بنویسید.</string>
+    <string name="builder_pick_button">دست‌کم یک دکمه انتخاب کنید.</string>
+    <string name="builder_buttons_gone">آن دکمه‌ها دیگر در پایگاه داده نیستند.</string>
+    <string name="builder_saved">%1$s ذخیره شد</string>
+
+    <!-- Edit device -->
+    <string name="edit_title">ویرایش دستگاه</string>
+    <string name="edit_name">نام</string>
+    <string name="edit_name_hint">مثلاً تلویزیون پذیرایی</string>
+    <string name="edit_room">اتاق</string>
+    <string name="edit_category">دسته</string>
+    <string name="edit_delete">حذف دستگاه</string>
+    <string name="edit_add_to_home">افزودن به صفحهٔ اصلی</string>
+    <string name="edit_add_to_home_sub">دکمهٔ میان‌بر را روی کاشی سنجاق کن</string>
+    <string name="edit_enabled">فعال</string>
+    <string name="edit_enabled_sub">دستگاه‌های غیرفعال کم‌رنگ نشان داده می‌شوند</string>
+
+    <!-- Macros -->
+    <string name="macros_title">ماکروها</string>
+    <string name="macros_intro">توالی‌هایی که دستگاه‌هایتان را دربرمی‌گیرند. یک ضربه، کل زنجیره را اجرا می‌کند.</string>
+    <string name="macros_add_device_first">اول یک دستگاه اضافه کنید — ماکروها دکمه‌های ریموت‌های شما را بازپخش می‌کنند.</string>
+    <string name="macros_sending">در حال ارسال…</string>
+    <string name="macros_run">اجرا</string>
+    <string name="macros_tick_buttons">دکمه‌ها را به ترتیب تیک بزنید. هر گام دستگاه خودش را نگه می‌دارد.</string>
+    <string name="macros_cancel">انصراف</string>
+
+    <!-- Missing code / contribution -->
+    <string name="missing_title">کد کم دارید؟</string>
+    <string name="missing_intro">کد را بچسبانید و منشأ آن را نام ببرید. اشتراک‌گذاری دستی است — Controlix هیچ‌چیز را خودش آپلود نمی‌کند.</string>
+    <string name="missing_from_pad">از پد: %1$s · %2$s</string>
+    <string name="missing_no_supported_keys">هیچ دکمهٔ پشتیبانی‌شده‌ای روی این ریموت نیست</string>
+    <string name="missing_no_button_code">کد «%1$s» وجود ندارد</string>
+    <string name="missing_cannot_learn">Controlix نمی‌تواند کد یاد بگیرد — سخت‌افزار مادون قرمزش فقط ارسال می‌کند. فقط منبعی را نام ببرید که پشتوانه‌اش را می‌شناسید؛ کدهایی با منبع ناشناخته یا متعلق به مالکیت خصوصی پذیرفته نمی‌شوند.</string>
+    <string name="missing_share_opens_apps">زدن اشتراک‌گذاری برنامه‌های شما را باز می‌کند — گزارش فقط از طریق انتخابگری که می‌گیرید از دستگاه خارج می‌شود. هیچ چیزی در پس‌زمینه آپلود نمی‌شود.</string>
+    <string name="missing_fix_flagged">اول %2$s علامت‌خوردهٔ %1$d را درست کنید.</string>
+    <string name="missing_field_one">فیلد</string>
+    <string name="missing_field_many">فیلد</string>
+    <string name="missing_no_app">برنامه‌ای برای اشتراک‌گذاری نیست. JSON را دستی کپی کنید.</string>
+    <string name="missing_brand">برند</string>
+    <string name="missing_category">دسته</string>
+    <string name="missing_remote_name">نام / مدل ریموت</string>
+    <string name="missing_button_name">نام دکمه</string>
+    <string name="missing_carrier_hz">فرکانس حامل (Hz)</string>
+    <string name="missing_pattern">الگو (میکروثانیه)</string>
+    <string name="missing_source">منبع / اصالت</string>
+    <string name="missing_app_version">نسخهٔ برنامه</string>
+    <string name="missing_share">اشتراک‌گذاری با نگه‌دارنده</string>
+    <string name="missing_confirm_share">تأیید — باز کردن برگهٔ اشتراک</string>
+
+    <!-- Pad -->
+    <string name="pad_favorites">علاقه‌مندی‌ها</string>
+    <string name="pad_copied_keys">کلیدهای کپی‌شده</string>
+    <string name="pad_on_this_remote">روی این ریموت</string>
+    <string name="pad_switch_remote">تعویض ریموت</string>
+    <string name="pad_nothing_copied">هنوز چیزی کپی نشده. روی یک کلید در ریموت دیگر فشار طولانی بزنید تا کدش اینجا کپی شود.</string>
+    <string name="pad_paste">چسباندن %1$s</string>
+    <string name="pad_clipboard_info">%1$d Hz · %2$d نشانه</string>
+    <string name="pad_key_info">%1$d Hz · برای ارسال بزنید</string>
+    <string name="pad_device_brand">%1$s  ·  %2$s</string>
+    <string name="pad_key_label">%1$s · </string>
+    <string name="pad_sent">ارسال شد: %1$s</string>
+    <string name="pad_not_sent">ارسال نشد</string>
+    <string name="pad_no_code_report">کد %1$s نیست. برای گزارش در صف قرار گرفت.</string>
+    <string name="pad_no_code">این ریموت کد %1$s ندارد.</string>
+    <string name="pad_no_code_copy">این ریموت کد %1$s برای کپی ندارد.</string>
+    <string name="pad_borrowed_key">%1$s · </string>
+    <string name="pad_copied">%1$s کپی شد. برای چسباندن، روی ریموت دیگری … را فشار طولانی بزنید.</string>
+    <string name="pad_no_identity">این ریموت هویت پایداری برای پین کردن ندارد.</string>
+    <string name="pad_noted">ثبت شد. بار بعد کد دیگری ترجیح داده می‌شود.</string>
+    <string name="pad_pasted">%1$s روی این ریموت چسبانده شد.</string>
+    <string name="pad_summary">%1$d روی پد · %2$d بیشتر</string>
+
+    <!-- Recent sends -->
+    <string name="recent_title">ارسال‌های اخیر</string>
+    <string name="recent_intro">آخرین %1$d کدی که فرستنده شلیک کرده، از جدیدترین. برای شلیک دوبارهٔ همان کد، روی ردیف بزنید.</string>
+    <string name="recent_nothing">هنوز چیزی ارسال نشده.</string>
+    <string name="recent_entry">%1$s · %2$s</string>
+
+    <!-- Ritual (power-code sweep) -->
+    <string name="ritual_progress">%1$d / %2$d</string>
+    <string name="ritual_power_code">کد روشن %1$d</string>
+    <string name="ritual_follow_up">آزمون‌های بعدی</string>
+    <string name="ritual_codes_from">کدهای برگرفته از ریموتِ پذیرفته‌شدهٔ روشن/خاموش.</string>
+    <string name="ritual_missing_button">این دکمه را کم دارید؟ گزارش دهید</string>
+    <string name="ritual_skip_volume">پرش به آزمون صدا</string>
+    <string name="ritual_nothing">چیزی برای آزمودن نیست</string>
+    <string name="ritual_no_power">برای %1$s در %2$s کد روشنی نیست. جاروی خاموشی هنوز همهٔ برندها را یکی‌یکی می‌زند — به‌جایش آن را امتحان کنید.</string>
+    <string name="ritual_missing_code">کد کم دارید؟ گزارش دهید</string>
+    <string name="ritual_back">بازگشت</string>
+    <string name="ritual_point_camera">دوربین را روی کد QR گوشی Controlix دیگر بگیرید.</string>
+
+    <!-- Setup transmission -->
+    <string name="setup_command_sent">فرستاده شد. دستگاهتان را بررسی کنید، بعد بله یا خیر را بزنید.</string>
+    <string name="setup_no_ir">این دستگاه بلاستر مادون‌قرمز ندارد. راه‌اندازی نمی‌تواند این ریموت را آزمایش کند.</string>
+    <string name="setup_press">برای ارسال فرمان، دکمهٔ زیر را فشار دهید.</string>
+    <string name="setup_couldnt_send">ارسال این کد ممکن نشد (%1$s). دوباره دکمه را بزنید، یا برای کد بعدی خیر را بزنید — یا اگر کاری کرد، بله.</string>
+
+    <!-- Share -->
+    <string name="share_qr_for">کد QR برای %1$s</string>
+
+    <!-- Signal analyzer -->
+    <string name="analyzer_title">تحلیلگر سیگنال</string>
+    <string name="analyzer_waveform">شکل موج</string>
+    <string name="analyzer_timings">زمان‌بندی‌ها</string>
+    <string name="analyzer_no_durations">مدتی ثبت نشده.</string>
+    <string name="analyzer_index">#%1$d</string>
+    <string name="analyzer_mark">نشانه</string>
+    <string name="analyzer_space">فاصله</string>
+    <string name="analyzer_us">%1$d us</string>
+    <string name="analyzer_pick_button">یک دکمه انتخاب کنید تا زمان پالس، فرکانس حامل و پروتکلش را ببینید.</string>
+    <string name="analyzer_no_timing">این دکمه دادهٔ زمانی ندارد.</string>
+    <string name="analyzer_summary">%1$s · %2$s · %3$d نشانه</string>
+    <string name="analyzer_mark_range">نشانهٔ %1$d–%2$d us · </string>
+
+    <!-- Tile target -->
+    <string name="tile_title">هدف کاشی</string>
+    <string name="tile_pick_key">%1$s · یک کلید بردارید</string>
+    <string name="tile_no_keys">این ریموت هیچ کلیدی ندارد، پس نمی‌توان آن را پین کرد.</string>
+    <string name="tile_fires_key">کاشی، %1$s را روی %2$s می‌زند</string>
+    <string name="tile_fires_fav">کاشی، %1$s را می‌زند</string>
+    <string name="tile_back_to_devices">بازگشت به دستگاه‌ها</string>
+    <string name="tile_no_saved">هنوز ریموت ذخیره‌شده‌ای برای پین نیست. اول دستگاه اضافه کنید.</string>
+    <string name="tile_remotes">ریموت‌ها</string>
+    <string name="tile_done">انجام شد</string>
+
+    <!-- Tools -->
+    <string name="tools_tv_b_gone">TV-B-Gone</string>
+    <string name="tools_tv_b_gone_desc">هر کد روشن تلویزیونی که می‌شناسیم را می‌زدد. برای مسلح شدن نگه دارید؛ برای توقف رها کنید یا انصراف را بزنید.</string>
+    <string name="tools_pre_flight">پیش‌پرواز</string>
+    <string name="tools_skipped_remotes">%1$d ریموت رد شد — دکمهٔ روشن نداشت</string>
+    <string name="tools_no_transmissions">هنوز ارسالی نیست.</string>
+    <string name="tools_cancel_sweep">توقف جارو</string>
+    <string name="tools_ir_self_test">تست مادون قرمز</string>
+    <string name="tools_ir_self_test_desc">دسته‌ای می‌فرستد که به هیچ دستگاهی نمی‌خورد. دوربین هر گوشی را مقابل فرستنده بگیرید: باید چشمک بنفشی ببینید.</string>
+
+    <!-- What's new -->
+    <string name="whats_new_title">تازه‌های %1$s</string>
+    <string name="whats_new_got_it">متوجه شدم</string>
+
+    <!-- Widget macro configure -->
+    <string name="widget_macro_title">ماکروی ویجت</string>
+    <string name="widget_macro_pick">ماکرویی را که این ویجت اجرا می‌کند انتخاب کنید. هر ویجت، یک ماکرو؛ برای ماکروی دیگر، ویجت دیگری اضافه کنید.</string>
+    <string name="widget_macro_none">هنوز ماکرویی نیست — اول در Controlix یکی بسازید.</string>
+    <string name="widget_macro_steps">%1$d گام</string>
+
+    <!-- Borrowed code -->
+    <string name="borrowed_title">کد قرض‌گرفته</string>
+    <string name="borrowed_from">%1$s از %2$s آمده. %3$d %4$s.</string>
+    <string name="borrowed_sibling_one">ریموت خواهر‌و‌برادری هم موافق است</string>
+    <string name="borrowed_sibling_many">ریموت‌های خواهر‌و‌برادری هم موافق‌اند</string>
+    <string name="borrowed_try">روی دستگاهتان امتحان کنید. رد کردن باعث می‌شود بار بعد از این کد استفاده نشود.</string>
+    <string name="borrowed_try_next">آزمودن بعدی</string>
+    <string name="borrowed_keep_send">نگه‌داشتن و فرستادن</string>
+
+    <!-- AC pad -->
+    <string name="ac_target">هدف</string>
+    <string name="ac_mode">حالت</string>
+    <string name="ac_power">روشن/خاموش</string>
+    <string name="ac_fan">فن</string>
+    <string name="ac_swing">پرتاب باد</string>
+    <string name="ac_on">روشن</string>
+    <string name="ac_off">خاموش</string>
+    <string name="ac_temp">%1$d°C</string>
+    <string name="ac_no_usable">این ریموت هیچ کد قابل استفاده‌ای در پایگاه داده ندارد.</string>
+    <string name="ac_no_temps">دمای ذخیره‌شده‌ای برای %1$s نیست. پد نمی‌تواند دمایی تنظیم کند — حالت دیگری را انتخاب کنید.</string>
+    <string name="ac_disabled_modes">غیرفعال: %1$s — این ریموت چنین کدی ندارد.</string>
+    <string name="ac_sent">ارسال شد: %1$s</string>
+
+    <!-- Widget (RemoteViews) -->
+    <string name="widget_no_target">برای باز کردن Controlix بزنید</string>
+    <string name="widget_no_device">ریموت حذف شد</string>
+    <string name="widget_no_ir">فرستندهٔ مادون قرمز نیست</string>
+    <string name="widget_open_to_setup">برای راه‌اندازی Controlix را باز کنید</string>
+    <string name="widget_removed_remote">ریموت حذف‌شده</string>
+    <string name="widget_macro_deleted">ماکرو حذف شد</string>
+    <string name="widget_macro_unset">یک ماکرو انتخاب کنید</string>
+    <string name="widget_tap_to_run">برای اجرا بزنید</string>
+    <string name="widget_all_sent">همهٔ %1$d فرستاده شد</string>
+    <string name="widget_stopped">متوقف شد — %1$s</string>
+    <string name="widget_key_power">روشن/خاموش</string>
+    <string name="widget_key_volume_up">صدای بلندتر</string>
+    <string name="widget_key_volume_down">صدای آرام‌تر</string>
+    <string name="widget_key_channel_up">کانال بعدی</string>
+    <string name="widget_key_channel_down">کانال قبلی</string>
+    <string name="widget_key_mute">بی‌صدا</string>
+    <string name="widget_key_up">بالا</string>
+    <string name="widget_key_down">پایین</string>
+    <string name="widget_key_left">چپ</string>
+    <string name="widget_key_right">راست</string>
+    <string name="widget_key_ok">تأیید</string>
+
+    <!-- Repeat pace -->
+    <string name="pace_relaxed">آرام</string>
+    <string name="pace_rapid">تند</string>
+    <string name="pace_standard">استاندارد</string>
+
+    <!-- Rooms -->
+    <string name="room_unassigned">بدون اتاق</string>
+    <string name="toast_no_ir_blaster">این دستگاه مادون قرمز ندارد.</string>
+    <string name="toast_couldnt_send">ارسال نشد. دوباره امتحان کنید.</string>
+    <string name="edit_add_home">افزودن به صفحهٔ اصلی</string>
+    <string name="edit_pin_shortcut">دکمهٔ میان‌بر را روی کاشی سنجاق کن</string>
+    <string name="edit_disabled_dimmed">دستگاه‌های غیرفعال کم‌رنگ می‌شوند</string>
+    <string name="mc_confirm_share">تأیید — باز کردن برگهٔ اشتراک</string>
+    <string name="mc_share_with">اشتراک با نگهدارنده</string>
+    <string name="field_source">منبع / خاستگاه</string>
+    <string name="borrowed_source_votes">%1$s · %2$d %3$s</string>
+    <string name="borrowed_agree_one">ریموت موافق است</string>
+    <string name="borrowed_agree_many">ریموت‌ها موافق‌اند</string>
+    <string name="borrowed_sibling_fallback">ریموت خواهر #%1$d</string>
+    <string name="borrowed_sheet">%1$s از %2$s آمد. %3$d %4$s.</string>
+    <string name="ac_remote_title">ریموت کولر</string>
+    <string name="ac_on_disabled">روشن غیرفعال است: این ریموت کلید روشنِ جدا ندارد.</string>
+    <string name="ac_off_uses_own">خاموش از کلید خاموشی خودِ این ریموت استفاده می‌کند.</string>
+    <string name="ac_carries">شامل: %1$s</string>
+    <string name="ac_no_key_on">این ریموت کلید روشن ندارد. شامل: %1$s</string>
+    <string name="ac_no_key_off">این ریموت کلید خاموش ندارد. شامل: %1$s</string>
+    <string name="ac_selection_desc">%1$d°C %2$s</string>
+    <string name="ac_mode_cool">سرد</string>
+    <string name="ac_mode_heat">گرم</string>
+    <string name="ac_mode_dry">خشک</string>
+    <string name="ac_mode_fan">فن</string>
+    <string name="ac_mode_auto">خودکار</string>
+    <string name="builder_source_custom">سفارشی</string>
+    <string name="builder_search_hint">برای جست‌وجوی پایگاه داده تایپ کنید.</string>
+    <string name="builder_no_match">ریموتی پیدا نشد.</string>
+    <string name="home_scene_self">%1$s: صحنه به خودش ارجاع می‌دهد.</string>
+    <string name="home_scene_no_steps">%1$s: گام قابل اجرا ندارد.</string>
+    <string name="home_scene_blocked">%1$s مسدود است: %2$s در دسترس نیست.</string>
+    <string name="home_scene_running">در حال اجرای %1$s · %2$d گام آماده</string>
+    <string name="home_scene_progress">%1$d/%2$d · %3$s</string>
+    <string name="home_scene_sent">%1$s: %2$d ارسال شد</string>
+    <string name="home_scene_stopped">در گام %1$d متوقف شد.</string>
+    <string name="home_scene_failed">%1$s: %2$s</string>
+    <string name="scene_err_resolve">گام %1$d قابل شناسایی نیست.</string>
+    <string name="scene_err_send">ارسال گام %1$d ناموفق بود.</string>
+    <string name="home_unpinned">%1$s از سنجاق خارج شد</string>
+    <string name="home_pinned">%1$s سنجاق شد</string>
+    <string name="home_copied_keys_desc">چسباندن کد کپی‌شده</string>
+    <string name="home_favorites_desc">سنجاق کلیدها به ردیف اصلی</string>
+    <string name="home_inspect_desc">شکل موج، حامل، پروتکل</string>
+    <string name="home_edit_desc">نام، اتاق، میان‌بر</string>
+    <string name="home_pin_desc">علامت زدن با ستاره</string>
+    <string name="home_unpin_desc">حذف ستاره</string>
+    <string name="home_share_desc">نمایش کد QR</string>
+    <string name="macros_new">ماکروی جدید</string>
+    <string name="macros_save">ذخیره</string>
+    <string name="macros_save_count">ذخیره (%1$d)</string>
+    <string name="macros_default_name">ماکروی %1$d گام</string>
+    <string name="macros_step_line">%1$d. %2$s %3$s</string>
+    <string name="macros_more_steps">%1$s → +%2$d</string>
+    <string name="macros_unknown">ناشناخته</string>
+    <string name="pad_fav_removed">%1$s از علاقه‌مندی‌ها حذف شد</string>
+    <string name="pad_fav_added">%1$s به علاقه‌مندی‌ها اضافه شد</string>
+    <string name="pad_fav_hint">برای افزودن به ردیف اصلی، روی یک کلید بزنید.</string>
+    <string name="pad_fav_count">%1$d مورد روی ردیف اصلی. برای حذف بزنید.</string>
+    <string name="pad_vol">صدا</string>
+    <string name="pad_ch">کانال</string>
+    <string name="pad_keyboard">کیبورد</string>
+    <string name="pad_media">پد رسانه</string>
+    <string name="pad_fallback">ریموت</string>
+    <string name="tools_keep_holding">نگه دارید…</string>
+    <string name="tools_transmitting">در حال ارسال — رها کنید تا متوقف شود</string>
+    <string name="tools_hold_power_off">برای خاموش کردن نگه دارید</string>
+    <string name="tools_sweep_progress">%1$s%2$d/%3$d · %4$s</string>
+    <string name="tools_done">انجام شد</string>
+    <string name="tools_stopped_count">متوقف شد · %1$d/%2$d</string>
+    <string name="tools_cancelled">لغو شد — چیزی ارسال نشد</string>
+    <string name="tools_ready">آماده</string>
+    <string name="tools_sent">ارسال شد</string>
+    <string name="tools_no_ir">فرستندهٔ IR ندارد</string>
+    <string name="tools_failed">ناموفق</string>
+    <string name="tools_fire_burst">شلیک دستهٔ آزمایشی</string>
+    <string name="tools_burst_sent">دسته ارسال شد. چشمک زدن را دیدید؟</string>
+    <string name="tools_no_ir_device">این دستگاه فرستندهٔ IR ندارد</string>
+    <string name="ritual_action_power">دکمهٔ روشن/خاموش را بزن</string>
+    <string name="ritual_action_vol_up">دکمهٔ زیاد کردن صدا را بزن</string>
+    <string name="ritual_action_vol_down">دکمهٔ کم کردن صدا را بزن</string>
+    <string name="ritual_action_mute">دکمهٔ بی‌صدا را بزن</string>
+    <string name="ritual_q_power">خاموش شد؟</string>
+    <string name="ritual_q_up">صدا زیاد شد؟</string>
+    <string name="ritual_q_down">و دوباره کم شد؟</string>
+    <string name="ritual_q_mute">بی‌صدا شد؟</string>
+    <string name="ritual_yes">بله</string>
+    <string name="ritual_no">خیر</string>
+    <string name="recent_failed">ارسال نشد — %1$s</string>
+    <string name="recent_signal">%1$d Hz · %2$d نشان</string>
+    <string name="tile_key_label">%1$s · %2$s</string>
+    <string name="tile_nothing_pinned">چیزی سنجاق نشده — کاشی برنامه را باز می‌کند.</string>
+    <string name="analyzer_test_fire">آزمایش ارسال</string>
+    <string name="analyzer_raw">خام</string>
+    <string name="analyzer_selftest_burst">دستهٔ خودآزمایی</string>
+    <string name="analyzer_selftest">خودآزمایی</string>
+    <string name="analyzer_remote">ریموت %1$d</string>
+    <string name="analyzer_copied_durations">%1$d مدت کپی شد</string>
+    <string name="analyzer_sent">%1$s ارسال شد</string>
+    <string name="analyzer_send_failed">ارسال نشد: %1$s</string>
+    <string name="analyzer_inverse_failed">(آزمایش وارونه ناموفق)</string>
+    <string name="wmacro_bound">✓ متصل</string>
+    <string name="wmacro_use">استفاده</string>
+    <string name="scan_camera_permission">برای اسکن ریموت، مجوز دوربین لازم است.</string>
+    <string name="screen_scan">اسکن ریموت</string>
+    <string name="screen_share">اشتراک ریموت</string>
+    <string name="menu_token_prefix">توکن: %1$s</string>
+    <string name="transmitter_usb">دانگل USB</string>
+    <string name="transmitter_ble">فرستندهٔ BLE</string>
+    <string name="backup_store_devices">دستگاه‌ها</string>
+    <string name="backup_store_macros">ماکروها</string>
+    <string name="backup_store_scenes">صحنه‌ها</string>
+    <string name="backup_store_copied">دکمه‌های کپی‌شده</string>
+    <string name="backup_store_custom">ریموت‌های سفارشی</string>
+    <string name="backup_store_borrowed">کدهای قرضی</string>
+    <string name="backup_read_failed_partial">بازیابی شد، اما خواندن ممکن نشد: %1$s</string>
+    <string name="backup_must_object">پشتیبان باید یک شیء JSON باشد</string>
+    <string name="backup_damaged">فایل پشتیبان خراب است</string>
+    <string name="backup_unknown_fields">پشتیبان فیلدهای ناشناختهٔ سطح بالا دارد: %1$s</string>
+    <string name="backup_missing_fields">پشتیبان فیلدهایی کم دارد: %1$s</string>
+    <string name="room_living">نشیمن</string>
+    <string name="room_bedroom">خواب</string>
+    <string name="room_study">مطالعه</string>
+    <string name="room_dining">ناهارخوری</string>
+    <string name="room_office">دفتر</string>
+    <string name="room_general">عمومی</string>
+    <string name="shared_remote_name">ریموت اشتراکی</string>
+    <string name="shared_buttons_one">۱ دکمه</string>
+    <string name="shared_buttons_n">%1$d دکمه</string>
+    <string name="tile_unavailable">%1$s روی این ریموت در دسترس نیست.</string>
+    <string name="macro_err_id">ماکرو شناسه ندارد.</string>
+    <string name="macro_err_name">ماکرو به نام نیاز دارد.</string>
+    <string name="macro_err_steps">ماکرو حداقل به یک گام نیاز دارد.</string>
+    <string name="macro_err_button">هر گام به یک دکمه نیاز دارد.</string>
+    <string name="macro_err_delay">تأخیر گام باید ۰ تا %1$d میلی‌ثانیه باشد.</string>
+    <string name="contrib_required">%1$s الزامی است.</string>
+    <string name="contrib_prov_missing">بگویید این کد از کجا آمده است. بدون منبع، نگهدارنده نمی‌تواند آن را بپذیرد.</string>
+    <string name="contrib_prov_prohibited">پایگاه دادهٔ کدهای Mi Remote مخصوص بوده و نباید بازتوزیع شود — این ارسال قابل بسته‌بندی نیست. docs/DB.md را ببینید.</string>
+    <string name="contrib_prov_unknown">خاستگاه ناشناخته: نگهدارنده برای پذیرش این کد به یک منبع واقعی نیاز دارد (مثلاً ریموت خودتان، دامپ عمومی irdb).</string>
+    <string name="contrib_carrier_required">فرکانس حامل الزامی است.</string>
+    <string name="contrib_carrier_range">حامل باید %1$d تا %2$d هرتز باشد (معمول: 38000).</string>
+    <string name="contrib_pattern_count">الگو به تعداد زوج و دست‌کم %1$d مدت نیاز دارد (جفت‌های mark/space، جداشده با فاصله یا ویرگول).</string>
+    <string name="contrib_pattern_numeric">الگو فقط باید عدد باشد — &quot;%1$s&quot; یک مدت نیست.</string>
+    <string name="contrib_pattern_range">مدت‌ها باید مثبت و حداکثر %1$d میکروثانیه باشد.</string>
+    <string name="dbh_remotes_note">هر سطر ریموت در پایگاه دادهٔ همراه</string>
+    <string name="dbh_buttons_note">کدهایی که قابل ارسال‌اند</string>
+    <string name="dbh_empty_note">بدون هیچ دکمه‌ای عرضه می‌شوند — قابل جست‌وجو اما غیرقابل ارسال</string>
+    <string name="dbh_extra">کلیدهای اضافی / نگاشت‌نشده</string>
+    <string name="dbh_extra_note">بدون عملکرد استاندارد پد — برای کیبورد گسترش‌یافته نگه داشته شده</string>
+    <string name="dbh_protocols">پروتکل‌های موجود</string>
+    <string name="dbh_e_unmapped">دکمه‌ای در سطر مبدأ نیست — نام فایل irdb به ,-1 ختم می‌شود (ورودی نگاشت‌نشده)</string>
+    <string name="dbh_e_nobuttons">دکمه‌ای در فایل مبدأ نیست</string>
+    <string name="refresh_size_mismatch">عدم تطابق اندازه</string>
+    <string name="refresh_sha_mismatch">عدم تطابق sha256</string>
+    <string name="refresh_apply_failed">اعمال ناموفق</string>
+    <string name="refresh_dl_requires">دانلود نیاز به Checked دارد</string>
+    <string name="refresh_verify_requires">راستی‌آزمایی نیاز به Downloading دارد</string>
+    <string name="refresh_apply_requires">اعمال نیاز به Verified دارد</string>
+    <string name="refresh_finish_requires">پایان نیاز به Applying دارد</string>
+    <string name="scene_err_no_steps">صحنه گامی ندارد.</string>
+    <string name="scene_err_selfref">صحنه به خودش ارجاع می‌دهد.</string>
+    <string name="macro_step_gone">گام %1$d: دستگاه دیگر در دسترس نیست.</string>
+    <string name="update_check_failed2">بررسی ناموفق بود — دسترسی به GitHub ممکن نشد (%1$s)</string>
+    <string name="dbh_unusable_codes">کدهای غیرقابل استفاده</string>
+    <string name="dbh_unusable_note">الگوهای دکمه‌ای که فرستنده نمی‌تواند باز کند</string>
+    <string name="db_idle">بی‌کار</string>
+    <string name="refresh_no_source">منبع به‌روزرسانی تنظیم نشده — نسخهٔ refresh ساخته نشده</string>
+    <string name="sendlog_no_ir">مادون قرمز ندارد</string>
+    <string name="sendlog_not_sent">ارسال نشد</string>
+    <string name="up">بالا</string>
+    <string name="down">پایین</string>
+    <string name="left">چپ</string>
+    <string name="right">راست</string>
+    <string name="ok">تأیید</string>
+    <string name="widget_open_setup">Controlix را باز کنید تا راه‌اندازی کنید</string>
+    <string name="field_brand">برند</string>
+    <string name="field_category">دسته</string>
+    <string name="field_remote_name">نام ریموت</string>
+    <string name="field_button_name">نام دکمه</string>
+    <string name="field_carrier">فرکانس حامل (هرتز)</string>
+    <string name="field_pattern">الگو (میکروثانیه)</string>
+    <string name="field_app_version">نسخهٔ برنامه</string>
+    <string name="ac_key_off">خاموش</string>
+    <string name="ac_key_on">روشن</string>
+    <string name="ac_no_code_desc">هنوز کد «%1$s» ثبت نشده</string>
+    <string name="ac_no_key_has">«%1$s» هنوز کلید «%2$s» ندارد.</string>
+    <string name="ac_nothing_usable">در «%1$s» چیز قابل استفاده‌ای برای «%2$s» نیست</string>
+    <string name="analyzer_copy_json">کپی JSON</string>
+    <string name="analyzer_timings_values">مارک، شکاف (ms): %1$s</string>
+    <string name="field_remote_model">نام / مدل ریموت</string>
+    <string name="home_copied_keys">کلیدهای کپی‌شده</string>
+    <string name="home_edit">ویرایش</string>
+    <string name="home_inspect">بررسی سیگنال‌ها</string>
+    <string name="home_pin">سنجاق</string>
+    <string name="home_share">اشتراک‌گذاری</string>
+    <string name="home_unpin">برداشتن سنجاق</string>
+    <string name="missing_learn_note">ابزاری را انتخاب کنید که بتواند کد را یاد بگیرد، سپس اینجا اضافه کنید.</string>
+    <string name="missing_share_body">برنامه سازنده را باز کنید، کد را یاد بگیرید، سپس از همان برنامه با Controlix اشتراک بگذارید.</string>
+    <string name="missing_share_note">هر برنامه‌ای که بتواند کدهای مادون قرمز را به اشتراک بگذارد کار می‌کند.</string>
+    <string name="widget_no_key">%1$s نیست</string>
+    <string name="widget_pick_macro">یک ماکرو انتخاب کنید</string>
+    <string name="widget_remote_deleted">ریموت حذف شده</string>
+    <string name="resent_toast">«%1$s» دوباره ارسال شد</string>
+    <string name="home_cancel_scene">لغو «%1$s»</string>
+    <string name="widget_not_sent">ارسال نشد</string>
+    <string name="missing_share_subject">کد مادون قرمز: %1$s %2$s</string>
+    <string name="missing_share_contribution">اشتراک‌گذاری گزارش</string>
+    <string name="missing_prov_example">دیتابیس عمومی irdb، بازآزمایی‌شده روی ریموت خودم</string>
+    <string name="hold_preflight">%1$d دستگاه عند تأثیر قرار می‌گیرند</string>
+    <string name="whats_new_default">رفع اشکالات و بهبود عملکرد.</string>
+    <string name="db_changelog">%1$s ریموت، %2$s کلید</string>
+    <string name="ac_mode_fan_only">فقط فن</string>
+    <string name="share_qr_desc_full">این کد همه ی %1$d کلید را دارد، بنابراین هر گوشی‌ی کنترلیکس می‌تواند آن را وارد کند.</string>
+    <string name="share_scan_desc">برای وارد کردن این ریموت، با یک برنامهٔ دیگر کنترلیکس اسکن کنید.</string>
+    <string name="menu_language">به زبان</string>
+    <string name="lang_english">English</string>
+    <string name="lang_farsi">فارسی</string>
+    <string name="dbh_unusable_row">این الگو قابل گسترش نیست</string>
+    <string name="backup_ctx_object">%1$s باید یک شیء باشد</string>
+    <string name="backup_ctx_array">%1$s باید یک آرایه باشد</string>
+    <string name="backup_ctx_number">%1$s باید یک عدد باشد</string>
+    <string name="backup_ctx_integer">%1$s باید یک عدد صحیح باشد</string>
+    <string name="backup_ctx_string">%1$s باید یک متن صورتی باشد</string>
+    <string name="backup_ctx_bool">%1$s باید true یت false باشد</string>
+    <string name="backup_ctx_unknown">فیلدهای ناشناشه یا مقددر در %1$s</string>
+    <string name="backup_ctx_delayms">%1$s باید delayMs باید عدد باشد</string>
+    <string name="backup_ctx_devicestrings">فیلدهای دستگاه در %1$s باید متن صورتی باشد</string>
+    <string name="backup_ctx_remoteid">%1$s باید remoteId باید عدد صحیح باشد</string>
+    <string name="backup_ctx_steps">%1$s باید یک آرایه باشد</string>
+</resources>

@@ -15,6 +15,7 @@
         android:maxLines="1"
         android:ellipsize="end"
         android:textColor="@color/widget_title"
+        style="@style/WidgetText"
         android:textSize="14sp"
         android:textStyle="bold" />
 
@@ -27,6 +28,7 @@
         android:layout_marginTop="8dp"
         android:background="@drawable/widget_key"
         android:textColor="@color/widget_key_text"
+        style="@style/WidgetText"
         android:textSize="18sp"
         android:textStyle="bold" />
 
@@ -38,5 +40,6 @@
         android:maxLines="1"
         android:ellipsize="end"
         android:textColor="@color/widget_status"
+        style="@style/WidgetText"
         android:textSize="12sp" />
 </LinearLayout>

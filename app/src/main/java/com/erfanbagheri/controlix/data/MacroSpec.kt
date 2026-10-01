@@ -104,6 +104,9 @@ object MacroCodec {
         else -> null
     }
 
+    /** Localized copy of [structuralError] for display. */
+    fun structuralErrorText(m: Macro): String? = structuralError(m)?.let { Copy.macroError(MacroError.of(it)) }
+
     /**
      * Pure decode. Null, blank, corrupt and half-written input all fall back
      * to an empty list; one bad record is dropped, the rest still load.
@@ -134,6 +137,9 @@ object MacroCodec {
             "Step delay must be 0-${MAX_STEP_DELAY_MS} ms."
         else -> null
     }
+
+    /** Localized copy of [saveError] for display. */
+    fun saveErrorText(m: Macro): String? = saveError(m)?.let { Copy.macroError(MacroError.of(it)) }
 
     private fun encodeRecord(m: Macro): String {
         val steps = m.steps.joinToString(STEP_SEPARATOR) { step ->

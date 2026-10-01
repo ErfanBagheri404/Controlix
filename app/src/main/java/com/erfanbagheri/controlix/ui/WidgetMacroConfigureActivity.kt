@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.Macro
 import com.erfanbagheri.controlix.ui.theme.ControlixTheme
 import com.erfanbagheri.controlix.widget.WidgetStore
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /**
  * Widget configuration screen (issue #82): picks ONE macro for the widget
@@ -78,10 +80,10 @@ private fun WidgetMacroConfigureScreen(
         Spacer(Modifier.height(14.dp))
         BackRow(onCancel)
         Spacer(Modifier.height(8.dp))
-        Text("Widget macro", style = MaterialTheme.typography.headlineMedium)
+        Text(tr(R.string.widget_macro_title), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Pick the macro this widget runs. One widget, one macro; add another widget for another macro.",
+            tr(R.string.widget_macro_pick),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -89,7 +91,7 @@ private fun WidgetMacroConfigureScreen(
 
         if (macros.isEmpty()) {
             Text(
-                "No macros yet — create one in Controlix first.",
+                tr(R.string.widget_macro_none),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -107,14 +109,14 @@ private fun WidgetMacroConfigureScreen(
                         Column(Modifier.weight(1f)) {
                             Text(macro.name, style = MaterialTheme.typography.titleMedium)
                             Text(
-                                "${macro.steps.size} step${if (macro.steps.size == 1) "" else "s"}",
+                                tr(R.string.widget_macro_steps, macro.steps.size, if (macro.steps.size == 1) "" else "s"),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                         Spacer(Modifier.padding(4.dp))
                         Text(
-                            if (selected) "✓ Bound" else "Use",
+                            if (selected) tr(R.string.wmacro_bound) else tr(R.string.wmacro_use),
                             style = MaterialTheme.typography.labelMedium,
                             color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -126,7 +128,7 @@ private fun WidgetMacroConfigureScreen(
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                "Cancel",
+                tr(R.string.macros_cancel),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.pressable(onCancel).padding(vertical = 8.dp),

@@ -34,6 +34,9 @@ import com.erfanbagheri.controlix.ui.theme.Danger
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
 import com.erfanbagheri.controlix.widget.WidgetBinding
 import com.erfanbagheri.controlix.widget.WidgetStore
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
+import com.erfanbagheri.controlix.data.Copy
 
 /**
  * Device edit screen. Check (save) + back at top, then name input with
@@ -87,27 +90,27 @@ fun EditDeviceScreen(
         }
 
         Spacer(Modifier.height(28.dp))
-        Text("Edit device", style = MaterialTheme.typography.displaySmall)
+        Text(tr(R.string.edit_title), style = MaterialTheme.typography.displaySmall)
         Spacer(Modifier.height(24.dp))
 
-        Text("Name", style = MaterialTheme.typography.labelLarge, color = PaperFaint)
+        Text(tr(R.string.edit_name), style = MaterialTheme.typography.labelLarge, color = PaperFaint)
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             value = name, onValueChange = { name = it },
-            placeholder = { Text("e.g. Living room TV") },
+            placeholder = { Text(tr(R.string.edit_name_hint)) },
             singleLine = true,
             shape = RoundedCornerShape(14.dp),
             modifier = Modifier.fillMaxWidth(),
         )
 
         Spacer(Modifier.height(24.dp))
-        Text("Room", style = MaterialTheme.typography.labelLarge, color = PaperFaint)
+        Text(tr(R.string.edit_room), style = MaterialTheme.typography.labelLarge, color = PaperFaint)
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Room.entries.forEach { room ->
                 val selected = roomIdx == room.ordinal
                 Text(
-                    room.display,
+                    Copy.room(room),
                     style = MaterialTheme.typography.labelLarge,
                     color = if (selected) Accent else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
@@ -119,19 +122,19 @@ fun EditDeviceScreen(
         }
 
         Spacer(Modifier.height(24.dp))
-        Text("Category", style = MaterialTheme.typography.labelLarge, color = PaperFaint)
+        Text(tr(R.string.edit_category), style = MaterialTheme.typography.labelLarge, color = PaperFaint)
         Spacer(Modifier.height(8.dp))
         Text(device.categorySlug.replace('_', ' ').replaceFirstChar { it.uppercase() },
             style = MaterialTheme.typography.bodyLarge)
 
         Spacer(Modifier.height(24.dp))
-        ToggleRow("Add to home screen", "Pin shortcut button on tile", shortcutOn) { shortcutOn = it }
+        ToggleRow(tr(R.string.edit_add_home), tr(R.string.edit_pin_shortcut), shortcutOn) { shortcutOn = it }
         Spacer(Modifier.height(12.dp))
-        ToggleRow("Enabled", "Disabled devices are dimmed", enabledOn) { enabledOn = it }
+        ToggleRow(tr(R.string.edit_enabled), tr(R.string.edit_disabled_dimmed), enabledOn) { enabledOn = it }
 
         Spacer(Modifier.height(32.dp))
         Row(Modifier.fillMaxWidth().pressable { model.remove(device.key); onDone() }.padding(vertical = 14.dp)) {
-            Text("Delete device", style = MaterialTheme.typography.titleMedium, color = Danger)
+            Text(tr(R.string.edit_delete), style = MaterialTheme.typography.titleMedium, color = Danger)
         }
 
         Spacer(Modifier.height(40.dp))

@@ -36,6 +36,9 @@ import com.erfanbagheri.controlix.data.RemoteIndex
 import com.erfanbagheri.controlix.feature.MacroPlayer
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import kotlinx.coroutines.launch
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
+import com.erfanbagheri.controlix.data.Copy
 
 /**
  * Macro list screen: named button sequences (TV on → soundbar on → HDMI).
@@ -60,10 +63,10 @@ fun MacrosScreen(
         Spacer(Modifier.height(14.dp))
         BackRow(onBack)
         Spacer(Modifier.height(8.dp))
-        Text("Macros", style = MaterialTheme.typography.headlineMedium)
+        Text(tr(R.string.macros_title), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Sequences that span your devices. One tap runs the whole chain.",
+            tr(R.string.macros_intro),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -94,8 +97,9 @@ fun MacrosScreen(
                             playResult = null
                             scope.launch {
                                 playResult = when (val r = player.play(macro)) {
-                                    is MacroRunResult.Complete -> "All ${r.sent} sent"
-                                    is MacroRunResult.Failed -> "Stopped — ${r.reason}"
+                                    is MacroRunResult.Complete -> tr(R.string.widget_all_sent, r.sent)
+                                    is MacroRunResult.Failed ->
+                                        Copy.widgetMacroFailed(r.reason)
                                 }
                                 playing = null
                             }
@@ -117,12 +121,12 @@ fun MacrosScreen(
             Spacer(Modifier.height(12.dp))
             if (devices.isEmpty()) {
                 Text(
-                    "Add a device first — macros replay buttons from your remotes.",
+                    tr(R.string.macros_add_device_first),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                BigPressButton("New macro", ActionIcon.Add) { creating = true }
+                BigPressButton(tr(R.string.macros_new), ActionIcon.Add) { creating = true }
             }
             Spacer(Modifier.height(28.dp))
         }
@@ -147,9 +151,11 @@ private fun MacroRow(
                 // Step 1 = TV power · 2 = Soundbar power — the cross-device
                 // story is what distinguishes this from a button list.
                 macro.steps.take(3)
-                    .mapIndexed { i, s -> "${i + 1} · ${s.deviceLabel(devices)} ${s.buttonName}" }
+                    .mapIndexed { i, s -> tr(R.string.macros_step_line, i + 1, s.deviceLabel(devices), s.buttonName) }
                     .joinToString("  →  ")
-                    .let { if (macro.steps.size > 3) "$it → +${macro.steps.size - 3}" else it },
+                    .let {
+                        if (macro.steps.size > 3) tr(R.string.macros_more_steps, it, macro.steps.size - 3) else it
+                    },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
@@ -157,7 +163,7 @@ private fun MacroRow(
         }
         if (playing) {
             Text(
-                "Sending…",
+                tr(R.string.macros_sending),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -168,7 +174,7 @@ private fun MacroRow(
             ) {
                 ActionIconView(ActionIcon.Sweep, 20.dp, MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(6.dp))
-                Text("Run", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Text(tr(R.string.macros_run), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
             Spacer(Modifier.width(4.dp))
             Row(
@@ -219,7 +225,7 @@ private fun MacroBuilder(
 
     Column(Modifier.fillMaxSize()) {
         Text(
-            "Tick buttons in order. Each step keeps the device it came from.",
+            tr(R.string.macros_tick_buttons),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -253,7 +259,9 @@ private fun MacroBuilder(
         // step list
         if (steps.isNotEmpty()) {
             Text(
-                steps.mapIndexed { i, s -> "${i + 1}. ${s.deviceLabel(devices)} ${s.buttonName}" }.joinToString("  →  "),
+                steps.mapIndexed { i, s ->
+                    tr(R.string.macros_step_line, i + 1, s.deviceLabel(devices), s.buttonName)
+                }.joinToString("  →  "),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -284,14 +292,17 @@ private fun MacroBuilder(
 
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            BigPressButton(if (name.isBlank()) "Save (${steps.size})" else "Save", ActionIcon.Sweep) {
+            BigPressButton(
+                if (name.isBlank()) tr(R.string.macros_save_count, steps.size) else tr(R.string.macros_save),
+                ActionIcon.Sweep,
+            ) {
                 if (steps.isEmpty()) return@BigPressButton
-                onDone(name.ifBlank { "Macro ${steps.size} steps" }, steps)
+                onDone(name.ifBlank { tr(R.string.macros_default_name, steps.size) }, steps)
             }
         }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.pressable(onCancel).padding(vertical = 8.dp)) {
-            Text("Cancel", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(tr(R.string.macros_cancel), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(28.dp))
     }
@@ -304,5 +315,5 @@ fun MacroStep.deviceLabel(devices: List<SavedDevice>): String {
         if (key != null) it.key == key
         else it.remoteId == legacyRemoteId
     }
-    return dev?.name ?: if (legacyRemoteId != NO_DEVICE_ID) "#$legacyRemoteId" else "unknown"
+    return dev?.name ?: if (legacyRemoteId != NO_DEVICE_ID) "#$legacyRemoteId" else tr(R.string.macros_unknown)
 }

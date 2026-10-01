@@ -26,6 +26,9 @@ import com.erfanbagheri.controlix.data.DbHealth
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
+import com.erfanbagheri.controlix.data.Copy
 
 private data class Health(
     val summary: List<DbHealth.Row>,
@@ -68,10 +71,10 @@ fun DbHealthScreen(
         Spacer(Modifier.height(14.dp))
         BackRow(onBack)
         Spacer(Modifier.height(8.dp))
-        Text("Database health", style = MaterialTheme.typography.headlineMedium)
+        Text(tr(R.string.dbhealth_title), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(4.dp))
         Text(
-            "Read-only audit of the bundled code database. Every row below is reported as-is — nothing is deleted or hidden.",
+            tr(R.string.dbhealth_intro),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -80,18 +83,18 @@ fun DbHealthScreen(
         val h = health
         if (h == null) {
             Text(
-                "Reading database…",
+                tr(R.string.dbhealth_reading),
                 Modifier.padding(top = 24.dp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
             LazyColumn(Modifier.weight(1f)) {
                 items(h.summary, key = { "s:${it.title}" }) { HealthRow(it) }
-                item(key = "head-unusable") { SectionHead("Unusable codes") }
+                item(key = "head-unusable") { SectionHead(tr(R.string.dbhealth_unusable)) }
                 items(h.unusable, key = { "u:${it.title}:${it.value}" }) { HealthRow(it) }
-                item(key = "head-empty") { SectionHead("Empty remotes") }
+                item(key = "head-empty") { SectionHead(tr(R.string.dbhealth_empty)) }
                 items(h.empty.size, key = { "e:$it" }) { i -> HealthRow(h.empty[i]) }
-                item(key = "head-protocols") { SectionHead("Protocols present") }
+                item(key = "head-protocols") { SectionHead(tr(R.string.dbhealth_protocols)) }
                 items(h.protocols, key = { "p:${it.title}" }) { HealthRow(it) }
                 item(key = "tail") { Spacer(Modifier.height((ScreenChrome.BOTTOM_SPACE_DP + 16).dp)) }
             }
@@ -106,14 +109,14 @@ private fun HealthRow(row: DbHealth.Row) {
         Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    row.title,
+                    Copy.dbTitle(row),
                     style = MaterialTheme.typography.titleMedium,
                     color = if (row.danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 )
                 row.hint?.let {
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        it,
+                        Copy.dbRow(row),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

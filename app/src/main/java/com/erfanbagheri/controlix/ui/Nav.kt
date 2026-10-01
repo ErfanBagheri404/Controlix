@@ -73,6 +73,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.isFa
+import com.erfanbagheri.controlix.setLanguage
+import com.erfanbagheri.controlix.R
+import com.erfanbagheri.controlix.data.Copy
 
 /** Every screen. Sealed route list, no nav library — app is 4 levels deep max. */
 private sealed interface Route {
@@ -148,8 +153,8 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
             val output = context.contentResolver.openOutputStream(uri, "wt")
                 ?: error("Backup stream unavailable")
             output.use { it.write(json.toByteArray(Charsets.UTF_8)) }
-        }.onSuccess { toast.show("Backup exported") }
-            .onFailure { toast.show("Couldn't write the backup file") }
+        }.onSuccess { toast.show(tr(R.string.backup_exported)) }
+            .onFailure { toast.show(tr(R.string.backup_couldnt_write)) }
     }
 
     val importLauncher = rememberLauncherForActivityResult(
@@ -160,30 +165,36 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
             context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
         }.getOrNull()
         if (json == null) {
-            toast.show("Couldn't read that file")
+            toast.show(tr(R.string.backup_couldnt_read))
             return@rememberLauncherForActivityResult
         }
         when (val result = BackupCodec.decode(json)) {
-            is BackupDecodeResult.Error -> toast.show(result.message)
+            is BackupDecodeResult.Error -> toast.show(Copy.backupError(result.message))
             is BackupDecodeResult.Success -> {
                 val backup = result.backup
                 // Issue #83: a restore that drops a store must say which one,
                 // rather than reporting success over a partial state.
                 val lost = backup.unreadableStores
+                val lostNames = lost.map { Copy.backupStore(it) }
                 val label = when {
-                    lost.isEmpty() ->
-                        "Replace with ${backup.devices.size} devices, ${backup.macros.size} macros?"
-                    lost.size == 1 -> "Lost ${lost[0]} — import the rest?"
-                    else -> "Lost ${lost.size} stores (${lost.joinToString()}) — import the rest?"
+                    lost.isEmpty() -> tr(
+                        R.string.backup_replace_confirm,
+                        backup.devices.size, backup.macros.size,
+                    )
+                    lost.size == 1 -> tr(R.string.backup_lost_one, lostNames[0])
+                    else -> tr(R.string.backup_lost_many, lost.size, lostNames.joinToString())
                 }
-                toast.show(label, actionLabel = "Import") {
+                toast.show(label, actionLabel = tr(R.string.backup_import)) {
                     model.replaceAll(backup.devices)
                     macroModel.save(backup.macros)
                     val unreadable = BackupStoreIo.restore(context, backup.stores)
                     val stillLost = (lost + unreadable).distinct()
                     toast.show(
-                        if (stillLost.isEmpty()) "Backup restored"
-                        else "Restored, but couldn't read: ${stillLost.joinToString()}",
+                        if (stillLost.isEmpty()) tr(R.string.backup_restored)
+                        else tr(
+                            R.string.backup_read_failed_partial,
+                            stillLost.map { Copy.backupStore(it) }.joinToString(),
+                        ),
                     )
                 }
             }
@@ -259,17 +270,12 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                     onAnalyzer = { scope.launch { drawerState.close() }; route = Route.Analyzer() },
                     onUpdateDb = onUpdateDb,
                     dbChangelog = (refreshState as? RefreshState.Checked)?.let {
-                        DbChangelog.format(dbCounts.first, dbCounts.second, it.manifest.remoteCount, it.manifest.buttonCount)
+                        Copy.changelog(dbCounts.first, dbCounts.second, it.manifest.remoteCount, it.manifest.buttonCount)
                     },
                     dbState = when (val s = refreshState) {
                         RefreshState.Idle -> null
-                        is RefreshState.Checked -> "Update available"
-                        is RefreshState.Downloading -> "Downloading…"
-                        is RefreshState.Verified -> "Verifying…"
-                        is RefreshState.Applying -> "Applying…"
-                        is RefreshState.Done -> "Database updated — restart to load it"
-                        is RefreshState.RolledBack -> "Rolled back: ${s.reason} — old database kept"
-                        is RefreshState.Failed -> s.reason
+                        is RefreshState.RolledBack -> tr(R.string.db_rolled_back, Copy.rollbackReason(s.reason))
+                        else -> Copy.refreshState(s)
                     },
                     onExport = {
                         scope.launch { drawerState.close() }
@@ -287,10 +293,10 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                     onCheckUpdate = { scope.launch { runUpdateCheck() } },
                     updateStateLabel = when (val s = updateState) {
                         UpdateCheckState.Idle -> null
-                        UpdateCheckState.Checking -> "Checking…"
-                        is UpdateCheckState.UpToDate -> "Up to date (${s.currentVersion})"
-                        is UpdateCheckState.UpdateAvailable -> "${s.release.tagName} available"
-                        is UpdateCheckState.Failed -> s.reason
+                        UpdateCheckState.Checking -> tr(R.string.update_checking)
+                        is UpdateCheckState.UpToDate -> tr(R.string.update_up_to_date, s.currentVersion)
+                        is UpdateCheckState.UpdateAvailable -> tr(R.string.update_available_version, s.release.tagName)
+                        is UpdateCheckState.Failed -> Copy.updateFailure(s.reason)
                     },
                     onRecentSends = { scope.launch { drawerState.close() }; route = Route.RecentSends },
                     onTileTarget = { scope.launch { drawerState.close() }; route = Route.TileTarget },
@@ -346,10 +352,10 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                                 val shared = SharedRemoteImport.fromPayload(text)
                                 if (shared != null) {
                                     val saved = SharedRemoteStore(context).save(shared)
-                                    toast.show("Imported ${saved.name} · ${saved.buttons.size} buttons")
+                                    toast.show(tr(R.string.backup_imported, saved.name, saved.buttons.size))
                                     route = Route.Pad(saved.remoteId)
                                 } else {
-                                    toast.show("That QR code is not a Controlix remote")
+                                    toast.show(tr(R.string.menu_qr_not_controlix))
                                     route = Route.AddDevice
                                 }
                                 return@ScanScreen
@@ -401,7 +407,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                                 buttonCount = repo.buttons(remoteId).size,
                             )
                             openPad(remoteId)
-                            toast.show("${r.brandName} added")
+                            toast.show(tr(R.string.menu_brand_added, r.brandName))
                         },
                         onBack = { route = Route.Home },
                     )
@@ -459,7 +465,7 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                             EditDeviceScreen(
                                 device = dev,
                                 model = model,
-                                onDone = { route = Route.Home; toast.show("Remote updated") },
+                                onDone = { route = Route.Home; toast.show(tr(R.string.menu_remote_updated)) },
                                 onBack = { route = Route.Home },
                             )
                         }
@@ -569,7 +575,7 @@ private fun MissingDb() {
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
     ) {
         Text(
-            "The code database didn't load. Reinstall the app — the bundled DB ships inside the APK.",
+            tr(R.string.db_not_loaded),
             style = MaterialTheme.typography.bodyLarge,
         )
     }
@@ -608,12 +614,12 @@ private fun MenuDrawer(
                 .padding(horizontal = 24.dp),
         ) {
             Spacer(Modifier.height(16.dp))
-            Text("Menu", style = MaterialTheme.typography.headlineMedium)
+            Text(tr(R.string.menu), style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(32.dp))
 
             // AC-category remotes jump straight to the climate pad.
             if (acDevices.isNotEmpty()) {
-                SectionHead("Air conditioning")
+                SectionHead(tr(R.string.menu_air_conditioning))
                 acDevices.forEach { dev ->
                     Row(
                         Modifier.fillMaxWidth().pressable { onOpenAc(dev) }.padding(vertical = 18.dp),
@@ -634,19 +640,19 @@ private fun MenuDrawer(
                 Spacer(Modifier.height(32.dp))
             }
 
-            SectionHead("Tools")
-            DrawerRow(ActionIcon.Add, "Build remote", onBuild)
-            DrawerRow(ActionIcon.CameraTest, "IR self-test", onSelfTest)
-            DrawerRow(ActionIcon.Macros, "Macros", onMacros)
-            DrawerRow(ActionIcon.History, "Recent sends", onRecentSends)
-            DrawerRow(ActionIcon.Waveform, "Signal analyzer", onAnalyzer)
+            SectionHead(tr(R.string.menu_tools))
+            DrawerRow(ActionIcon.Add, tr(R.string.menu_build_remote), onBuild)
+            DrawerRow(ActionIcon.CameraTest, tr(R.string.menu_ir_self_test), onSelfTest)
+            DrawerRow(ActionIcon.Macros, tr(R.string.menu_macros), onMacros)
+            DrawerRow(ActionIcon.History, tr(R.string.menu_recent_sends), onRecentSends)
+            DrawerRow(ActionIcon.Waveform, tr(R.string.menu_signal_analyzer), onAnalyzer)
             DrawerRow(ActionIcon.Sweep, "TV-B-Gone", onSweep)
 
             Spacer(Modifier.height(32.dp))
-            SectionHead("Database")
-            DrawerRow(ActionIcon.Gauge, "Database health", onDbHealth)
-            DrawerRow(ActionIcon.Info, "Missing a code?", onMissingCode)
-            DrawerRow(ActionIcon.Database, "Update code database", onUpdateDb)
+            SectionHead(tr(R.string.menu_database))
+            DrawerRow(ActionIcon.Gauge, tr(R.string.menu_database_health), onDbHealth)
+            DrawerRow(ActionIcon.Info, tr(R.string.menu_missing_code), onMissingCode)
+            DrawerRow(ActionIcon.Database, tr(R.string.menu_update_code_database), onUpdateDb)
             if (dbChangelog != null) {
                 Text(
                     dbChangelog,
@@ -663,32 +669,31 @@ private fun MenuDrawer(
             }
 
             Spacer(Modifier.height(32.dp))
-            SectionHead("Automation")
+            SectionHead(tr(R.string.menu_automation))
             val automationCtx = LocalContext.current
             DrawerToggle(
-                "Allow external broadcasts",
+                tr(R.string.menu_allow_external_broadcasts),
                 AutomationState.enabled,
             ) { AutomationState.setEnabled(automationCtx, it) }
             if (AutomationState.enabled) {
                 val clipboard = LocalClipboardManager.current
                 if (AutomationState.token.isEmpty()) {
-                    DrawerRow(ActionIcon.Info, "Set a broadcast token (recommended)") {
+                    DrawerRow(ActionIcon.Info, tr(R.string.menu_set_broadcast_token)) {
                         AutomationState.setToken(automationCtx, AutomationState.newToken())
                         clipboard.setText(AnnotatedString(AutomationState.token))
                     }
                     Text(
-                        "No token: any app on this phone can fire codes. Setting one " +
-                            "copies it to the clipboard — add --es token <value> to each task.",
+                        tr(R.string.menu_token_warning),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 } else {
-                    DrawerRow(ActionIcon.Info, "Rotate token (copies new value)") {
+                    DrawerRow(ActionIcon.Info, tr(R.string.menu_rotate_token)) {
                         AutomationState.setToken(automationCtx, AutomationState.newToken())
                         clipboard.setText(AnnotatedString(AutomationState.token))
                     }
                     Text(
-                        "Token: ${AutomationState.token}\n" +
+                        tr(R.string.menu_token_prefix, AutomationState.token) + "\n" +
                             "adb shell am broadcast -a ${ExternalCommand.ACTION} \\\n" +
                             "  --es remote_name \"TV\" --es button power --es token ${AutomationState.token}",
                         style = MaterialTheme.typography.bodySmall,
@@ -698,28 +703,29 @@ private fun MenuDrawer(
             }
 
             Spacer(Modifier.height(32.dp))
-            SectionHead("Transmitter")
+            SectionHead(tr(R.string.menu_transmitter))
             TransmitterPickerRow()
 
             Spacer(Modifier.height(32.dp))
-            SectionHead("Backup")
-            DrawerRow(ActionIcon.Share, "Export backup", onExport)
-            DrawerRow(ActionIcon.Down, "Import backup", onImport)
+            SectionHead(tr(R.string.menu_backup))
+            DrawerRow(ActionIcon.Share, tr(R.string.menu_export_backup), onExport)
+            DrawerRow(ActionIcon.Down, tr(R.string.menu_import_backup), onImport)
 
             Spacer(Modifier.height(32.dp))
-            SectionHead("Appearance")
-            DrawerToggle("Dark mode", ThemeState.isDark, ThemeState::toggleDark)
-            DrawerToggle("Animations", Feedback.animationsOn, Feedback::setAnimations)
+            SectionHead(tr(R.string.menu_appearance))
+            DrawerToggle(tr(R.string.menu_dark_mode), ThemeState.isDark, ThemeState::toggleDark)
+            DrawerToggle(tr(R.string.menu_animations), Feedback.animationsOn, Feedback::setAnimations)
+            LanguageRow()
 
             Spacer(Modifier.height(32.dp))
-            SectionHead("Settings")
+            SectionHead(tr(R.string.menu_settings))
             DrawerToggle(
-                "Resume last remote",
+                tr(R.string.menu_resume_last_remote),
                 effectiveResumeEnabled(ResumeState.explicit, hasDevices),
                 ResumeState::setEnabled,
             )
-            DrawerRow(ActionIcon.QrScan, "Tile target", onTileTarget)
-            DrawerRow(ActionIcon.Down, "Check for app update", onCheckUpdate)
+            DrawerRow(ActionIcon.QrScan, tr(R.string.menu_tile_target), onTileTarget)
+            DrawerRow(ActionIcon.Down, tr(R.string.menu_check_for_app_update), onCheckUpdate)
             if (updateStateLabel != null) {
                 Text(
                     updateStateLabel,
@@ -729,15 +735,15 @@ private fun MenuDrawer(
             }
 
             Spacer(Modifier.height(24.dp))
-            SectionHead("Feedback")
-            DrawerToggle("Haptics", Feedback.hapticsOn, Feedback::setHaptics)
+            SectionHead(tr(R.string.menu_feedback))
+            DrawerToggle(tr(R.string.menu_haptics), Feedback.hapticsOn, Feedback::setHaptics)
 
             Spacer(Modifier.height(32.dp))
-            SectionHead("Rocker repeat")
-            DrawerToggle("Hold VOL/CH to repeat", Feedback.rockerRepeatOn, Feedback::setRockerRepeat)
+            SectionHead(tr(R.string.menu_rocker_repeat))
+            DrawerToggle(tr(R.string.menu_hold_vol_ch_to_repeat), Feedback.rockerRepeatOn, Feedback::setRockerRepeat)
             if (Feedback.rockerRepeatOn) {
                 RepeatSettingRow(
-                    label = "Hold delay",
+                    label = tr(R.string.menu_hold_delay),
                     valueMs = Feedback.rockerRepeatHoldMs,
                     steps = RepeatSettings.HOLD_STEPS,
                     slowMs = RepeatSettings.MAX_HOLD_MS,
@@ -745,7 +751,7 @@ private fun MenuDrawer(
                     onChange = Feedback::setRockerRepeatHold,
                 )
                 RepeatSettingRow(
-                    label = "Repeat interval",
+                    label = tr(R.string.menu_repeat_interval),
                     valueMs = Feedback.rockerRepeatIntervalMs,
                     steps = RepeatSettings.INTERVAL_STEPS,
                     slowMs = RepeatSettings.MAX_INTERVAL_MS,
@@ -784,7 +790,7 @@ private fun RepeatSettingRow(
             modifier = Modifier.weight(1f),
         )
         Text(
-            "$valueMs ms · ${RepeatSettings.paceLabel(valueMs, slowMs, fastMs)}",
+            tr(R.string.menu_pace, valueMs, Copy.pace(RepeatSettings.paceLabel(valueMs, slowMs, fastMs))),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -806,6 +812,33 @@ private fun DrawerRow(icon: ActionIcon, label: String, onClick: () -> Unit) {
         Text(label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
             maxLines = if (FontScale.allowWrap(LocalDensity.current.fontScale)) 2 else 1,
             overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** In-app language: cycles English ↔ فارسی, recreates the activity so RTL/type re-derive. */
+@Composable
+private fun LanguageRow() {
+    val ctx = LocalContext.current
+    Row(
+        Modifier.fillMaxWidth().pressable {
+            setLanguage(if (isFa()) "en" else "fa")
+            (ctx as? Activity)?.recreate()
+        }.padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            tr(R.string.menu_language),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            if (isFa()) tr(R.string.lang_farsi) else tr(R.string.lang_english),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.width(10.dp))
+        ActionIconView(ActionIcon.ChevRight, 16.dp, MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -849,13 +882,13 @@ private fun TransmitterPickerRow() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            "Transmitter",
+            tr(R.string.menu_transmitter),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
         Text(
-            choice.display,
+            Copy.transmitter(choice),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

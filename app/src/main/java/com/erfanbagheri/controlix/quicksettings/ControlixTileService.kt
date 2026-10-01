@@ -10,6 +10,7 @@ import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.feature.RepoKeyResolver
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.FavoritesScenesStore
+import com.erfanbagheri.controlix.tr
 
 /**
  * One tile, one *pinned* action (issues #78 and #81).
@@ -41,7 +42,7 @@ class ControlixTileService : TileService() {
         when (val tap = resolveTap()) {
             // Same wording as the home row's unavailable report.
             is TileTap.Unavailable -> {
-                Toast.makeText(this, "${tap.display} is unavailable on this remote.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, tr(R.string.tile_unavailable, tap.display), Toast.LENGTH_SHORT).show()
                 openApp()
             }
             is TileTap.Send ->

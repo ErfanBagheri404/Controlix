@@ -1,8 +1,563 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Controlix UI strings. English (default). Persian lives in values-fa/strings.xml.
+     Keys are stable: the Kotlin call sites reference R.string.*, never literals. -->
 <resources>
     <string name="app_name">Controlix</string>
     <string name="widget_description">Fires one stored remote button from your home screen.</string>
     <string name="widget_label">Controlix button</string>
     <string name="widget_macro_description">Runs one macro from your home screen.</string>
     <string name="widget_macro_label">Controlix macro</string>
+
+    <!-- Home -->
+    <string name="home_title">Controlix</string>
+    <string name="home_no_devices">No devices yet</string>
+    <string name="home_tap_to_add">Tap to add your first remote.</string>
+    <string name="home_favorites">Favorites</string>
+    <string name="home_scenes">Scenes</string>
+    <string name="home_unavailable">unavailable</string>
+    <string name="home_favorite_unavailable">%1$s is unavailable on this remote.</string>
+    <string name="home_favorite_removed">%1$s removed from favorites</string>
+    <string name="home_remote_disabled">Remote disabled. Long-press to edit it.</string>
+    <string name="home_remote_removed">%1$s removed</string>
+    <string name="home_undo">Undo</string>
+
+    <!-- Drawer -->
+    <string name="menu">Menu</string>
+    <string name="menu_air_conditioning">Air conditioning</string>
+    <string name="menu_tools">Tools</string>
+    <string name="menu_build_remote">Build remote</string>
+    <string name="menu_ir_self_test">IR self-test</string>
+    <string name="menu_macros">Macros</string>
+    <string name="menu_recent_sends">Recent sends</string>
+    <string name="menu_signal_analyzer">Signal analyzer</string>
+    <string name="menu_tv_b_gone">TV-B-Gone</string>
+    <string name="menu_database">Database</string>
+    <string name="menu_database_health">Database health</string>
+    <string name="menu_missing_code">Missing a code?</string>
+    <string name="menu_update_code_database">Update code database</string>
+    <string name="menu_automation">Automation</string>
+    <string name="menu_allow_external_broadcasts">Allow external broadcasts</string>
+    <string name="menu_set_broadcast_token">Set a broadcast token (recommended)</string>
+    <string name="menu_token_warning">No token: any app on this phone can fire codes. Setting one copies it to the clipboard — add --es token &lt;value&gt; to each task.</string>
+    <string name="menu_rotate_token">Rotate token (copies new value)</string>
+    <string name="menu_token_command">Token: %1$s\n  --es remote_name &quot;TV&quot; --es button power --es token %2$s</string>
+    <string name="menu_transmitter">Transmitter</string>
+    <string name="menu_backup">Backup</string>
+    <string name="menu_export_backup">Export backup</string>
+    <string name="menu_import_backup">Import backup</string>
+    <string name="menu_appearance">Appearance</string>
+    <string name="menu_dark_mode">Dark mode</string>
+    <string name="menu_animations">Animations</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_resume_last_remote">Resume last remote</string>
+    <string name="menu_tile_target">Tile target</string>
+    <string name="menu_check_for_app_update">Check for app update</string>
+    <string name="menu_qr_not_controlix">That QR code is not a Controlix remote</string>
+    <string name="menu_brand_added">%1$s added</string>
+    <string name="menu_remote_updated">Remote updated</string>
+    <string name="menu_feedback">Feedback</string>
+    <string name="menu_haptics">Haptics</string>
+    <string name="menu_rocker_repeat">Rocker repeat</string>
+    <string name="menu_hold_vol_ch_to_repeat">Hold VOL/CH to repeat</string>
+    <string name="menu_hold_delay">Hold delay</string>
+    <string name="menu_repeat_interval">Repeat interval</string>
+    <string name="menu_pace">%1$d ms · %2$s</string>
+
+    <!-- Transmitter choices -->
+    <string name="transmitter_internal">Internal blaster</string>
+    <string name="transmitter_usb_dongle">USB dongle</string>
+    <string name="transmitter_ble_blaster">BLE blaster</string>
+
+    <!-- Backup / restore -->
+    <string name="backup_exported">Backup exported</string>
+    <string name="backup_couldnt_write">Couldn\'t write the backup file</string>
+    <string name="backup_couldnt_read">Couldn\'t read that file</string>
+    <string name="backup_import">Import</string>
+    <string name="backup_replace_confirm">Replace with %1$d devices, %2$d macros?</string>
+    <string name="backup_lost_one">Lost %1$s — import the rest?</string>
+    <string name="backup_lost_many">Lost %1$d stores (%2$s) — import the rest?</string>
+    <string name="backup_restored">Backup restored</string>
+    <string name="backup_restored_partial">Restored, but couldn\'t read: %1$s</string>
+    <string name="backup_not_valid">Not a valid backup file</string>
+    <string name="backup_must_be_json">Backup must be a JSON object</string>
+    <string name="backup_version_number">Backup version must be a number</string>
+    <string name="backup_version_unsupported">Backup version %1$d is not supported — this app reads version %2$d</string>
+    <string name="backup_macro_step">Macro %1$d step %2$d</string>
+    <string name="backup_imported">Imported %1$s · %2$d buttons</string>
+
+    <!-- Database refresh / update check -->
+    <string name="db_update_available">Update available</string>
+    <string name="db_downloading">Downloading…</string>
+    <string name="db_verifying">Verifying…</string>
+    <string name="db_applying">Applying…</string>
+    <string name="db_updated_restart">Database updated — restart to load it</string>
+    <string name="db_rolled_back">Rolled back: %1$s — old database kept</string>
+    <string name="db_no_source">No update source configured — refresh flavor not built yet</string>
+    <string name="db_manifest_unavailable">Update manifest unavailable — old database kept</string>
+    <string name="db_download_failed">Download failed — old database kept</string>
+    <string name="db_not_loaded">The code database didn\'t load. Reinstall the app — the bundled DB ships inside the APK.</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_up_to_date">Up to date (%1$s)</string>
+    <string name="update_available_version">%1$s available</string>
+    <string name="update_check_failed">Check failed - couldn\'t reach GitHub</string>
+
+    <!-- Database health -->
+    <string name="dbhealth_title">Database health</string>
+    <string name="dbhealth_intro">Read-only audit of the bundled code database. Every row below is reported as-is — nothing is deleted or hidden.</string>
+    <string name="dbhealth_reading">Reading database…</string>
+    <string name="dbhealth_unusable">Unusable codes</string>
+    <string name="dbhealth_empty">Empty remotes</string>
+    <string name="dbhealth_protocols">Protocols present</string>
+    <string name="dbhealth_remotes">Remotes</string>
+    <string name="dbhealth_buttons">Buttons</string>
+    <string name="dbhealth_brands">Brands</string>
+    <string name="dbhealth_sources">Sources</string>
+    <string name="dbhealth_protocols_note">including raw frames as their own entry</string>
+    <string name="dbhealth_pattern_cannot_expand">pattern cannot be expanded</string>
+
+    <!-- Add device -->
+    <string name="add_what_adding">What are you adding?</string>
+    <string name="add_who_made">%1$s. Who made it?</string>
+    <string name="add_search_brands">Search brands or models — \'ue55\', \'samsung vol ch\'</string>
+    <string name="add_remote_count">%1$d %2$s</string>
+    <string name="add_remote_one">remote</string>
+    <string name="add_remote_many">remotes</string>
+
+    <!-- Builder -->
+    <string name="builder_title">Build remote</string>
+    <string name="builder_remote_name">Remote name</string>
+    <string name="builder_search_remotes">Search remotes</string>
+    <string name="builder_buttons_count">Buttons (%1$d)</string>
+    <string name="builder_search_below">Search below, pick a remote, tap its buttons.</string>
+    <string name="builder_source_remote">Source remote</string>
+    <string name="builder_all_remotes">All remotes</string>
+    <string name="builder_no_mappable">This remote has no pad-mappable buttons.</string>
+    <string name="builder_step_index">%1$d</string>
+    <string name="builder_entry_source">%1$s · remote %2$d</string>
+    <string name="builder_name_first">Name the remote first.</string>
+    <string name="builder_pick_button">Pick at least one button.</string>
+    <string name="builder_buttons_gone">Those buttons are gone from the database.</string>
+    <string name="builder_saved">%1$s saved</string>
+
+    <!-- Edit device -->
+    <string name="edit_title">Edit device</string>
+    <string name="edit_name">Name</string>
+    <string name="edit_name_hint">e.g. Living room TV</string>
+    <string name="edit_room">Room</string>
+    <string name="edit_category">Category</string>
+    <string name="edit_delete">Delete device</string>
+    <string name="edit_add_to_home">Add to home screen</string>
+    <string name="edit_add_to_home_sub">Pin shortcut button on tile</string>
+    <string name="edit_enabled">Enabled</string>
+    <string name="edit_enabled_sub">Disabled devices are dimmed</string>
+
+    <!-- Macros -->
+    <string name="macros_title">Macros</string>
+    <string name="macros_intro">Sequences that span your devices. One tap runs the whole chain.</string>
+    <string name="macros_add_device_first">Add a device first — macros replay buttons from your remotes.</string>
+    <string name="macros_sending">Sending…</string>
+    <string name="macros_run">Run</string>
+    <string name="macros_tick_buttons">Tick buttons in order. Each step keeps the device it came from.</string>
+    <string name="macros_cancel">Cancel</string>
+
+    <!-- Missing code / contribution -->
+    <string name="missing_title">Missing a code?</string>
+    <string name="missing_intro">Paste the code, name its source. Sharing is manual — Controlix never uploads anything itself.</string>
+    <string name="missing_from_pad">From the pad: %1$s · %2$s</string>
+    <string name="missing_no_supported_keys">no supported keys on this remote</string>
+    <string name="missing_no_button_code">no &quot;%1$s&quot; code</string>
+    <string name="missing_cannot_learn">Controlix cannot learn codes — its IR hardware only transmits. Only name a source you can vouch for; codes with unknown or proprietary provenance are refused.</string>
+    <string name="missing_share_opens_apps">Tapping share opens your apps — the report leaves the device only through the chooser you pick. Nothing is uploaded in the background.</string>
+    <string name="missing_fix_flagged">Fix the %1$d flagged %2$s first.</string>
+    <string name="missing_field_one">field</string>
+    <string name="missing_field_many">fields</string>
+    <string name="missing_no_app">No app available to share. Copy the JSON manually.</string>
+    <string name="missing_brand">Brand</string>
+    <string name="missing_category">Category</string>
+    <string name="missing_remote_name">Remote name / model</string>
+    <string name="missing_button_name">Button name</string>
+    <string name="missing_carrier_hz">Carrier Hz</string>
+    <string name="missing_pattern">Pattern (microseconds)</string>
+    <string name="missing_source">Source / provenance</string>
+    <string name="missing_app_version">App version</string>
+    <string name="missing_share">Share with maintainer</string>
+    <string name="missing_confirm_share">Confirm — open share sheet</string>
+
+    <!-- Pad -->
+    <string name="pad_favorites">Favorites</string>
+    <string name="pad_copied_keys">Copied keys</string>
+    <string name="pad_on_this_remote">On this remote</string>
+    <string name="pad_switch_remote">Switch remote</string>
+    <string name="pad_nothing_copied">Nothing copied yet. Long-press a key on another remote to copy its code here.</string>
+    <string name="pad_paste">Paste %1$s</string>
+    <string name="pad_clipboard_info">%1$d Hz · %2$d marks</string>
+    <string name="pad_key_info">%1$d Hz · tap to send</string>
+    <string name="pad_device_brand">%1$s  ·  %2$s</string>
+    <string name="pad_key_label">"%1$s · "</string>
+    <string name="pad_sent">Sent: %1$s</string>
+    <string name="pad_not_sent">Not sent</string>
+    <string name="pad_no_code_report">No %1$s code. Queued for a report.</string>
+    <string name="pad_no_code">This remote has no %1$s code.</string>
+    <string name="pad_no_code_copy">This remote has no %1$s code to copy.</string>
+    <string name="pad_borrowed_key">%1$s · </string>
+    <string name="pad_copied">Copied %1$s. Long-press … on another remote to paste it.</string>
+    <string name="pad_no_identity">This remote has no stable identity to pin against.</string>
+    <string name="pad_noted">Noted. A different code will be preferred next time.</string>
+    <string name="pad_pasted">Pasted %1$s onto this remote.</string>
+    <string name="pad_summary">%1$d on pad · %2$d more</string>
+
+    <!-- Recent sends -->
+    <string name="recent_title">Recent sends</string>
+    <string name="recent_intro">Last %1$d codes the blaster fired, newest first. Tap a row to fire that exact code again.</string>
+    <string name="recent_nothing">Nothing sent yet.</string>
+    <string name="recent_entry">%1$s · %2$s</string>
+
+    <!-- Ritual (power-code sweep) -->
+    <string name="ritual_progress">%1$d / %2$d</string>
+    <string name="ritual_power_code">Power code %1$d</string>
+    <string name="ritual_follow_up">Follow-up tests</string>
+    <string name="ritual_codes_from">Codes from the accepted power remote.</string>
+    <string name="ritual_missing_button">Missing this button? Report it</string>
+    <string name="ritual_skip_volume">Skip to volume test</string>
+    <string name="ritual_nothing">Nothing to try</string>
+    <string name="ritual_no_power">No power codes for %1$s in %2$s. The power-off sweep still brute-forces every brand — try that instead.</string>
+    <string name="ritual_missing_code">Missing a code? Report it</string>
+    <string name="ritual_back">Back</string>
+    <string name="ritual_point_camera">Point the camera at the QR code on another Controlix phone.</string>
+
+    <!-- Setup transmission -->
+    <string name="setup_command_sent">Command sent. Check your device, then choose Yes or No.</string>
+    <string name="setup_no_ir">This device has no IR blaster. Setup cannot test this remote.</string>
+    <string name="setup_press">Press the button below to send the command.</string>
+    <string name="setup_couldnt_send">Couldn\'t send this code (%1$s). Try the button again, or press No for the next code — or Yes if it did something.</string>
+
+    <!-- Share -->
+    <string name="share_qr_for">QR code for %1$s</string>
+
+    <!-- Signal analyzer -->
+    <string name="analyzer_title">Signal analyzer</string>
+    <string name="analyzer_waveform">Waveform</string>
+    <string name="analyzer_timings">Timings</string>
+    <string name="analyzer_no_durations">No durations.</string>
+    <string name="analyzer_index">#%1$d</string>
+    <string name="analyzer_mark">mark</string>
+    <string name="analyzer_space">space</string>
+    <string name="analyzer_us">%1$d us</string>
+    <string name="analyzer_pick_button">Pick a button to see its pulse timings, carrier and protocol.</string>
+    <string name="analyzer_no_timing">This button has no timing data.</string>
+    <string name="analyzer_summary">%1$s · %2$s · %3$d marks</string>
+    <string name="analyzer_mark_range">"mark %1$d–%2$d us · "</string>
+
+    <!-- Tile target -->
+    <string name="tile_title">Tile target</string>
+    <string name="tile_pick_key">%1$s · pick a key</string>
+    <string name="tile_no_keys">This remote resolves no keys, so it cannot be pinned.</string>
+    <string name="tile_fires_key">Tile fires %1$s on %2$s</string>
+    <string name="tile_fires_fav">Tile fires %1$s</string>
+    <string name="tile_back_to_devices">Back to devices</string>
+    <string name="tile_no_saved">No saved remote can be pinned yet. Add a device first.</string>
+    <string name="tile_remotes">Remotes</string>
+    <string name="tile_done">Done</string>
+
+    <!-- Tools -->
+    <string name="tools_tv_b_gone">TV-B-Gone</string>
+    <string name="tools_tv_b_gone_desc">Fires every TV power code we know. Press and hold to arm; release or Cancel to stop.</string>
+    <string name="tools_pre_flight">Pre-flight</string>
+    <string name="tools_skipped_remotes">%1$d remotes skipped — no power button</string>
+    <string name="tools_no_transmissions">No transmissions yet.</string>
+    <string name="tools_cancel_sweep">Cancel sweep</string>
+    <string name="tools_ir_self_test">IR self-test</string>
+    <string name="tools_ir_self_test_desc">Sends a burst that matches no device. Point any phone camera at the blaster: you should see a violet flicker.</string>
+
+    <!-- What's new -->
+    <string name="whats_new_title">What\'s new in %1$s</string>
+    <string name="whats_new_got_it">Got it</string>
+
+    <!-- Widget macro configure -->
+    <string name="widget_macro_title">Widget macro</string>
+    <string name="widget_macro_pick">Pick the macro this widget runs. One widget, one macro; add another widget for another macro.</string>
+    <string name="widget_macro_none">No macros yet — create one in Controlix first.</string>
+    <string name="widget_macro_steps">%1$d step%2$s</string>
+
+    <!-- Borrowed code -->
+    <string name="borrowed_title">Borrowed code</string>
+    <string name="borrowed_from">%1$s came from %2$s. %3$d %4$s.</string>
+    <string name="borrowed_sibling_one">sibling remote agrees</string>
+    <string name="borrowed_sibling_many">sibling remotes agree</string>
+    <string name="borrowed_try">Try it on your device. Rejecting avoids this code next time.</string>
+    <string name="borrowed_try_next">Try next</string>
+    <string name="borrowed_keep_send">Keep &amp; send</string>
+
+    <!-- AC pad -->
+    <string name="ac_target">Target</string>
+    <string name="ac_mode">Mode</string>
+    <string name="ac_power">Power</string>
+    <string name="ac_fan">Fan</string>
+    <string name="ac_swing">Swing</string>
+    <string name="ac_on">On</string>
+    <string name="ac_off">Off</string>
+    <string name="ac_temp">%1$d°C</string>
+    <string name="ac_no_usable">This remote has no usable AC codes in the database.</string>
+    <string name="ac_no_temps">No stored temperatures for %1$s. The pad cannot set one — pick another mode.</string>
+    <string name="ac_disabled_modes">Disabled: %1$s — this remote carries no such code.</string>
+    <string name="ac_sent">Sent: %1$s</string>
+
+    <!-- Widget (RemoteViews) -->
+    <string name="widget_no_target">Tap to open Controlix</string>
+    <string name="widget_no_device">Remote deleted</string>
+    <string name="widget_no_ir">No IR blaster</string>
+    <string name="widget_open_to_setup">Open Controlix to set up</string>
+    <string name="widget_removed_remote">Removed remote</string>
+    <string name="widget_macro_deleted">Macro deleted</string>
+    <string name="widget_macro_unset">Pick a macro</string>
+    <string name="widget_tap_to_run">Tap to run</string>
+    <string name="widget_all_sent">All %1$d sent</string>
+    <string name="widget_stopped">Stopped — %1$s</string>
+    <string name="widget_key_power">Power</string>
+    <string name="widget_key_volume_up">Volume up</string>
+    <string name="widget_key_volume_down">Volume down</string>
+    <string name="widget_key_channel_up">Channel up</string>
+    <string name="widget_key_channel_down">Channel down</string>
+    <string name="widget_key_mute">Mute</string>
+    <string name="widget_key_up">Up</string>
+    <string name="widget_key_down">Down</string>
+    <string name="widget_key_left">Left</string>
+    <string name="widget_key_right">Right</string>
+    <string name="widget_key_ok">OK</string>
+
+    <!-- Repeat pace -->
+    <string name="pace_relaxed">relaxed</string>
+    <string name="pace_rapid">rapid</string>
+    <string name="pace_standard">standard</string>
+
+    <!-- Rooms -->
+    <string name="room_unassigned">Unassigned</string>
+    <string name="toast_no_ir_blaster">This device has no IR blaster.</string>
+    <string name="toast_couldnt_send">Couldn\'t send. Try again.</string>
+    <string name="edit_add_home">Add to home screen</string>
+    <string name="edit_pin_shortcut">Pin shortcut button on tile</string>
+    <string name="edit_disabled_dimmed">Disabled devices are dimmed</string>
+    <string name="mc_confirm_share">Confirm — open share sheet</string>
+    <string name="mc_share_with">Share with maintainer</string>
+    <string name="field_source">Source / provenance</string>
+    <string name="borrowed_source_votes">%1$s · %2$d %3$s</string>
+    <string name="borrowed_agree_one">remote agrees</string>
+    <string name="borrowed_agree_many">remotes agree</string>
+    <string name="borrowed_sibling_fallback">sibling remote #%1$d</string>
+    <string name="borrowed_sheet">%1$s came from %2$s. %3$d %4$s.</string>
+    <string name="ac_remote_title">AC remote</string>
+    <string name="ac_on_disabled">On is disabled: this remote has no separate power-on key.</string>
+    <string name="ac_off_uses_own">Off uses this remote\'s own off key.</string>
+    <string name="ac_carries">It carries: %1$s</string>
+    <string name="ac_no_key_on">This remote has no power-on key. It carries: %1$s</string>
+    <string name="ac_no_key_off">This remote has no power-off key. It carries: %1$s</string>
+    <string name="ac_selection_desc">%1$d°C %2$s</string>
+    <string name="ac_mode_cool">Cool</string>
+    <string name="ac_mode_heat">Heat</string>
+    <string name="ac_mode_dry">Dry</string>
+    <string name="ac_mode_fan">Fan</string>
+    <string name="ac_mode_auto">Auto</string>
+    <string name="builder_source_custom">Custom</string>
+    <string name="builder_search_hint">Type to search the database.</string>
+    <string name="builder_no_match">No remotes match.</string>
+    <string name="home_scene_self">%1$s: scene references itself.</string>
+    <string name="home_scene_no_steps">%1$s: no runnable steps.</string>
+    <string name="home_scene_blocked">%1$s blocked: %2$s unavailable.</string>
+    <string name="home_scene_running">Running %1$s · %2$d steps ready</string>
+    <string name="home_scene_progress">%1$d/%2$d · %3$s</string>
+    <string name="home_scene_sent">%1$s: %2$d sent</string>
+    <string name="home_scene_stopped">Stopped at step %1$d.</string>
+    <string name="home_scene_failed">%1$s: %2$s</string>
+    <string name="scene_err_resolve">Step %1$d cannot be resolved.</string>
+    <string name="scene_err_send">Step %1$d failed to send.</string>
+    <string name="home_unpinned">%1$s unpinned</string>
+    <string name="home_pinned">%1$s pinned</string>
+    <string name="home_copied_keys_desc">paste a copied code</string>
+    <string name="home_favorites_desc">pin keys to the home row</string>
+    <string name="home_inspect_desc">waveform, carrier, protocol</string>
+    <string name="home_edit_desc">name, room, shortcut</string>
+    <string name="home_pin_desc">mark with a star</string>
+    <string name="home_unpin_desc">remove the star</string>
+    <string name="home_share_desc">show QR code</string>
+    <string name="macros_new">New macro</string>
+    <string name="macros_save">Save</string>
+    <string name="macros_save_count">Save (%1$d)</string>
+    <string name="macros_default_name">Macro %1$d steps</string>
+    <string name="macros_step_line">%1$d. %2$s %3$s</string>
+    <string name="macros_more_steps">%1$s → +%2$d</string>
+    <string name="macros_unknown">unknown</string>
+    <string name="pad_fav_removed">%1$s removed from favorites</string>
+    <string name="pad_fav_added">%1$s added to favorites</string>
+    <string name="pad_fav_hint">Tap a key to add it to the home row.</string>
+    <string name="pad_fav_count">%1$d on the home row. Tap to remove.</string>
+    <string name="pad_vol">VOL</string>
+    <string name="pad_ch">CH</string>
+    <string name="pad_keyboard">KEYBOARD</string>
+    <string name="pad_media">MEDIA PAD</string>
+    <string name="pad_fallback">Remote</string>
+    <string name="tools_keep_holding">Keep holding…</string>
+    <string name="tools_transmitting">Transmitting — release to stop</string>
+    <string name="tools_hold_power_off">Hold to power off</string>
+    <string name="tools_sweep_progress">%1$s%2$d/%3$d · %4$s</string>
+    <string name="tools_done">Done</string>
+    <string name="tools_stopped_count">Stopped · %1$d/%2$d</string>
+    <string name="tools_cancelled">Cancelled — nothing sent</string>
+    <string name="tools_ready">Ready</string>
+    <string name="tools_sent">Sent</string>
+    <string name="tools_no_ir">No IR emitter</string>
+    <string name="tools_failed">Failed</string>
+    <string name="tools_fire_burst">Fire test burst</string>
+    <string name="tools_burst_sent">Burst sent. Saw the flicker?</string>
+    <string name="tools_no_ir_device">No IR emitter on this device</string>
+    <string name="ritual_action_power">Press power</string>
+    <string name="ritual_action_vol_up">Press volume up</string>
+    <string name="ritual_action_vol_down">Press volume down</string>
+    <string name="ritual_action_mute">Press mute</string>
+    <string name="ritual_q_power">Did it turn off?</string>
+    <string name="ritual_q_up">Did the volume go up?</string>
+    <string name="ritual_q_down">And back down?</string>
+    <string name="ritual_q_mute">Did it mute?</string>
+    <string name="ritual_yes">Yes</string>
+    <string name="ritual_no">No</string>
+    <string name="recent_failed">Not sent — %1$s</string>
+    <string name="recent_signal">%1$d Hz · %2$d marks</string>
+    <string name="tile_key_label">%1$s · %2$s</string>
+    <string name="tile_nothing_pinned">Nothing pinned — the tile opens the app.</string>
+    <string name="analyzer_test_fire">Test fire</string>
+    <string name="analyzer_raw">Raw</string>
+    <string name="analyzer_selftest_burst">Self-test burst</string>
+    <string name="analyzer_selftest">Self-test</string>
+    <string name="analyzer_remote">Remote %1$d</string>
+    <string name="analyzer_copied_durations">Copied %1$d durations</string>
+    <string name="analyzer_sent">Sent %1$s</string>
+    <string name="analyzer_send_failed">Couldn\'t send: %1$s</string>
+    <string name="analyzer_inverse_failed">(inverse check failed)</string>
+    <string name="wmacro_bound">✓ Bound</string>
+    <string name="wmacro_use">Use</string>
+    <string name="scan_camera_permission">Camera permission is needed to scan a remote.</string>
+    <string name="screen_scan">Scan remote</string>
+    <string name="screen_share">Share remote</string>
+    <string name="menu_token_prefix">Token: %1$s</string>
+    <string name="transmitter_usb">USB dongle</string>
+    <string name="transmitter_ble">BLE blaster</string>
+    <string name="backup_store_devices">devices</string>
+    <string name="backup_store_macros">macros</string>
+    <string name="backup_store_scenes">scenes</string>
+    <string name="backup_store_copied">copied buttons</string>
+    <string name="backup_store_custom">custom remotes</string>
+    <string name="backup_store_borrowed">borrowed codes</string>
+    <string name="backup_read_failed_partial">Restored, but couldn\'t read: %1$s</string>
+    <string name="backup_must_object">Backup must be a JSON object</string>
+    <string name="backup_damaged">Backup file is damaged</string>
+    <string name="backup_unknown_fields">Backup contains unknown top-level fields: %1$s</string>
+    <string name="backup_missing_fields">Backup is missing fields: %1$s</string>
+    <string name="room_living">Living Room</string>
+    <string name="room_bedroom">Bedroom</string>
+    <string name="room_study">Study</string>
+    <string name="room_dining">Dining Room</string>
+    <string name="room_office">Office</string>
+    <string name="room_general">General</string>
+    <string name="shared_remote_name">Shared remote</string>
+    <string name="shared_buttons_one">1 button</string>
+    <string name="shared_buttons_n">%1$d buttons</string>
+    <string name="tile_unavailable">%1$s is unavailable on this remote.</string>
+    <string name="macro_err_id">Macro has no id.</string>
+    <string name="macro_err_name">Macro needs a name.</string>
+    <string name="macro_err_steps">Macro needs at least one step.</string>
+    <string name="macro_err_button">Every step needs a button.</string>
+    <string name="macro_err_delay">Step delay must be 0-%1$d ms.</string>
+    <string name="contrib_required">%1$s is required.</string>
+    <string name="contrib_prov_missing">Say where this code came from. Without a source the maintainer cannot accept it.</string>
+    <string name="contrib_prov_prohibited">Mi Remote\'s code database is proprietary and must not be redistributed — this submission cannot be packaged. See docs/DB.md.</string>
+    <string name="contrib_prov_unknown">Unknown provenance: the maintainer needs a real source (e.g. your own remote, public irdb dump) to accept this code.</string>
+    <string name="contrib_carrier_required">Carrier frequency is required.</string>
+    <string name="contrib_carrier_range">Carrier must be %1$d-%2$d Hz (typical: 38000).</string>
+    <string name="contrib_pattern_count">Pattern needs an even count of at least %1$d durations (mark/space pairs, space or comma separated).</string>
+    <string name="contrib_pattern_numeric">Pattern must be numbers only — &quot;%1$s&quot; is not a duration.</string>
+    <string name="contrib_pattern_range">Durations must be positive and at most %1$d us.</string>
+    <string name="dbh_remotes_note">every remote row in the bundled DB</string>
+    <string name="dbh_buttons_note">codes that can be transmitted</string>
+    <string name="dbh_empty_note">ship with no buttons at all — searchable but unable to transmit</string>
+    <string name="dbh_extra">Extra / unmapped keys</string>
+    <string name="dbh_extra_note">no standard pad function — kept for the expanded keypad</string>
+    <string name="dbh_protocols">Protocols present</string>
+    <string name="dbh_e_unmapped">no buttons in the source row — the irdb filename ends ,-1 (unmapped source entry)</string>
+    <string name="dbh_e_nobuttons">no buttons in the source file</string>
+    <string name="refresh_size_mismatch">size mismatch</string>
+    <string name="refresh_sha_mismatch">sha256 mismatch</string>
+    <string name="refresh_apply_failed">apply failed</string>
+    <string name="refresh_dl_requires">download requires Checked</string>
+    <string name="refresh_verify_requires">verify requires Downloading</string>
+    <string name="refresh_apply_requires">apply requires Verified</string>
+    <string name="refresh_finish_requires">finish requires Applying</string>
+    <string name="scene_err_no_steps">Scene has no steps.</string>
+    <string name="scene_err_selfref">Scene references itself.</string>
+    <string name="macro_step_gone">Step %1$d: device is no longer available.</string>
+    <string name="update_check_failed2">Check failed - couldn\'t reach GitHub (%1$s)</string>
+    <string name="dbh_unusable_codes">Unusable codes</string>
+    <string name="dbh_unusable_note">button patterns the transmitter cannot expand</string>
+    <string name="db_idle">Idle</string>
+    <string name="refresh_no_source">No update source configured — refresh flavor not built yet</string>
+    <string name="sendlog_no_ir">no IR blaster on this device</string>
+    <string name="sendlog_not_sent">not sent</string>
+    <string name="up">Up</string>
+    <string name="down">Down</string>
+    <string name="left">Left</string>
+    <string name="right">Right</string>
+    <string name="ok">OK</string>
+    <string name="widget_open_setup">Open Controlix to set up</string>
+    <string name="field_brand">Brand</string>
+    <string name="field_category">Category</string>
+    <string name="field_remote_name">Remote name</string>
+    <string name="field_button_name">Button name</string>
+    <string name="field_carrier">Carrier Hz</string>
+    <string name="field_pattern">Pattern (microseconds)</string>
+    <string name="field_app_version">App version</string>
+    <string name="ac_key_off">Off</string>
+    <string name="ac_key_on">On</string>
+    <string name="ac_no_code_desc">No %1$s code exists yet</string>
+    <string name="ac_no_key_has">%1$s has no %2$s key yet.</string>
+    <string name="ac_nothing_usable">Nothing usable in %1$s for %2$s</string>
+    <string name="analyzer_copy_json">Copy JSON</string>
+    <string name="analyzer_timings_values">Mark, gap (ms): %1$s</string>
+    <string name="field_remote_model">Remote name / model</string>
+    <string name="home_copied_keys">Copied keys</string>
+    <string name="home_edit">Edit</string>
+    <string name="home_inspect">Inspect signals</string>
+    <string name="home_pin">Pin</string>
+    <string name="home_share">Share</string>
+    <string name="home_unpin">Unpin</string>
+    <string name="missing_learn_note">Pick a tool that can learn the code, then add it here.</string>
+    <string name="missing_share_body">Open the maker\'s app, learn the code, then share it with Controlix from that app.</string>
+    <string name="missing_share_note">Any app that can share IR codes will work.</string>
+    <string name="widget_no_key">No %1$s</string>
+    <string name="widget_pick_macro">Pick a macro</string>
+    <string name="widget_remote_deleted">Remote deleted</string>
+    <string name="resent_toast">Sent %1$s again</string>
+    <string name="home_cancel_scene">Cancel %1$s</string>
+    <string name="widget_not_sent">Not sent</string>
+    <string name="missing_share_subject">Missing IR code: %1$s %2$s</string>
+    <string name="missing_share_contribution">Share contribution</string>
+    <string name="missing_prov_example">Public irdb dump, retested on my own remote</string>
+    <string name="hold_preflight">%1$d devices will be affected</string>
+    <string name="whats_new_default">Bug fixes and performance improvements.</string>
+    <string name="db_changelog">%1$s remotes, %2$s buttons</string>
+    <string name="ac_mode_fan_only">Fan only</string>
+    <string name="share_qr_desc_full">This code carries all %1$d buttons, so any Controlix phone can import it.</string>
+    <string name="share_scan_desc">Scan with another Controlix app to import this remote.</string>
+    <string name="menu_language">Language</string>
+    <string name="lang_english">English</string>
+    <string name="lang_farsi">Farsi</string>
+    <string name="dbh_unusable_row">cannot expand this pattern</string>
+    <string name="backup_ctx_object">%1$s must be an object</string>
+    <string name="backup_ctx_array">%1$s must be an array</string>
+    <string name="backup_ctx_number">%1$s must be a number</string>
+    <string name="backup_ctx_integer">%1$s must be an integer</string>
+    <string name="backup_ctx_string">%1$s must be a string</string>
+    <string name="backup_ctx_bool">%1$s must be true or false</string>
+    <string name="backup_ctx_unknown">%1$s has unknown or missing fields</string>
+    <string name="backup_ctx_delayms">%1$s delayMs must be a number</string>
+    <string name="backup_ctx_devicestrings">%1$s device fields must be strings</string>
+    <string name="backup_ctx_remoteid">%1$s remoteId must be an integer</string>
+    <string name="backup_ctx_steps">%1$s must be an array</string>
 </resources>

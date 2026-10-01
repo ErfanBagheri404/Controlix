@@ -36,6 +36,8 @@ import com.erfanbagheri.controlix.ui.theme.PaperFaint
 import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.BarcodeView
 import com.journeyapps.barcodescanner.DefaultDecoderFactory
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /**
  * QR scanner: point at another Controlix share screen. Both phones ship the
@@ -51,7 +53,7 @@ import com.journeyapps.barcodescanner.DefaultDecoderFactory
 fun ScanScreen(onResult: (String) -> Unit, onError: (String) -> Unit, onBack: () -> Unit) {
     var granted by remember { mutableStateOf(false) }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) granted = true else onError("Camera permission is needed to scan a remote.")
+        if (ok) granted = true else onError(tr(R.string.scan_camera_permission))
     }
     LaunchedEffect(Unit) { permission.launch(Manifest.permission.CAMERA) }
 
@@ -99,14 +101,14 @@ fun ScanScreen(onResult: (String) -> Unit, onError: (String) -> Unit, onBack: ()
         }
         Column(Modifier.align(Alignment.TopCenter).applyTopInset().padding(horizontal = 24.dp)) {
             Spacer(Modifier.height(12.dp))
-            BackTitleRow("Scan remote", onBack)
+            BackTitleRow(tr(R.string.screen_scan), onBack)
         }
         Box(
             Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                 .background(Color.Black.copy(alpha = 0.6f)).padding(24.dp),
         ) {
             Text(
-                "Point the camera at the QR code on another Controlix phone.",
+                tr(R.string.ritual_point_camera),
                 style = MaterialTheme.typography.bodyMedium,
                 color = PaperFaint,
             )

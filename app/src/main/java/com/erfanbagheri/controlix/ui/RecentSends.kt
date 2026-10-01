@@ -24,8 +24,12 @@ import com.erfanbagheri.controlix.ir.IrTransmitter
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.locale
+import com.erfanbagheri.controlix.R
+import com.erfanbagheri.controlix.data.Copy
 
-private val DAY = DateTimeFormatter.ofPattern("EEE d MMM")
+private val DAY = DateTimeFormatter.ofPattern("EEE d MMM").withLocale(locale())
 private val TIME = DateTimeFormatter.ofPattern("HH:mm")
 
 /**
@@ -55,9 +59,9 @@ fun RecentSendsScreen(
         )
         toast.show(
             when (result) {
-                SendResult.Sent -> "Sent ${e.buttonName} again"
-                SendResult.NoHardware -> "This device has no IR blaster."
-                is SendResult.Failed -> "Couldn't send. Try again."
+                SendResult.Sent -> tr(R.string.resent_toast, e.buttonName)
+                SendResult.NoHardware -> tr(R.string.toast_no_ir_blaster)
+                is SendResult.Failed -> tr(R.string.toast_couldnt_send)
             },
         )
     }
@@ -66,10 +70,10 @@ fun RecentSendsScreen(
         Spacer(Modifier.height(14.dp))
         BackRow(onBack)
         Spacer(Modifier.height(8.dp))
-        Text("Recent sends", style = MaterialTheme.typography.headlineMedium)
+        Text(tr(R.string.recent_title), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(4.dp))
         Text(
-            "Last ${SendLog.MAX} codes the blaster fired, newest first. Tap a row to fire that exact code again.",
+            tr(R.string.recent_intro, SendLog.MAX),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -77,7 +81,7 @@ fun RecentSendsScreen(
 
         if (days.isEmpty()) {
             Text(
-                "Nothing sent yet.",
+                tr(R.string.recent_nothing),
                 Modifier.padding(top = 24.dp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -111,16 +115,16 @@ private fun SendRow(entry: SentEntry, refire: ((SentEntry) -> Unit)?) {
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    "${entry.remoteName} · ${entry.buttonName}",
+                    tr(R.string.recent_entry, entry.remoteName, entry.buttonName),
                     style = MaterialTheme.typography.titleMedium,
                     color = if (failed != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
                     if (failed != null) {
-                        "Not sent — $failed"
+                        tr(R.string.recent_failed, Copy.sendFailure(failed))
                     } else {
-                        "${entry.carrierHz} Hz · ${entry.pattern.size} marks"
+                        tr(R.string.recent_signal, entry.carrierHz, entry.pattern.size)
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = if (failed != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,

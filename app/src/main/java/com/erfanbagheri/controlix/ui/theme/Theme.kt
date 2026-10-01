@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.erfanbagheri.controlix.isFa
 
 private val DarkScheme = darkColorScheme(
     primary = Accent, onPrimary = Color(0xFF003312),
@@ -63,7 +64,7 @@ fun ControlixTheme(content: @Composable () -> Unit) {
         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !ThemeState.isDark
     }
 
-    MaterialTheme(colorScheme = scheme, typography = AppTypography) {
+    MaterialTheme(colorScheme = scheme, typography = if (isFa()) AppTypographyFa else AppTypography) {
         androidx.compose.material3.Surface(
             color = scheme.background,
             contentColor = scheme.onBackground,

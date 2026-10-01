@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.AcMode
+import com.erfanbagheri.controlix.data.Copy
 import com.erfanbagheri.controlix.data.AcOutcome
 import com.erfanbagheri.controlix.data.AcSelection
 import com.erfanbagheri.controlix.data.ButtonNames
@@ -37,6 +38,8 @@ import com.erfanbagheri.controlix.data.SentEntry
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /**
  * Flat AC pad. Rows only, hairline separators, no cards: the remote is
@@ -96,12 +99,12 @@ fun AcPadScreen(
         )
         if (result is SendResult.Sent) {
             Feedback.send(view)
-            lastSent = "Sent: ${button.name}"
+            lastSent = tr(R.string.ac_sent, button.name)
         } else {
-            lastSent = "Not sent"
+            lastSent = tr(R.string.pad_not_sent)
             toast.show(
-                if (!transmitter.hasIrEmitter()) "This device has no IR blaster."
-                else "Couldn't send. Try again.",
+                if (!transmitter.hasIrEmitter()) tr(R.string.toast_no_ir_blaster)
+                else tr(R.string.toast_couldnt_send),
             )
         }
     }
@@ -123,7 +126,7 @@ fun AcPadScreen(
                 modifier = Modifier.pressable(onBack).padding(9.dp),
             )
             Spacer(Modifier.weight(1f))
-            Text(deviceName ?: "AC remote", style = MaterialTheme.typography.titleMedium)
+            Text(deviceName ?: tr(R.string.ac_remote_title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.weight(1f))
             Spacer(Modifier.size(44.dp))
         }
@@ -132,14 +135,14 @@ fun AcPadScreen(
 
         if (available.isEmpty()) {
             Text(
-                "This remote has no usable AC codes in the database.",
+                tr(R.string.ac_no_usable),
                 style = MaterialTheme.typography.bodyMedium, color = PaperFaint,
             )
             return@Column
         }
 
         // ── Temperature: only values this remote stores for this mode ────
-        SectionHead("Target")
+        SectionHead(tr(R.string.ac_target))
         Hairline()
         Row(
             Modifier.fillMaxWidth().heightIn(min = 76.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), verticalAlignment = Alignment.CenterVertically,
@@ -152,7 +155,7 @@ fun AcPadScreen(
             }
             Spacer(Modifier.width(12.dp))
             Text(
-                "$target°C",
+                tr(R.string.ac_temp, target),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
@@ -169,7 +172,7 @@ fun AcPadScreen(
         Hairline()
         if (temps.isEmpty()) {
             Text(
-                "No stored temperatures for ${mode.label}. The pad cannot set one — pick another mode.",
+                tr(R.string.ac_no_temps, Copy.mode(mode)),
                 style = MaterialTheme.typography.labelSmall, color = PaperFaint,
                 modifier = Modifier.padding(vertical = 10.dp),
             )
@@ -181,7 +184,7 @@ fun AcPadScreen(
         }
 
         // ── Mode ─────────────────────────────────────────────────────────
-        SectionHead("Mode")
+        SectionHead(tr(R.string.ac_mode))
         Hairline()
         ModeRow(AcSelection.presetModes(), modes, mode) { picked ->
             val pickedTemps = AcSelection.supportedTemps(available, picked)
@@ -193,36 +196,35 @@ fun AcPadScreen(
         val missingModes = AcSelection.presetModes().filterNot { it in modes }
         if (missingModes.isNotEmpty()) {
             Text(
-                "Disabled: ${missingModes.joinToString { it.label }} — this remote carries no such code.",
+                tr(R.string.ac_disabled_modes, missingModes.joinToString { it.label }),
                 style = MaterialTheme.typography.labelSmall, color = PaperFaint,
                 modifier = Modifier.padding(vertical = 10.dp),
             )
         }
 
         // ── Power ────────────────────────────────────────────────────────
-        SectionHead("Power")
+        SectionHead(tr(R.string.ac_power))
         Hairline()
         Row(Modifier.fillMaxWidth().heightIn(min = 56.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), verticalAlignment = Alignment.CenterVertically) {
-            FlatKey("On", enabled = powerOnKey != null) {
+            FlatKey(tr(R.string.ac_on), enabled = powerOnKey != null) {
                 powerOnKey?.let { transmit(it, "power") }
                     ?: toast.show(explainPower(available, on = true))
             }
             Spacer(Modifier.width(24.dp))
-            FlatKey("Off", enabled = available.any { ButtonNames.powerOff(it.name) }) {
+            FlatKey(tr(R.string.ac_off), enabled = available.any { ButtonNames.powerOff(it.name) }) {
                 send(AcSelection(target, mode, false))
             }
         }
         Hairline()
         Text(
-            if (powerOnKey == null) "On is disabled: this remote has no separate power-on key."
-            else "Off uses this remote's own off key.",
+            if (powerOnKey == null) tr(R.string.ac_on_disabled) else tr(R.string.ac_off_uses_own),
             style = MaterialTheme.typography.labelSmall, color = PaperFaint,
             modifier = Modifier.padding(vertical = 10.dp),
         )
 
         // ── Fan speed: one row, the real keys it carries ─────────────────
         if (fanKeys.isNotEmpty()) {
-            SectionHead("Fan")
+            SectionHead(tr(R.string.ac_fan))
             Hairline()
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -241,7 +243,7 @@ fun AcPadScreen(
 
         // ── Swing ────────────────────────────────────────────────────────
         if (swingKey != null) {
-            SectionHead("Swing")
+            SectionHead(tr(R.string.ac_swing))
             Hairline()
             Row(Modifier.fillMaxWidth().heightIn(min = 56.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), verticalAlignment = Alignment.CenterVertically) {
                 FlatKey(swingKey.name) { transmit(swingKey, "swing") }
@@ -261,14 +263,14 @@ fun AcPadScreen(
 /** "This remote has no 24°C Cool code. It carries: Cool_23, Heat_30." */
 private fun explain(selection: AcSelection, out: AcOutcome.NotSupported): String {
     val have = out.buttonsItDoesHave.take(4).joinToString(", ")
-    return "This remote has no ${selection.describe()} code." +
-        if (have.isEmpty()) " Nothing usable to send." else " It carries: $have."
+    return tr(R.string.ac_no_code_desc, Copy.acSelection(selection)) +
+        if (have.isEmpty()) tr(R.string.ac_nothing_usable) else tr(R.string.ac_carries, have)
 }
 
 private fun explainPower(available: List<EffectiveButtons.Resolved>, on: Boolean): String {
     val have = available.map { it.name }.distinct().take(4).joinToString(", ")
-    val what = if (on) "power-on" else "power-off"
-    return "This remote has no $what key. It carries: $have."
+    val key = if (on) tr(R.string.ac_key_on) else tr(R.string.ac_key_off)
+    return tr(R.string.ac_no_key_has, key, have)
 }
 
 @Composable

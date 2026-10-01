@@ -29,6 +29,8 @@ data class ContributionRejection(
     val field: ContributionField,
     val type: ContributionRejectionType,
     val message: String,
+    /** The offending token / raw detail, kept verbatim for localized copy. */
+    val detail: String = "",
 )
 
 data class Contribution(
@@ -113,6 +115,7 @@ data class Contribution(
                     ContributionField.PATTERN,
                     ContributionRejectionType.PATTERN_NON_NUMERIC,
                     "Pattern must be numbers only — \"$token\" is not a duration.",
+                    token,
                 )
                 if (value < MIN_DURATION_US || value > MAX_DURATION_US) return ContributionRejection(
                     ContributionField.PATTERN,

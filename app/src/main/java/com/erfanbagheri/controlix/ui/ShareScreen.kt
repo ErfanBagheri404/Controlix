@@ -19,6 +19,8 @@ import com.journeyapps.barcodescanner.BarcodeEncoder
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.data.RemoteShareCodec
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /**
  * Share screen: device name + a QR code that carries the remote's **buttons**,
@@ -63,7 +65,7 @@ fun ShareScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(12.dp))
-        BackTitleRow("Share remote", onBack)
+        BackTitleRow(tr(R.string.screen_share), onBack)
         Spacer(Modifier.height(36.dp))
         Text(device.name, style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(4.dp))
@@ -72,16 +74,16 @@ fun ShareScreen(
         bitmap?.let { bmp ->
             androidx.compose.foundation.Image(
                 bitmap = bmp.asImageBitmap(),
-                contentDescription = "QR code for ${device.name}",
+                contentDescription = tr(R.string.share_qr_for, device.name),
                 modifier = Modifier.size(240.dp),
             )
         }
         Spacer(Modifier.height(24.dp))
         Text(
             if (buttonCount > 0) {
-                "This code carries all $buttonCount buttons, so any Controlix phone can import it."
+                tr(R.string.share_qr_desc_full, buttonCount)
             } else {
-                "Scan with another Controlix app to import this remote."
+                tr(R.string.share_scan_desc)
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

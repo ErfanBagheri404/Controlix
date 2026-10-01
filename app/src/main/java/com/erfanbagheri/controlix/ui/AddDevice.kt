@@ -34,6 +34,8 @@ import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /**
  * Setup flow. Step 1: category tiles (2 columns, Material vectors).
@@ -71,14 +73,14 @@ fun AddDeviceScreen(
         ContentSwap(target = chosen, modifier = Modifier.fillMaxWidth().weight(1f)) { cat ->
             Column(Modifier.fillMaxSize()) {
                 if (cat == null) {
-                    Text("What are you adding?", style = MaterialTheme.typography.headlineMedium)
+                    Text(tr(R.string.add_what_adding), style = MaterialTheme.typography.headlineMedium)
                     Spacer(Modifier.height(16.dp))
                     CategoryGrid(
                         categories = remember(repo) { repo.categories() },
                         onPick = { chosen = it },
                     )
                 } else {
-                    Text("${cat.name}. Who made it?", style = MaterialTheme.typography.headlineMedium)
+                    Text(tr(R.string.add_who_made, cat.name), style = MaterialTheme.typography.headlineMedium)
                     Spacer(Modifier.height(8.dp))
                     BrandGrid(
                         brands = remember(repo, cat.slug) { repo.brands(cat.slug) },
@@ -167,7 +169,7 @@ private fun BrandGrid(
     OutlinedTextField(
         value = query,
         onValueChange = { query = it },
-        placeholder = { Text("Search brands or models — 'ue55', 'samsung vol ch'") },
+        placeholder = { Text(tr(R.string.add_search_brands)) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
@@ -201,7 +203,7 @@ private fun BrandGrid(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "${b.remoteCount} ${if (b.remoteCount == 1) "remote" else "remotes"}",
+                        tr(R.string.add_remote_count, if (b.remoteCount == 1) tr(R.string.add_remote_one) else tr(R.string.add_remote_many)),
                         style = MaterialTheme.typography.labelSmall,
                         color = PaperFaint,
                     )

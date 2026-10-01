@@ -54,8 +54,8 @@ object WhatsNewStore {
      * Strips common markdown formatting and HTML tags from GitHub release body
      * so it renders cleanly as plain text without requiring heavy rich-text libraries.
      */
-    fun cleanReleaseBody(body: String?): String {
-        if (body.isNullOrBlank()) return "Bug fixes and performance improvements."
+    fun cleanReleaseBody(body: String?, fallback: String = "Bug fixes and performance improvements."): String {
+        if (body.isNullOrBlank()) return fallback
         return body
             // Remove markdown links: [text](url) -> text
             .replace(Regex("""\[([^]]+)]\([^)]+\)"""), "$1")

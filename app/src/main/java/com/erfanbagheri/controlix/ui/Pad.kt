@@ -60,6 +60,8 @@ import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.Gold
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /**
  * Remote pad. Two stacked regions under the header:
@@ -164,8 +166,10 @@ fun PadScreen(
     fun showProvenance(key: String) {
         val borrowed = borrowedKeys[key] ?: return
         val source = runCatching { repo?.remoteName(borrowed.remoteId) }.getOrNull()
-        val label = "${key.replace('_', ' ').replaceFirstChar { it.uppercase() }} · " +
-            borrowedSourceLabel(borrowed, source)
+        val label = tr(
+            R.string.pad_borrowed_key,
+            key.replace('_', ' ').replaceFirstChar { it.uppercase() },
+        ) + " · " + borrowedSourceLabel(borrowed, source)
         toast.show(label)
     }
 
@@ -179,11 +183,13 @@ fun PadScreen(
             else SendLog.nothingSent(name, resolved.name, sendFailureReason(result), System.currentTimeMillis()),
         )
         if (result is SendResult.Sent) {
-            lastSent = "Sent: ${resolved.name}"
+            lastSent = tr(R.string.pad_sent, resolved.name)
             emitKey = Any()
         } else {
-            lastSent = "Not sent"
-            toast.show(if (!transmitter.hasIrEmitter()) "This device has no IR blaster." else "Couldn't send. Try again.")
+            lastSent = tr(R.string.pad_not_sent)
+            toast.show(
+                if (!transmitter.hasIrEmitter()) tr(R.string.toast_no_ir_blaster) else tr(R.string.toast_couldnt_send),
+            )
         }
     }
     // MCE/RC6 media layout — present/missing decided by ButtonNames only.
@@ -249,9 +255,9 @@ fun PadScreen(
                 MissingCodeReportStore(context).queue(
                     MissingCodeReport(identity.first, identity.second, identity.third, name)
                 )
-                toast.show("No ${name.replace('_', ' ')} code. Queued for a report.")
+                toast.show(tr(R.string.pad_no_code_report, name.replace('_', ' ')))
             } else {
-                toast.show("This remote has no ${name.replace('_', ' ')} code.")
+                toast.show(tr(R.string.pad_no_code, name.replace('_', ' ')))
             }
             return
         }
@@ -261,11 +267,13 @@ fun PadScreen(
             else SendLog.nothingSent(deviceName ?: "Remote", code.name, sendFailureReason(result), System.currentTimeMillis()),
         )
         if (result is SendResult.Sent) {
-            lastSent = "Sent: ${code.name}"
+            lastSent = tr(R.string.pad_sent, code.name)
             emitKey = Any()
         } else {
-            lastSent = "Not sent"
-            toast.show(if (!transmitter.hasIrEmitter()) "This device has no IR blaster." else "Couldn't send. Try again.")
+            lastSent = tr(R.string.pad_not_sent)
+            toast.show(
+                if (!transmitter.hasIrEmitter()) tr(R.string.toast_no_ir_blaster) else tr(R.string.toast_couldnt_send),
+            )
         }
     }
 
@@ -273,11 +281,11 @@ fun PadScreen(
     fun copyKey(name: String) {
         val code = codeFor(name)
         if (code == null) {
-            toast.show("This remote has no ${name.replace('_', ' ')} code to copy.")
+            toast.show(tr(R.string.pad_no_code_copy, name.replace('_', ' ')))
             return
         }
         copied.copyToClipboard(code)
-        toast.show("Copied ${code.name}. Long-press … on another remote to paste it.")
+        toast.show(tr(R.string.pad_copied, code.name))
     }
 
     fun toggleFavorite(key: String) {
@@ -287,15 +295,15 @@ fun PadScreen(
         val device = saved.key.takeIf { saved.fileName.isNotEmpty() }
             ?: runCatching { repo?.remoteIndex()?.let { RemoteIdentity.row(remoteId, it)?.key } }.getOrNull()
         if (device == null) {
-            toast.show("This remote has no stable identity to pin against.")
+            toast.show(tr(R.string.pad_no_identity))
             return
         }
         val favorite = GlobalFavorite(device, key, key.prettify())
         val wasFavorite = favoritesModel.favorites.any { it.device == favorite.device && it.button == favorite.button }
         favoritesModel.toggleFavorite(favorite)
         toast.show(
-            if (wasFavorite) "${key.replace('_', ' ')} removed from favorites"
-            else "${key.replace('_', ' ')} added to favorites"
+            if (wasFavorite) tr(R.string.pad_fav_removed, key.replace('_', ' '))
+            else tr(R.string.pad_fav_added, key.replace('_', ' '))
         )
     }
 
@@ -356,7 +364,7 @@ fun PadScreen(
             onReject = {
                 updateBorrowMemory(borrowMemory.reject(remoteId, pending.resolved.key, pending.candidate))
                 pendingBorrow = null
-                toast.show("Noted. A different code will be preferred next time.")
+                toast.show(tr(R.string.pad_noted))
             },
         )
     }
@@ -408,7 +416,7 @@ fun PadScreen(
             onPaste = { btn ->
                 localCopies = copied.paste(remoteId, btn)
                 copiedOpen = false
-                toast.show("Pasted ${btn.name} onto this remote.")
+                toast.show(tr(R.string.pad_pasted, btn.name))
             },
             onRemove = { name ->
                 copied.remove(remoteId, name)
@@ -422,10 +430,12 @@ fun PadScreen(
                     else SendLog.nothingSent(deviceName ?: "Remote", btn.name, sendFailureReason(res), System.currentTimeMillis()),
                 )
                 if (res is SendResult.Sent) {
-                    lastSent = "Sent: ${btn.name}"
+                    lastSent = tr(R.string.pad_sent, btn.name)
                     emitKey = Any()
                 } else {
-                    toast.show(if (!transmitter.hasIrEmitter()) "This device has no IR blaster." else "Couldn't send. Try again.")
+                    toast.show(
+                if (!transmitter.hasIrEmitter()) tr(R.string.toast_no_ir_blaster) else tr(R.string.toast_couldnt_send),
+            )
                 }
             },
             onDismiss = { copiedOpen = false },
@@ -521,11 +531,11 @@ private fun FavoriteKeysSheet(
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Column(Modifier.padding(horizontal = 24.dp)) {
-            Text("Favorites", style = MaterialTheme.typography.titleMedium)
+            Text(tr(R.string.pad_favorites), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(4.dp))
             Text(
-                if (favoriteKeys.isEmpty()) "Tap a key to add it to the home row."
-                else "${favoriteKeys.size} on the home row. Tap to remove.",
+                if (favoriteKeys.isEmpty()) tr(R.string.pad_fav_hint)
+                else tr(R.string.pad_fav_count, favoriteKeys.size),
                 style = MaterialTheme.typography.labelSmall,
                 color = PaperFaint,
             )
@@ -570,7 +580,7 @@ private fun PadControlsRow(
     onProvenance: ((String) -> Unit)? = null,
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        RockerColumn(ActionIcon.Add, ActionIcon.Minus, "VOL", "volume_up", "volume_down",
+        RockerColumn(ActionIcon.Add, ActionIcon.Minus, tr(R.string.pad_vol), "volume_up", "volume_down",
             borrowedKeys["volume_up"] != null, borrowedKeys["volume_down"] != null,
             onUp = { fire("volume_up") }, onDown = { fire("volume_down") },
             onLongUp = { copy("volume_up") }, onLongDown = { copy("volume_down") },
@@ -605,7 +615,7 @@ private fun PadControlsRow(
 
         Spacer(Modifier.width(14.dp))
 
-        RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, "CH", "channel_up", "channel_down",
+        RockerColumn(ActionIcon.ChevronUp, ActionIcon.ChevronDown, tr(R.string.pad_ch), "channel_up", "channel_down",
             borrowedKeys["channel_up"] != null, borrowedKeys["channel_down"] != null,
             onUp = { fire("channel_up") }, onDown = { fire("channel_down") },
             onLongUp = { copy("channel_up") }, onLongDown = { copy("channel_down") },
@@ -756,7 +766,7 @@ private fun ManualKeyList(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "${summary.onPad} on pad · ${summary.extraCount} more",
+                tr(R.string.pad_summary, summary.onPad, summary.extraCount),
                 style = MaterialTheme.typography.titleMedium,
             )
             ActionIconView(
@@ -823,7 +833,7 @@ private fun MediaPad(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                if (keyboard) "KEYBOARD" else "MEDIA PAD",
+                if (keyboard) tr(R.string.pad_keyboard) else tr(R.string.pad_media),
                 style = MaterialTheme.typography.labelSmall,
                 color = PaperFaint,
             )
@@ -1062,28 +1072,28 @@ private fun CopiedKeysSheet(
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Column(Modifier.padding(horizontal = 24.dp)) {
-            Text("Copied keys", style = MaterialTheme.typography.titleMedium)
+            Text(tr(R.string.pad_copied_keys), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(16.dp))
             if (clipboard == null) {
                 Text(
-                    "Nothing copied yet. Long-press a key on another remote to copy its code here.",
+                    tr(R.string.pad_nothing_copied),
                     style = MaterialTheme.typography.bodyMedium,
                     color = PaperFaint,
                 )
             } else {
                 SheetKeyRow(
-                    label = "Paste ${clipboard.name}",
-                    hint = "${clipboard.carrierHz} Hz · ${clipboard.pattern.size} marks",
+                    label = tr(R.string.pad_paste, clipboard.name),
+                    hint = tr(R.string.pad_clipboard_info, clipboard.carrierHz, clipboard.pattern.size),
                     onClick = { onPaste(clipboard) },
                 )
             }
             if (local.isNotEmpty()) {
                 Spacer(Modifier.height(12.dp))
-                Text("On this remote", style = MaterialTheme.typography.labelSmall, color = PaperFaint)
+                Text(tr(R.string.pad_on_this_remote), style = MaterialTheme.typography.labelSmall, color = PaperFaint)
                 local.forEach { btn ->
                     SheetKeyRow(
                         label = btn.name,
-                        hint = "${btn.carrierHz} Hz · tap to send",
+                        hint = tr(R.string.pad_key_info, btn.carrierHz),
                         onClick = { onSend(btn) },
                         onLongClick = { onRemove(btn.name) },
                     )
@@ -1128,12 +1138,12 @@ private fun RemoteSwitcher(
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Column(Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
-            Text("Switch remote", style = MaterialTheme.typography.titleMedium, color = PaperFaint)
+            Text(tr(R.string.pad_switch_remote), style = MaterialTheme.typography.titleMedium, color = PaperFaint)
             Spacer(Modifier.height(16.dp))
             devices.forEach { dev ->
                 val isCurrent = dev.remoteId == remoteId
                 Text(
-                    "${dev.name}  ·  ${dev.brand}",
+                    tr(R.string.pad_device_brand, dev.name, dev.brand),
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (isCurrent) Accent else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.fillMaxWidth().pressable { onPick(dev) }.padding(vertical = 14.dp),

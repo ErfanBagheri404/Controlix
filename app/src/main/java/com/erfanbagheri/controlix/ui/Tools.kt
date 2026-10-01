@@ -45,6 +45,8 @@ import com.erfanbagheri.controlix.ir.IrTransmitter
 import kotlinx.coroutines.delay
 import java.util.Locale
 import com.erfanbagheri.controlix.ui.SendResult
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 private const val HOLD_MS = 800L
 
@@ -126,17 +128,17 @@ fun SweepScreen(
         Text("TV-B-Gone", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Fires every TV power code we know. Press and hold to arm; release or Cancel to stop.",
+            tr(R.string.tools_tv_b_gone_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Spacer(Modifier.height(24.dp))
-        SectionHead("Pre-flight")
-        Text(preflightMessage(total), style = MaterialTheme.typography.titleLarge)
+        SectionHead(tr(R.string.tools_pre_flight))
+        Text(tr(R.string.hold_preflight, total), style = MaterialTheme.typography.titleLarge)
         if (skipped > 0) {
             Text(
-                "$skipped remotes skipped — no power button",
+                tr(R.string.tools_skipped_remotes, skipped),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -159,7 +161,7 @@ fun SweepScreen(
             if (recent.isEmpty()) {
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "No transmissions yet.",
+                    tr(R.string.tools_no_transmissions),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -194,9 +196,9 @@ fun SweepScreen(
         Spacer(Modifier.height(12.dp))
         HoldConfirmRow(
             label = when (s) {
-                is HoldState.Holding -> "Keep holding…"
-                HoldState.Armed, HoldState.Running -> "Transmitting — release to stop"
-                else -> "Hold to power off"
+                is HoldState.Holding -> tr(R.string.tools_keep_holding)
+                HoldState.Armed, HoldState.Running -> tr(R.string.tools_transmitting)
+                else -> tr(R.string.tools_hold_power_off)
             },
             fraction = when (s) {
                 is HoldState.Holding -> s.progress
@@ -232,7 +234,7 @@ fun SweepScreen(
                 ActionIconView(ActionIcon.Cross, 20.dp, MaterialTheme.colorScheme.error)
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    "Cancel sweep",
+                    tr(R.string.tools_cancel_sweep),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -290,12 +292,12 @@ private fun statusLine(
     running && p != null -> {
         val clock = mmss(SystemClock.elapsedRealtime() - startedAt)
         val head = if (p.currentBrand.isEmpty()) "" else "${p.currentBrand} "
-        "$head${p.sent}/${p.total} · $clock"
+        tr(R.string.tools_sweep_progress, head, p.sent, p.total, clock)
     }
-    s is HoldState.Done -> "Done"
-    s is HoldState.Cancelled && p != null -> "Stopped · ${p.sent}/${p.total}"
-    s is HoldState.Cancelled -> "Cancelled — nothing sent"
-    else -> "Ready"
+    s is HoldState.Done -> tr(R.string.tools_done)
+    s is HoldState.Cancelled && p != null -> tr(R.string.tools_stopped_count, p.sent, p.total)
+    s is HoldState.Cancelled -> tr(R.string.tools_cancelled)
+    else -> tr(R.string.tools_ready)
 }
 
 private fun mmss(ms: Long): String {
@@ -304,9 +306,9 @@ private fun mmss(ms: Long): String {
 }
 
 private fun sendResultLabel(r: SendResult): String = when (r) {
-    SendResult.Sent -> "Sent"
-    SendResult.NoHardware -> "No IR emitter"
-    is SendResult.Failed -> "Failed"
+    SendResult.Sent -> tr(R.string.tools_sent)
+    SendResult.NoHardware -> tr(R.string.tools_no_ir)
+    is SendResult.Failed -> tr(R.string.tools_failed)
 }
 
 /**
@@ -322,16 +324,16 @@ fun SelfTestScreen(
         Spacer(Modifier.height(40.dp))
         BackRow(onBack)
         Spacer(Modifier.height(20.dp))
-        Text("IR self-test", style = MaterialTheme.typography.displaySmall)
+        Text(tr(R.string.tools_ir_self_test), style = MaterialTheme.typography.displaySmall)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Sends a burst that matches no device. Point any phone camera at the blaster: you should see a violet flicker.",
+            tr(R.string.tools_ir_self_test_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(40.dp))
-        BigPressButton("Fire test burst", ActionIcon.CameraTest) {
-            result = if (transmitter.selfTest()) "Burst sent. Saw the flicker?" else "No IR emitter on this device"
+        BigPressButton(tr(R.string.tools_fire_burst), ActionIcon.CameraTest) {
+            result = if (transmitter.selfTest()) tr(R.string.tools_burst_sent) else tr(R.string.tools_no_ir_device)
         }
         Spacer(Modifier.height(16.dp))
         result?.let {

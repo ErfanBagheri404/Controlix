@@ -25,7 +25,6 @@ object RefreshPlan {
     fun startDownload(state: RefreshState): RefreshState =
         if (state is RefreshState.Checked) RefreshState.Downloading(state.manifest)
         else RefreshState.Failed("download requires Checked")
-
     /** Size and sha256 must both match the manifest, else roll back to Downloading. */
     fun verified(state: RefreshState, actualSize: Long, actualSha: String, manifest: DbUpdateManifest): RefreshState {
         if (state !is RefreshState.Downloading) return RefreshState.Failed("verify requires Downloading")

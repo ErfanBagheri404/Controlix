@@ -37,6 +37,8 @@ import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.SiblingButtonPicker
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.Gold
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /** Android persistence boundary around the pure [BorrowedCodeMemory]. */
 class BorrowedCodeStore(context: Context) {
@@ -77,8 +79,10 @@ internal fun rememberBorrowedCodeMemory(): Pair<BorrowedCodeMemory, (BorrowedCod
 
 /** "Borrowed" provenance for a key: source sibling + number of remotes in agreement. */
 internal fun borrowedSourceLabel(resolved: EffectiveButtons.Resolved, remoteName: String?): String {
-    val source = remoteName?.takeIf { it.isNotBlank() } ?: "sibling remote #${resolved.remoteId}"
-    return "$source · ${resolved.votes} ${if (resolved.votes == 1) "remote agrees" else "remotes agree"}"
+    val source = remoteName?.takeIf { it.isNotBlank() }
+        ?: tr(R.string.borrowed_sibling_fallback, resolved.remoteId)
+    val agree = if (resolved.votes == 1) tr(R.string.borrowed_agree_one) else tr(R.string.borrowed_agree_many)
+    return tr(R.string.borrowed_source_votes, source, resolved.votes, agree)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,23 +103,26 @@ internal fun BorrowedCodeConfirmSheet(
         Column(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 24.dp, vertical = 20.dp),
         ) {
-            Text("Borrowed code", style = MaterialTheme.typography.titleMedium)
+            Text(tr(R.string.borrowed_title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(16.dp))
             Text(
-                "$keyLabel came from $source. ${pending.resolved.votes} " +
-                    "${if (pending.resolved.votes == 1) "sibling remote agrees" else "sibling remotes agree"}.",
+                tr(
+                    R.string.borrowed_sheet, keyLabel, source, pending.resolved.votes,
+                    if (pending.resolved.votes == 1) tr(R.string.borrowed_sibling_one)
+                    else tr(R.string.borrowed_sibling_many),
+                ),
                 style = MaterialTheme.typography.bodyLarge,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Try it on your device. Rejecting avoids this code next time.",
+                tr(R.string.borrowed_try),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(24.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ChoiceButton("Try next", Modifier.weight(1f)) { onReject() }
-                ChoiceButton("Keep & send", Modifier.weight(1f), primary = true) { onKeep() }
+                ChoiceButton(tr(R.string.borrowed_try_next), Modifier.weight(1f)) { onReject() }
+                ChoiceButton(tr(R.string.borrowed_keep_send), Modifier.weight(1f), primary = true) { onKeep() }
             }
             Spacer(Modifier.height(16.dp))
         }

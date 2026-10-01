@@ -63,6 +63,9 @@ import com.erfanbagheri.controlix.ui.theme.Danger
 import com.erfanbagheri.controlix.ui.theme.Gold
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
 import kotlinx.coroutines.launch
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
+import com.erfanbagheri.controlix.data.Copy
 
 /** Sheet callbacks live in Nav and are passed through here. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,12 +108,12 @@ fun HomeScreen(
             is Resolution.Found ->
                 if (!transmitter.transmitButton(res.code.carrierHz, res.code.pattern)) {
                     toast.show(
-                        if (!transmitter.hasIrEmitter()) "This device has no IR blaster."
-                        else "Couldn't send. Try again."
+                        if (!transmitter.hasIrEmitter()) tr(R.string.toast_no_ir_blaster)
+                        else tr(R.string.toast_couldnt_send)
                     )
                 }
             Resolution.Unsupported ->
-                toast.show("${state.favorite.display} is unavailable on this remote.")
+                toast.show(tr(R.string.home_favorite_unavailable, state.favorite.display))
         }
     }
 
@@ -122,9 +125,12 @@ fun HomeScreen(
         if (report.hasBlockers) {
             val blocked = report.blockingSteps.mapNotNull { (it.step as? SceneStep.DeviceKey)?.key }
             val message = when {
-                report.cycle -> "${scene.name}: scene references itself."
-                blocked.isEmpty() -> "${scene.name}: no runnable steps."
-                else -> "${scene.name} blocked: ${blocked.joinToString(", ") { it.replace('_', ' ') }} unavailable."
+                report.cycle -> tr(R.string.home_scene_self, scene.name)
+                blocked.isEmpty() -> tr(R.string.home_scene_no_steps, scene.name)
+                else -> tr(
+                    R.string.home_scene_blocked, scene.name,
+                    blocked.joinToString(", ") { it.replace('_', ' ') },
+                )
             }
             sceneStatus = message
             toast.show(message)
@@ -133,20 +139,22 @@ fun HomeScreen(
         runningScene = scene
         cancelling = false
         // Pre-flight result is on screen before the first transmit.
-        sceneStatus = "Running ${scene.name} · ${scene.steps.size} steps ready"
+        sceneStatus = tr(R.string.home_scene_running, scene.name, scene.steps.size)
         scope.launch {
             val result = SceneModel.run(
                 scene,
                 r,
                 transmit = { code -> !cancelling && transmitter.transmitButton(code.carrierHz, code.pattern) },
-                onProgress = { sent, total -> if (sent > 0) sceneStatus = "$sent/$total · ${scene.name}" },
+                onProgress = { sent, total ->
+                    if (sent > 0) sceneStatus = tr(R.string.home_scene_progress, sent, total, scene.name)
+                },
                 delay = { kotlinx.coroutines.delay(it) },
             )
             sceneStatus = when (result) {
-                is SceneRunResult.Complete -> "${scene.name}: ${result.sent} sent"
+                is SceneRunResult.Complete -> tr(R.string.home_scene_sent, scene.name, result.sent)
                 is SceneRunResult.Failed ->
-                    if (cancelling) "Stopped at step ${result.stoppedAt + 1}."
-                    else "${scene.name}: ${result.reason}"
+                    if (cancelling) tr(R.string.home_scene_stopped, result.stoppedAt + 1)
+                    else tr(R.string.home_scene_failed, scene.name, Copy.sceneStepFailure(result.reason))
             }
             runningScene = null
             cancelling = false
@@ -177,7 +185,7 @@ fun HomeScreen(
                 onFire = ::fireFavorite,
                 onRemove = { favorite ->
                     favoritesModel.removeFavorite(favorite)
-                    toast.show("${favorite.display} removed from favorites")
+                    toast.show(tr(R.string.home_favorite_removed, favorite.display))
                 },
                 onMove = { from, to -> favoritesModel.moveFavorite(from, to) },
             )
@@ -214,7 +222,7 @@ fun HomeScreen(
                 sections.forEach { section ->
                     if (showHeaders) {
                         item(key = "head:${section.slug}", span = { GridItemSpan(maxLineSpan) }) {
-                            SectionHead(section.title, Modifier.padding(top = 6.dp, bottom = 2.dp))
+                            SectionHead(Copy.roomTitle(section.slug), Modifier.padding(top = 6.dp, bottom = 2.dp))
                         }
                     }
                     items(section.devices, key = { it.remoteId }) { dev ->
@@ -222,7 +230,7 @@ fun HomeScreen(
                             device = dev,
                             repo = repo,
                             transmitter = transmitter,
-                            onClick = { if (dev.enabled) onOpenDevice(dev) else toast.show("Remote disabled. Long-press to edit it.") },
+                            onClick = { if (dev.enabled) onOpenDevice(dev) else toast.show(tr(R.string.home_remote_disabled)) },
                             onLongClick = { sheetDevice = dev },
                         )
                     }
@@ -269,27 +277,27 @@ fun DeviceActionSheet(
             Text(dev.brand, style = MaterialTheme.typography.labelSmall, color = PaperFaint)
             Spacer(Modifier.height(20.dp))
             if (onCopiedKeys != null) {
-                SheetAction("Copied keys", "paste a copied code") { onDismiss(); onCopiedKeys() }
+                SheetAction(tr(R.string.home_copied_keys), tr(R.string.home_copied_keys_desc)) { onDismiss(); onCopiedKeys() }
             if (onFavorites != null) {
-                SheetAction("Favorites", "pin keys to the home row") { onDismiss(); onFavorites() }
+                SheetAction(tr(R.string.home_favorites), tr(R.string.home_favorites_desc)) { onDismiss(); onFavorites() }
             }
             if (onInspectSignals != null) {
-                SheetAction("Inspect signals", "waveform, carrier, protocol") { onDismiss(); onInspectSignals() }
+                SheetAction(tr(R.string.home_inspect), tr(R.string.home_inspect_desc)) { onDismiss(); onInspectSignals() }
             }
             }
-            SheetAction("Edit", "name, room, shortcut") { onDismiss(); onEdit(dev) }
+            SheetAction(tr(R.string.home_edit), tr(R.string.home_edit_desc)) { onDismiss(); onEdit(dev) }
             SheetAction(
-                if (dev.pinned) "Unpin" else "Pin",
-                if (dev.pinned) "remove the star" else "mark with a star",
-            ) { model.togglePin(dev.key); onDismiss(); toast.show(if (dev.pinned) "${dev.name} unpinned" else "${dev.name} pinned") }
+                if (dev.pinned) tr(R.string.home_unpin) else tr(R.string.home_pin),
+                if (dev.pinned) tr(R.string.home_unpin_desc) else tr(R.string.home_pin_desc),
+            ) { model.togglePin(dev.key); onDismiss(); toast.show(if (dev.pinned) tr(R.string.home_unpinned, dev.name) else tr(R.string.home_pinned, dev.name)) }
             // Custom remotes have no DB id to encode — nothing to scan.
             if (dev.remoteId >= 0) {
-                SheetAction("Share", "show QR code") { onDismiss(); onShare(dev) }
+                SheetAction(tr(R.string.home_share), tr(R.string.home_share_desc)) { onDismiss(); onShare(dev) }
             }
             SheetAction("Delete", null, destructive = true) {
                 model.remove(dev.key)
                 onDismiss()
-                toast.show("${dev.name} removed", "Undo") { model.save(dev) }
+                toast.show(tr(R.string.home_remote_removed, dev.name), tr(R.string.home_undo)) { model.save(dev) }
             }
         }
     }
@@ -319,9 +327,9 @@ private fun SheetAction(label: String, hint: String?, destructive: Boolean = fal
 private fun EmptyDeck(onAdd: () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(Modifier.padding(24.dp).pressable(onAdd).bgTile(20.dp).padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("No devices yet", style = MaterialTheme.typography.titleLarge)
+            Text(tr(R.string.home_no_devices), style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(8.dp))
-            Text("Tap to add your first remote.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(tr(R.string.home_tap_to_add), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -358,7 +366,7 @@ private fun DeviceTile(
                     buildString {
                         append(device.brand); append(" · "); append(device.buttonCount)
                         if (Room.fromSlug(device.roomSlug) != Room.General) {
-                            append(" · "); append(Room.fromSlug(device.roomSlug).display)
+                            append(" · "); append(Copy.room(Room.fromSlug(device.roomSlug)))
                         }
                     },
                     style = MaterialTheme.typography.labelSmall, color = PaperFaint,
@@ -396,7 +404,7 @@ private fun FavoritesStrip(
     val density = LocalDensity.current
     var dragIndex by remember { mutableStateOf(-1) }
     Column {
-        SectionHead("Favorites", Modifier.padding(start = 24.dp, top = 8.dp))
+        SectionHead(tr(R.string.home_favorites), Modifier.padding(start = 24.dp, top = 8.dp))
         Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
                 // Reorder by long-press drag: the detector only claims the
@@ -457,7 +465,7 @@ private fun FavoritesStrip(
                         )
                         if (!state.available) {
                             Text(
-                                "unavailable",
+                                tr(R.string.home_unavailable),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = PaperFaint,
                             )
@@ -487,7 +495,7 @@ private fun ScenesStrip(
     onCancel: () -> Unit,
 ) {
     Column {
-        SectionHead("Scenes", Modifier.padding(start = 24.dp, top = 4.dp))
+        SectionHead(tr(R.string.home_scenes), Modifier.padding(start = 24.dp, top = 4.dp))
         Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             verticalAlignment = Alignment.CenterVertically,
@@ -495,7 +503,7 @@ private fun ScenesStrip(
             scenes.forEachIndexed { index, scene ->
                 val isRunning = running != null && running.id == scene.id
                 Text(
-                    if (isRunning) "Cancel ${scene.name}" else scene.name,
+                    if (isRunning) tr(R.string.home_cancel_scene, scene.name) else scene.name,
                     style = MaterialTheme.typography.titleSmall,
                     color = if (isRunning) Danger else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,

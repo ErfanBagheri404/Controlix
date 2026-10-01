@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RemoteViews cannot read Compose typography, so the widget's text style lives
+  here. values-fa overrides the same style with Yekan Bakh — English keeps the
+  platform face, byte-identical to before.
+-->
+<resources>
+    <style name="WidgetText">
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+</resources>

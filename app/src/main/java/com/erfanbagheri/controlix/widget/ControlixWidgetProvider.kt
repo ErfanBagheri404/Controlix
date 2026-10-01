@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import com.erfanbagheri.controlix.R
 import com.erfanbagheri.controlix.ui.DeviceStore
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.data.Copy
 
 /**
  * Single-button home-screen widget. One stored remote + one stored button;
@@ -36,13 +38,13 @@ class ControlixWidgetProvider : AppWidgetProvider() {
         val buttonText: String
         when {
             target == null -> {
-                title = "Controlix"
-                status = WidgetBinding.NO_TARGET
+                title = ctx.getString(R.string.app_name)
+                status = ctx.getString(R.string.widget_no_target)
                 buttonText = "＋"
             }
             devices.none { it.remoteId == target.remoteId } -> {
-                title = "Controlix"
-                status = WidgetBinding.NO_DEVICE
+                title = ctx.getString(R.string.app_name)
+                status = ctx.getString(R.string.widget_remote_deleted)
                 buttonText = "–"
             }
             else -> {
@@ -51,11 +53,11 @@ class ControlixWidgetProvider : AppWidgetProvider() {
                 val bound = key?.let { WidgetBinding.pick(WidgetCore.resolve(ctx, target.remoteId), it) }
                 title = name
                 status = when {
-                    key == null -> WidgetBinding.NO_TARGET
-                    bound != null -> WidgetBinding.KEY_LABELS[key] ?: key
-                    else -> "No ${WidgetBinding.KEY_LABELS[key]?.lowercase() ?: key}"
+                    key == null -> ctx.getString(R.string.widget_no_target)
+                    bound != null -> Copy.widgetKey(key)
+                    else -> ctx.getString(R.string.widget_no_key, Copy.widgetKey(key))
                 }
-                buttonText = key?.let { WidgetBinding.KEY_LABELS[it] ?: it } ?: "＋"
+                buttonText = key?.let { Copy.widgetKey(it) } ?: "＋"
                 if (bound != null) {
                     v.setOnClickPendingIntent(R.id.widget_button, WidgetCore.firePending(ctx, id, key))
                 } else {

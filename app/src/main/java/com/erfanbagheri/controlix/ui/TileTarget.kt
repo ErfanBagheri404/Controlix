@@ -30,6 +30,8 @@ import com.erfanbagheri.controlix.quicksettings.TileTarget
 import com.erfanbagheri.controlix.quicksettings.TileTargetSelection
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /**
  * Issue #78: choose what the Quick Settings tile fires.
@@ -74,10 +76,10 @@ fun TileTargetScreen(
     Column(Modifier.fillMaxSize().applyTopInset().applyBottomInset().padding(horizontal = 24.dp)) {
         Spacer(Modifier.height(14.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Tile target", style = MaterialTheme.typography.headlineMedium)
+            Text(tr(R.string.tile_title), style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.weight(1f))
             Text(
-                "Done",
+                tr(R.string.tile_done),
                 style = MaterialTheme.typography.titleMedium,
                 color = Accent,
                 modifier = Modifier.pressable(onBack).padding(8.dp),
@@ -85,8 +87,8 @@ fun TileTargetScreen(
         }
         Spacer(Modifier.height(6.dp))
         Text(
-            pinned?.let { "${it.device.brandName} · ${it.key.replace('_', ' ')}" }
-                ?: "Nothing pinned — the tile opens the app.",
+            pinned?.let { tr(R.string.tile_key_label, it.device.brandName, it.key.replace('_', ' ')) }
+                ?: tr(R.string.tile_nothing_pinned),
             style = MaterialTheme.typography.bodyMedium,
             color = if (pinned != null) MaterialTheme.colorScheme.onSurface else PaperFaint,
         )
@@ -96,11 +98,11 @@ fun TileTargetScreen(
         if (chosen != null) {
             // Key step: only keys this remote actually resolves, so a pin can
             // never name a code the DB does not have.
-            SectionHead("${chosen.name} · pick a key")
+            SectionHead(tr(R.string.tile_pick_key, chosen.name))
             val keys = keyList(chosen)
             if (keys.isEmpty()) {
                 Text(
-                    "This remote resolves no keys, so it cannot be pinned.",
+                    tr(R.string.tile_no_keys),
                     style = MaterialTheme.typography.bodyMedium,
                     color = PaperFaint,
                     modifier = Modifier.padding(vertical = 16.dp),
@@ -116,7 +118,7 @@ fun TileTargetScreen(
                             store.pin(t)
                             pinned = t
                             pickDevice = null
-                            toast.show("Tile fires ${key.replace('_', ' ')} on ${chosen.name}")
+                            toast.show(tr(R.string.tile_fires_key, key.replace('_', ' '), chosen.name))
                         }.padding(vertical = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -132,7 +134,7 @@ fun TileTargetScreen(
             Row(
                 Modifier.fillMaxWidth().pressable { pickDevice = null }.padding(vertical = 16.dp),
             ) {
-                Text("Back to devices", style = MaterialTheme.typography.titleSmall, color = PaperFaint)
+                Text(tr(R.string.tile_back_to_devices), style = MaterialTheme.typography.titleSmall, color = PaperFaint)
             }
             return@Column
         }
@@ -151,7 +153,7 @@ fun TileTargetScreen(
         val favorites = remember { FavoritesScenesStore(ctx).loadFavorites() }
         if (favorites.isEmpty() && shown.isEmpty()) {
             Text(
-                "No saved remote can be pinned yet. Add a device first.",
+                tr(R.string.tile_no_saved),
                 style = MaterialTheme.typography.bodyMedium,
                 color = PaperFaint,
                 modifier = Modifier.padding(vertical = 16.dp),
@@ -159,7 +161,7 @@ fun TileTargetScreen(
         }
         LazyColumn(Modifier.weight(1f)) {
             if (favorites.isNotEmpty()) {
-                item(key = "head:fav") { SectionHead("Favorites") }
+                item(key = "head:fav") { SectionHead(tr(R.string.home_favorites)) }
             }
             items(favorites, key = { "f:${it.device.prefKey()}:${it.button}" }) { fav ->
                 Row(
@@ -167,7 +169,7 @@ fun TileTargetScreen(
                         val t = TileTarget(fav.device, fav.button)
                         store.pin(t)
                         pinned = t
-                        toast.show("Tile fires ${fav.display}")
+                        toast.show(tr(R.string.tile_fires_fav, fav.display))
                     }.padding(vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -181,7 +183,7 @@ fun TileTargetScreen(
                 SheetDivider()
             }
             if (shown.isNotEmpty()) {
-                item(key = "head:dev") { SectionHead("Remotes") }
+                item(key = "head:dev") { SectionHead(tr(R.string.tile_remotes)) }
             }
             items(shown, key = { "d:${it.remoteId}" }) { dev ->
                 Row(

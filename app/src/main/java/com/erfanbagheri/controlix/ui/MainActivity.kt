@@ -1,6 +1,7 @@
 package com.erfanbagheri.controlix.ui
 
 import android.app.Activity
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,12 +9,17 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.l10nApply
 import com.erfanbagheri.controlix.feature.AutomationState
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.theme.ControlixTheme
 import com.erfanbagheri.controlix.ui.theme.ThemeState
 
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(l10nApply(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Before setContent: the initial route reads ResumeState during composition.

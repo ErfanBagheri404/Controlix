@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ir.IrTransmitter
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /**
  * Brand setup — candidates are user-selectable in any order. Power codes keep
@@ -47,7 +49,23 @@ enum class TestKind(val title: String, val question: String, val actionLabel: St
     Power("Power", "Did it turn off?", "Press power", ActionIcon.Power),
     VolUp("Volume up", "Did the volume go up?", "Press volume up", ActionIcon.VolUp),
     VolDown("Volume down", "And back down?", "Press volume down", ActionIcon.VolDown),
-    Mute("Mute", "Did it mute?", "Press mute", ActionIcon.Mute),
+    Mute("Mute", "Did it mute?", "Press mute", ActionIcon.Mute);
+
+    /** Localized copy; the enum literals above are the English contract. */
+    fun display(kind: TestKind): Triple<String, String, String> = when (kind) {
+        TestKind.Power -> Triple(
+            tr(R.string.widget_key_power), tr(R.string.ritual_q_power), tr(R.string.ritual_action_power),
+        )
+        TestKind.VolUp -> Triple(
+            tr(R.string.widget_key_volume_up), tr(R.string.ritual_q_up), tr(R.string.ritual_action_vol_up),
+        )
+        TestKind.VolDown -> Triple(
+            tr(R.string.widget_key_volume_down), tr(R.string.ritual_q_down), tr(R.string.ritual_action_vol_down),
+        )
+        TestKind.Mute -> Triple(
+            tr(R.string.widget_key_mute), tr(R.string.ritual_q_mute), tr(R.string.ritual_action_mute),
+        )
+    }
 }
 
 private val setupSessionSaver = listSaver<SetupTestSession, String>(
@@ -101,8 +119,8 @@ fun RitualScreen(
     var lockedRemoteId by rememberSaveable { mutableStateOf(-1) }
     var emitTrigger by remember { mutableStateOf<Any?>(null) }
     val pressMessage =
-        if (transmitter.hasIrEmitter()) "Press the button below to send the command."
-        else "This device has no IR blaster. Setup cannot test this remote."
+        if (transmitter.hasIrEmitter()) tr(R.string.setup_press)
+        else tr(R.string.setup_no_ir)
     var transmission by remember { mutableStateOf(SetupTransmission(false, pressMessage)) }
 
     val followUpTests = remember(lockedRemoteId, brandId) {
@@ -216,14 +234,14 @@ fun RitualScreen(
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    "$testedCount / $totalCount",
+                    tr(R.string.ritual_progress, testedCount, totalCount),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Spacer(Modifier.height(6.dp))
             Text(
-                transmission.message,
+                SetupTransmission.display(transmission),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -232,7 +250,7 @@ fun RitualScreen(
                 items(powerKeys, key = { it }) { key ->
                     val index = key.substringAfter('#').toInt()
                     CandidateRow(
-                        title = "Power code ${index + 1}",
+                        title = tr(R.string.ritual_power_code, index + 1),
                         detail = candidates[index].buttonName,
                         status = session.statusFor(key),
                         selected = key == selectedKey,
@@ -243,10 +261,10 @@ fun RitualScreen(
                 if (followUpKeys.isNotEmpty()) {
                     item(key = "followups-head") {
                         Spacer(Modifier.height(16.dp))
-                        Text("Follow-up tests", style = MaterialTheme.typography.titleMedium)
+                        Text(tr(R.string.ritual_follow_up), style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            "Codes from the accepted power remote.",
+                            tr(R.string.ritual_codes_from),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -268,7 +286,7 @@ fun RitualScreen(
                     Spacer(Modifier.height(12.dp))
                     // Flat link, not a chip: the ritual stays the funnel, this is the escape hatch.
                     Text(
-                        "Missing this button? Report it",
+                        tr(R.string.ritual_missing_button),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.pressable { onMissingCode(currentTest.title) }.padding(vertical = 8.dp),
@@ -288,7 +306,7 @@ fun RitualScreen(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Text(
-                            "Skip to volume test",
+                            tr(R.string.ritual_skip_volume),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -307,10 +325,10 @@ fun RitualScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                AnswerChip(ActionIcon.Cross, "No", feedback = Feedback::deny) { answer(false) }
+                AnswerChip(ActionIcon.Cross, tr(R.string.ritual_no), feedback = Feedback::deny) { answer(false) }
                 AnswerChip(
                     ActionIcon.Check,
-                    "Yes",
+                    tr(R.string.ritual_yes),
                     enabled = transmission.canConfirm,
                     feedback = Feedback::confirm,
                 ) { answer(true) }
@@ -335,16 +353,16 @@ private fun EmptyRitual(
         Modifier.fillMaxSize().navigationBarsPadding().padding(24.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("Nothing to try", style = MaterialTheme.typography.headlineMedium)
+        Text(tr(R.string.ritual_nothing), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text(
-            "No power codes for $brandName in $categoryName. The power-off sweep still brute-forces every brand — try that instead.",
+            tr(R.string.ritual_no_power, brandName, categoryName),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(24.dp))
         Text(
-            "Missing a code? Report it",
+            tr(R.string.ritual_missing_code),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.pressable(onMissingCode).padding(vertical = 12.dp),
@@ -448,6 +466,6 @@ fun BackRow(onBack: () -> Unit) {
     Row(Modifier.pressable(onBack).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         ActionIconView(ActionIcon.Back, 20.dp, MaterialTheme.colorScheme.primary)
         Spacer(Modifier.width(8.dp))
-        Text("Back", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+        Text(tr(R.string.ritual_back), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
     }
 }

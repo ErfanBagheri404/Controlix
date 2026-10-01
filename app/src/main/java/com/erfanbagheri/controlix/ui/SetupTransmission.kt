@@ -1,4 +1,6 @@
 package com.erfanbagheri.controlix.ui
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /**
  * The outcome of one IR transmission attempt, typed so the UI can react to
@@ -17,32 +19,50 @@ sealed interface SendResult {
     data class Failed(val reason: String) : SendResult
 }
 
-internal data class SetupTransmission(val canConfirm: Boolean, val message: String) {
+internal data class SetupTransmission(
+    val canConfirm: Boolean,
+    val message: String,
+    /** Set when [message] is a rejection — lets [display] re-render it localized. */
+    val failedReason: String? = null,
+) {
     companion object {
+        /** The English contract the unit tests assert against. */
+        const val MSG_SENT = "Command sent. Check your device, then choose Yes or No."
+        const val MSG_NO_IR = "This device has no IR blaster. Setup cannot test this remote."
+
+        fun failedMessage(reason: String) =
+            "Couldn't send this code ($reason). Try the button again, or press No for the next code — or Yes if it did something."
+
         /**
          * The user physically watches the device. When hardware exists,
          * trust the user's observation over an API return value: only
          * [SendResult.NoHardware] blocks Yes. A [SendResult.Failed] code is
          * a dead end for *that* code, not for the whole ritual.
+         *
+         * Returns raw English — unit tests assert the exact wording. The
+         * setup screen renders through [display] for the localized copy.
          */
         fun afterSend(result: SendResult) = when (result) {
-            is SendResult.Sent -> SetupTransmission(
-                canConfirm = true,
-                message = "Command sent. Check your device, then choose Yes or No.",
-            )
-            is SendResult.NoHardware -> SetupTransmission(
-                canConfirm = false,
-                message = "This device has no IR blaster. Setup cannot test this remote.",
-            )
+            is SendResult.Sent -> SetupTransmission(canConfirm = true, message = MSG_SENT)
+            is SendResult.NoHardware -> SetupTransmission(canConfirm = false, message = MSG_NO_IR)
             is SendResult.Failed -> SetupTransmission(
                 canConfirm = true,
-                message = "Couldn't send this code (${result.reason}). Try the button again, or press No for the next code — or Yes if it did something.",
+                message = failedMessage(result.reason),
+                failedReason = result.reason,
             )
         }
 
         /** Old call sites passed booleans; map them onto the typed result. */
         fun afterSend(sent: Boolean, hasEmitter: Boolean) =
             afterSend(if (sent) SendResult.Sent else if (!hasEmitter) SendResult.NoHardware else SendResult.Failed("unknown"))
+
+        /** Localized copy for display; English contract stays in [message]. */
+        fun display(t: SetupTransmission): String = when {
+            t.failedReason != null -> tr(R.string.setup_couldnt_send, t.failedReason)
+            t.message == MSG_SENT -> tr(R.string.setup_command_sent)
+            t.message == MSG_NO_IR -> tr(R.string.setup_no_ir)
+            else -> t.message
+        }
     }
 }
 

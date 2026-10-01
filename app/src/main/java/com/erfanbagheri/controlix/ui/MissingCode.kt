@@ -35,6 +35,9 @@ import com.erfanbagheri.controlix.data.ContributionBundle
 import com.erfanbagheri.controlix.data.ContributionField
 import com.erfanbagheri.controlix.data.ContributionRejection
 import java.io.File
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
+import com.erfanbagheri.controlix.data.Copy
 
 /**
  * "Missing a code?" — one flat form, live typed validation, explicit share.
@@ -82,10 +85,10 @@ fun MissingCodeScreen(
 
     Column(Modifier.fillMaxSize().applyTopInset().navigationBarsPadding().padding(horizontal = 24.dp)) {
         Spacer(Modifier.height(14.dp))
-        BackTitleRow("Missing a code?", onBack)
+        BackTitleRow(tr(R.string.menu_missing_code), onBack)
         Spacer(Modifier.height(12.dp))
         Text(
-            "Paste the code, name its source. Sharing is manual — Controlix never uploads anything itself.",
+            tr(R.string.missing_intro),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -94,8 +97,12 @@ fun MissingCodeScreen(
         pending.firstOrNull()?.let { p ->
             Spacer(Modifier.height(12.dp))
             Text(
-                "From the pad: ${p.brand}${if (p.remote.isNotBlank()) " ${p.remote}" else ""} · " +
-                    (if (p.wholeRemote) "no supported keys on this remote" else "no \"${p.button}\" code"),
+                tr(
+                    R.string.missing_from_pad,
+                    p.brand + if (p.remote.isNotBlank()) " ${p.remote}" else "",
+                    if (p.wholeRemote) tr(R.string.missing_no_supported_keys)
+                    else tr(R.string.missing_no_button_code, p.button),
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -103,31 +110,30 @@ fun MissingCodeScreen(
         Spacer(Modifier.height(20.dp))
 
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            FlatField("Brand", brand, { brand = it }, reason(ContributionField.BRAND), showAll, "Sony")
-            FlatField("Category", category, { category = it }, reason(ContributionField.CATEGORY), showAll, "tvs")
-            FlatField("Remote name / model", remote, { remote = it }, reason(ContributionField.REMOTE_NAME), showAll, "RM-ED009")
-            FlatField("Button name", button, { button = it }, reason(ContributionField.BUTTON_NAME), showAll, "Volume up")
+            FlatField(tr(R.string.field_brand), brand, { brand = it }, reason(ContributionField.BRAND), showAll, "Sony")
+            FlatField(tr(R.string.field_category), category, { category = it }, reason(ContributionField.CATEGORY), showAll, "tvs")
+            FlatField(tr(R.string.field_remote_model), remote, { remote = it }, reason(ContributionField.REMOTE_NAME), showAll, "RM-ED009")
+            FlatField(tr(R.string.field_button_name), button, { button = it }, reason(ContributionField.BUTTON_NAME), showAll, tr(R.string.widget_key_volume_up))
             FlatField(
-                "Carrier Hz", carrier, { carrier = it.filter(Char::isDigit) },
+                tr(R.string.field_carrier), carrier, { carrier = it.filter(Char::isDigit) },
                 reason(ContributionField.CARRIER), showAll, "38000", numeric = true,
             )
             FlatField(
-                "Pattern (microseconds)", pattern, { pattern = it },
+                tr(R.string.field_pattern), pattern, { pattern = it },
                 reason(ContributionField.PATTERN), showAll,
                 "900 451 560 451 1680 560",
             )
             FlatField(
-                "Source / provenance", provenance, { provenance = it },
+                tr(R.string.field_source), provenance, { provenance = it },
                 reason(ContributionField.PROVENANCE), showAll,
-                "Public irdb dump, retested on my own remote",
+                tr(R.string.missing_prov_example),
             )
             Text(
-                "Controlix cannot learn codes — its IR hardware only transmits. Only name a source you can " +
-                    "vouch for; codes with unknown or proprietary provenance are refused.",
+                tr(R.string.missing_learn_note),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            FlatField("App version", version, { version = it }, reason(ContributionField.APP_VERSION), showAll, null)
+            FlatField(tr(R.string.field_app_version), version, { version = it }, reason(ContributionField.APP_VERSION), showAll, null)
             Spacer(Modifier.height(20.dp))
         }
 
@@ -137,19 +143,18 @@ fun MissingCodeScreen(
         if (armed) {
             Spacer(Modifier.height(8.dp))
             Text(
-                "Tapping share opens your apps — the report leaves the device only through the chooser " +
-                    "you pick. Nothing is uploaded in the background.",
+                tr(R.string.missing_share_note),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         BigPressButton(
-            if (armed) "Confirm — open share sheet" else "Share with maintainer",
+            if (armed) tr(R.string.mc_confirm_share) else tr(R.string.mc_share_with),
             ActionIcon.Share,
         ) {
             if (reasons.isNotEmpty()) {
                 showAll = true
-                shareError = "Fix the ${reasons.size} flagged ${if (reasons.size == 1) "field" else "fields"} first."
+                shareError = tr(R.string.missing_fix_flagged, if (reasons.size == 1) tr(R.string.missing_field_one) else tr(R.string.missing_field_many))
                 return@BigPressButton
             }
             if (!armed) {
@@ -158,7 +163,7 @@ fun MissingCodeScreen(
             }
             val bundle = ContributionBundle(listOf(draft))
             shareError = if (shareContribution(context, bundle)) null
-            else "No app available to share. Copy the JSON manually."
+            else tr(R.string.missing_no_app)
             if (shareError == null) reportStore.clear()
         }
         shareError?.let {
@@ -198,7 +203,7 @@ private fun FlatField(
         if (show) {
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.Top) {
                 Text(
-                    rejection.message,
+                    Copy.rejection(rejection),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -224,18 +229,19 @@ private fun shareContribution(context: Context, bundle: ContributionBundle): Boo
         file.writeText(json)
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         val first = bundle.buttons.first()
-        val body = "Missing IR code for ${first.brand} ${first.remoteName} · ${first.buttonName} " +
-            "(${first.carrierHz} Hz), sent from Controlix ${first.appVersion}. " +
-            "Source: ${first.provenance}. JSON attached — carrier plus full pattern, no proprietary data."
+        val body = tr(
+            R.string.missing_share_body, first.brand, first.remoteName, first.buttonName,
+            first.carrierHz, first.appVersion, first.provenance,
+        )
         val send = Intent(Intent.ACTION_SEND).apply {
             type = "application/json"
             putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, "Missing IR code: ${first.brand} ${first.remoteName}")
+            putExtra(Intent.EXTRA_SUBJECT, tr(R.string.missing_share_subject, first.brand, first.remoteName))
             putExtra(Intent.EXTRA_TEXT, body)
             clipData = ClipData.newRawUri(ContributionBundle.FILE_NAME, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(send, "Share contribution"))
+        context.startActivity(Intent.createChooser(send, tr(R.string.missing_share_contribution)))
         true
     }.getOrDefault(false)
 }

@@ -25,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.WhatsNewStore
 import com.erfanbagheri.controlix.ui.theme.Accent
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /**
  * Clean, studio-dark modal informing the user of what's new in this release (Issue #52).
@@ -56,7 +58,7 @@ fun WhatsNewDialog(
                     ActionIconView(ActionIcon.Info, 24.dp, Accent)
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        text = "What's new in $version",
+                        text = tr(R.string.whats_new_title, version),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -66,7 +68,7 @@ fun WhatsNewDialog(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                 Spacer(Modifier.height(16.dp))
 
-                val cleanedNotes = WhatsNewStore.cleanReleaseBody(notes)
+                val cleanedNotes = WhatsNewStore.cleanReleaseBody(notes, tr(R.string.whats_new_default))
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -91,7 +93,7 @@ fun WhatsNewDialog(
                         shape = RoundedCornerShape(0.dp),
                     ) {
                         Text(
-                            text = "Got it",
+                            text = tr(R.string.whats_new_got_it),
                             style = MaterialTheme.typography.labelLarge,
                             color = Accent,
                         )

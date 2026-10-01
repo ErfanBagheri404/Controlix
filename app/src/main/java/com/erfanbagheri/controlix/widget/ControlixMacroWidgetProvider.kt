@@ -16,6 +16,8 @@ import com.erfanbagheri.controlix.ui.WidgetMacroConfigureActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.data.Copy
 
 /**
  * Macro widget (issue #82): each instance binds one macro by its stable id
@@ -54,7 +56,7 @@ class ControlixMacroWidgetProvider : AppWidgetProvider() {
 
     private fun runMacro(ctx: Context, widgetId: Int, pending: BroadcastReceiver.PendingResult) {
         CoroutineScope(Dispatchers.Default).launch {
-            val status = runCatching { play(ctx, widgetId) }.getOrElse { "Not sent" }
+            val status = runCatching { play(ctx, widgetId) }.getOrElse { tr(R.string.widget_not_sent) }
             WidgetStore.setLastRun(ctx, widgetId, status)
             runCatching {
                 AppWidgetManager.getInstance(ctx).updateAppWidget(widgetId, render(ctx, widgetId, status))
@@ -64,12 +66,12 @@ class ControlixMacroWidgetProvider : AppWidgetProvider() {
     }
 
     private suspend fun play(ctx: Context, widgetId: Int): String {
-        val macroId = WidgetStore.macroId(ctx, widgetId) ?: return WidgetBinding.MACRO_UNSET
+        val macroId = WidgetStore.macroId(ctx, widgetId) ?: return ctx.getString(R.string.widget_pick_macro)
         val macro = WidgetBinding.findMacro(MacroStore(ctx).load(), macroId)
-            ?: return WidgetBinding.MACRO_DELETED
+            ?: return ctx.getString(R.string.widget_macro_deleted)
         val repo = IrCodeRepository(ctx)
         return try {
-            WidgetBinding.macroRunStatus(MacroPlayer(repo, IrTransmitter(ctx)).play(macro))
+            Copy.widgetMacroStatus(MacroPlayer(repo, IrTransmitter(ctx)).play(macro))
         } finally {
             repo.close()
         }
@@ -93,16 +95,17 @@ class ControlixMacroWidgetProvider : AppWidgetProvider() {
         val status: String
         when {
             macroId == null -> {
-                title = "Controlix"
-                status = WidgetBinding.MACRO_UNSET
+                title = ctx.getString(R.string.app_name)
+                status = ctx.getString(R.string.widget_pick_macro)
             }
             macro == null -> {
-                title = "Controlix"
-                status = WidgetBinding.MACRO_DELETED
+                title = ctx.getString(R.string.app_name)
+                status = ctx.getString(R.string.widget_macro_deleted)
             }
             else -> {
                 title = macro.name
-                status = statusOverride ?: WidgetStore.lastRun(ctx, widgetId) ?: WidgetBinding.TAP_TO_RUN
+                status = statusOverride ?: WidgetStore.lastRun(ctx, widgetId)
+                    ?: ctx.getString(R.string.widget_tap_to_run)
             }
         }
 

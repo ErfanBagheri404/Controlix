@@ -45,6 +45,8 @@ import com.erfanbagheri.controlix.ir.selfTestPattern
 import com.erfanbagheri.controlix.ui.theme.Accent
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
 import java.util.Locale
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /** One inspected code: the waveform, its stats, and the buttons to act on it. */
 data class InspectedSignal(
@@ -96,7 +98,7 @@ fun SignalAnalyzerScreen(
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "${formatHz(analysis.carrierHz)} · ${formatMs(analysis.totalDurationUs)} · ${analysis.pulseCount} marks",
+            tr(R.string.analyzer_summary, formatHz(analysis.carrierHz), formatMs(analysis.totalDurationUs), analysis.pulseCount),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -113,16 +115,18 @@ fun SignalAnalyzerScreen(
         }
 
         Spacer(Modifier.height(20.dp))
-        SectionHead("Waveform")
+        SectionHead(tr(R.string.analyzer_waveform))
         Spacer(Modifier.height(8.dp))
         Waveform(analysis)
 
         Spacer(Modifier.height(18.dp))
-        SectionHead("Timings")
+        SectionHead(tr(R.string.analyzer_timings))
         Spacer(Modifier.height(4.dp))
         Text(
-            "mark ${analysis.markMinUs}–${analysis.markMaxUs} us · " +
-                "space ${analysis.spaceMinUs}–${analysis.spaceMaxUs} us",
+            tr(
+                R.string.analyzer_timings_values,
+                analysis.markMinUs, analysis.markMaxUs, analysis.spaceMinUs, analysis.spaceMaxUs,
+            ),
             style = MaterialTheme.typography.labelSmall,
             color = PaperFaint,
         )
@@ -131,16 +135,16 @@ fun SignalAnalyzerScreen(
 
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ToolButton("Copy JSON", ActionIcon.Macros, {
+            ToolButton(tr(R.string.analyzer_copy_json), ActionIcon.Macros, {
                 clipboard.setText(AnnotatedString(patternToJson(analysis.pattern)))
-                note = "Copied ${analysis.pattern.size} durations"
+                note = tr(R.string.analyzer_copied_durations, analysis.pattern.size)
             }, Modifier.weight(1f))
             if (transmitter != null) {
-                ToolButton("Test fire", ActionIcon.Sweep, {
+                ToolButton(tr(R.string.analyzer_test_fire), ActionIcon.Sweep, {
                     note = when (val r = transmitter.transmitButtonResult(analysis.carrierHz, analysis.pattern)) {
-                        is SendResult.Sent -> "Sent ${buttonName.replace('_', ' ')}"
-                        SendResult.NoHardware -> "No IR emitter on this device"
-                        is SendResult.Failed -> "Couldn't send: ${r.reason}"
+                        is SendResult.Sent -> tr(R.string.analyzer_sent, buttonName.replace('_', ' '))
+                        SendResult.NoHardware -> tr(R.string.tools_no_ir_device)
+                        is SendResult.Failed -> tr(R.string.analyzer_send_failed, r.reason)
                     }
                 }, Modifier.weight(1f))
             }
@@ -163,7 +167,7 @@ private fun Waveform(analysis: SignalAnalysis, modifier: Modifier = Modifier) {
     val pattern = analysis.pattern
     if (pattern.isEmpty()) {
         Text(
-            "This button has no timing data.",
+            tr(R.string.analyzer_no_timing),
             style = MaterialTheme.typography.bodyMedium,
             color = PaperFaint,
             modifier = modifier,
@@ -222,7 +226,7 @@ private fun Waveform(analysis: SignalAnalysis, modifier: Modifier = Modifier) {
 @Composable
 private fun DurationRows(pattern: IntArray, modifier: Modifier = Modifier) {
     if (pattern.isEmpty()) {
-        Text("No durations.", style = MaterialTheme.typography.bodyMedium, color = PaperFaint, modifier = modifier)
+        Text(tr(R.string.analyzer_no_durations), style = MaterialTheme.typography.bodyMedium, color = PaperFaint, modifier = modifier)
         return
     }
     LazyColumn(modifier) {
@@ -240,7 +244,7 @@ private fun DurationRows(pattern: IntArray, modifier: Modifier = Modifier) {
                 )
                 Text("#$i", Modifier.width(48.dp), style = MaterialTheme.typography.labelSmall, color = PaperFaint)
                 Text(
-                    "${pattern[i]} us",
+                    tr(R.string.analyzer_us, pattern[i]),
                     Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -254,7 +258,7 @@ private fun DurationRows(pattern: IntArray, modifier: Modifier = Modifier) {
 private fun ProtocolBadge(analysis: SignalAnalysis) {
     val known = analysis.protocolName != null
     Text(
-        analysis.protocolName ?: "Raw",
+        analysis.protocolName ?: tr(R.string.analyzer_raw),
         style = MaterialTheme.typography.labelLarge,
         color = if (known) Accent else MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier
@@ -296,7 +300,7 @@ private fun group(n: Int): String = n.toString().reversed().chunked(3).joinToStr
 
 /** The self-test burst, inspectable without a saved remote (drawer entry). */
 fun selfTestSignal(): InspectedSignal =
-    InspectedSignal("Self-test burst", 38000, selfTestPattern(), null)
+    InspectedSignal(tr(R.string.analyzer_selftest_burst), 38000, selfTestPattern(), null)
 
 /**
  * What the analyzer screen can be opened on: one saved device's buttons, or
@@ -310,14 +314,14 @@ internal fun analyzerTargets(
 ): List<Pair<String, InspectedSignal>> {
     val ids = if (remoteId != null) listOf(remoteId) else devices.map { it.remoteId }.filter { it >= 0 }
     val out = ArrayList<Pair<String, InspectedSignal>>()
-    out += "Self-test" to selfTestSignal()
+    out += tr(R.string.analyzer_selftest) to selfTestSignal()
     ids.forEach { rid ->
         val buttons = runCatching { repo?.buttons(rid) }.getOrNull().orEmpty()
         val name = devices.firstOrNull { it.remoteId == rid }?.name
             ?: runCatching { repo?.remoteName(rid) }.getOrNull()
-            ?: "Remote $rid"
+            ?: tr(R.string.analyzer_remote, rid)
         buttons.forEach { b ->
-            out += "$name · ${b.name.replace('_', ' ')}" to
+            out += tr(R.string.tile_key_label, name, b.name.replace('_', ' ')) to
                 InspectedSignal(b.name, b.carrierHz, b.pattern, b.protocol)
         }
     }
@@ -344,10 +348,10 @@ fun AnalyzerPickerScreen(
         Spacer(Modifier.height(12.dp))
         BackRow(onBack)
         Spacer(Modifier.height(12.dp))
-        Text("Signal analyzer", style = MaterialTheme.typography.headlineMedium)
+        Text(tr(R.string.analyzer_title), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(4.dp))
         Text(
-            "Pick a button to see its pulse timings, carrier and protocol.",
+            tr(R.string.analyzer_pick_button),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

@@ -37,6 +37,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /**
  * Custom remote builder. Search the bundled DB for a source remote, tap
@@ -91,8 +93,8 @@ fun BuilderScreen(
 
     fun save() {
         val label = name.trim()
-        if (label.isEmpty()) { toast.show("Name the remote first."); return }
-        if (recipe.buttons.isEmpty()) { toast.show("Pick at least one button."); return }
+        if (label.isEmpty()) { toast.show(tr(R.string.builder_name_first)); return }
+        if (recipe.buttons.isEmpty()) { toast.show(tr(R.string.builder_pick_button)); return }
         // Validation queries SQLite — off the frame, then persist.
         scope.launch {
             val validated = withContext(Dispatchers.IO) {
@@ -101,13 +103,13 @@ fun BuilderScreen(
                 }
             }
             if (validated.buttons.isEmpty()) {
-                toast.show("Those buttons are gone from the database.")
+                toast.show(tr(R.string.builder_buttons_gone))
                 return@launch
             }
             val id = store.nextId()
             store.save(id, validated)
-            model.save(SavedDevice(id, label, "Custom", "custom", validated.buttons.size))
-            toast.show("$label saved")
+            model.save(SavedDevice(id, label, tr(R.string.builder_source_custom), "custom", validated.buttons.size))
+            toast.show(tr(R.string.builder_saved, label))
             onSaved(id)
         }
     }
@@ -126,13 +128,13 @@ fun BuilderScreen(
             )
         }
         Spacer(Modifier.height(8.dp))
-        Text("Build remote", style = MaterialTheme.typography.headlineMedium)
+        Text(tr(R.string.builder_title), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(16.dp))
 
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            placeholder = { Text("Remote name") },
+            placeholder = { Text(tr(R.string.builder_remote_name)) },
             singleLine = true,
             shape = RoundedCornerShape(14.dp),
             modifier = Modifier.fillMaxWidth(),
@@ -140,13 +142,13 @@ fun BuilderScreen(
 
         Spacer(Modifier.height(24.dp))
         Text(
-            "Buttons (${recipe.buttons.size})",
+            tr(R.string.builder_buttons_count, recipe.buttons.size),
             style = MaterialTheme.typography.labelLarge, color = PaperFaint,
         )
         Spacer(Modifier.height(4.dp))
         if (recipe.buttons.isEmpty()) {
             Text(
-                "Search below, pick a remote, tap its buttons.",
+                tr(R.string.builder_search_below),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 12.dp),
@@ -171,14 +173,14 @@ fun BuilderScreen(
         val source = sourceRemote
         if (source == null) {
             Text(
-                "Source remote",
+                tr(R.string.builder_source_remote),
                 style = MaterialTheme.typography.labelLarge, color = PaperFaint,
             )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = { Text("Search remotes") },
+                placeholder = { Text(tr(R.string.builder_search_remotes)) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth(),
@@ -186,7 +188,7 @@ fun BuilderScreen(
             Spacer(Modifier.height(8.dp))
             if (results.isEmpty()) {
                 Text(
-                    if (query.isBlank()) "Type to search the database." else "No remotes match.",
+                    if (query.isBlank()) tr(R.string.builder_search_hint) else tr(R.string.builder_no_match),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 12.dp),
@@ -216,7 +218,7 @@ fun BuilderScreen(
                 ActionIconView(ActionIcon.Back, 18.dp, MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "All remotes",
+                    tr(R.string.builder_all_remotes),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -224,7 +226,7 @@ fun BuilderScreen(
             Hairline()
             if (sourceButtons.isEmpty()) {
                 Text(
-                    "This remote has no pad-mappable buttons.",
+                    tr(R.string.builder_no_mappable),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 12.dp),
@@ -272,7 +274,7 @@ private fun ChosenRow(
 ) {
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            "${index + 1}",
+            tr(R.string.builder_step_index, index + 1),
             style = MaterialTheme.typography.labelSmall, color = PaperFaint,
             modifier = Modifier.width(24.dp),
         )
@@ -297,7 +299,7 @@ private fun ChosenRow(
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    "${entry.sourceName} · remote ${entry.remoteId}",
+                    tr(R.string.builder_entry_source, entry.sourceName, entry.remoteId),
                     style = MaterialTheme.typography.labelSmall, color = PaperFaint,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )

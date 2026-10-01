@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Persian widget text: Yekan Bakh, matching the in-app typography. -->
+<resources>
+    <style name="WidgetText">
+        <item name="android:fontFamily">@font/yekanbakh</item>
+    </style>
+</resources>

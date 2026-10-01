@@ -6,6 +6,8 @@ import com.erfanbagheri.controlix.data.CopiedButtons
 import com.erfanbagheri.controlix.data.RemoteShareCodec
 import java.net.URLDecoder
 import java.net.URLEncoder
+import com.erfanbagheri.controlix.tr
+import com.erfanbagheri.controlix.R
 
 /**
  * A remote that arrived from a QR code (issue #56) and therefore owns its
