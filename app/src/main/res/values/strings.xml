@@ -19,6 +19,7 @@
     <string name="home_favorite_removed">%1$s removed from favorites</string>
     <string name="home_remote_disabled">Remote disabled. Long-press to edit it.</string>
     <string name="home_remote_removed">%1$s removed</string>
+    <string name="home_delete">Delete</string>
     <string name="home_undo">Undo</string>
 
     <!-- Drawer -->

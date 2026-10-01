@@ -285,16 +285,17 @@ fun DeviceActionSheet(
                 SheetAction(tr(R.string.home_inspect), tr(R.string.home_inspect_desc)) { onDismiss(); onInspectSignals() }
             }
             }
-            SheetAction(tr(R.string.home_edit), tr(R.string.home_edit_desc)) { onDismiss(); onEdit(dev) }
+            SheetAction(tr(R.string.home_edit), tr(R.string.home_edit_desc), icon = ActionIcon.Edit) { onDismiss(); onEdit(dev) }
             SheetAction(
                 if (dev.pinned) tr(R.string.home_unpin) else tr(R.string.home_pin),
                 if (dev.pinned) tr(R.string.home_unpin_desc) else tr(R.string.home_pin_desc),
+                icon = ActionIcon.Star,
             ) { model.togglePin(dev.key); onDismiss(); toast.show(if (dev.pinned) tr(R.string.home_unpinned, dev.name) else tr(R.string.home_pinned, dev.name)) }
             // Custom remotes have no DB id to encode — nothing to scan.
             if (dev.remoteId >= 0) {
                 SheetAction(tr(R.string.home_share), tr(R.string.home_share_desc)) { onDismiss(); onShare(dev) }
             }
-            SheetAction("Delete", null, destructive = true) {
+            SheetAction(tr(R.string.home_delete), null, destructive = true, icon = ActionIcon.Trash) {
                 model.remove(dev.key)
                 onDismiss()
                 toast.show(tr(R.string.home_remote_removed, dev.name), tr(R.string.home_undo)) { model.save(dev) }
@@ -304,16 +305,13 @@ fun DeviceActionSheet(
 }
 
 @Composable
-private fun SheetAction(label: String, hint: String?, destructive: Boolean = false, onClick: () -> Unit) {
+private fun SheetAction(label: String, hint: String?, destructive: Boolean = false,
+                        icon: ActionIcon? = null, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().pressable(onClick).padding(vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(40.dp).bgTile(12.dp, if (destructive) Danger.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-            val icon = when {
-                label == "Delete" -> ActionIcon.Trash
-                label.contains("Pin", true) -> ActionIcon.Star
-                label == "Edit" -> ActionIcon.Edit
-                else -> ActionIcon.Share
-            }
-            ActionIconView(icon, 18.dp, if (destructive) Danger else if (label.contains("Pin", true)) Gold else MaterialTheme.colorScheme.onSurface)
+            // Locale-independent: never branch on the translated label.
+            val resolved = icon ?: if (destructive) ActionIcon.Trash else ActionIcon.Share
+            ActionIconView(resolved, 18.dp, if (destructive) Danger else if (resolved == ActionIcon.Star) Gold else MaterialTheme.colorScheme.onSurface)
         }
         Spacer(Modifier.width(16.dp))
         Column {

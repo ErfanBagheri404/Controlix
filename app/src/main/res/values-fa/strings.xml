@@ -19,6 +19,7 @@
     <string name="home_favorite_removed">%1$s از علاقه‌مندی‌ها حذف شد</string>
     <string name="home_remote_disabled">ریموت غیرفعال است. برای ویرایش، روی آن فشار طولانی بزنید.</string>
     <string name="home_remote_removed">%1$s حذف شد</string>
+    <string name="home_delete">حذف</string>
     <string name="home_undo">بازگردانی</string>
 
     <!-- Drawer -->
