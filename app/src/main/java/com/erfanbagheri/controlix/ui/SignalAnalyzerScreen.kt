@@ -237,7 +237,7 @@ private fun DurationRows(pattern: IntArray, modifier: Modifier = Modifier) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    if (i % 2 == 0) "mark" else "space",
+                    if (i % 2 == 0) tr(R.string.analyzer_mark) else tr(R.string.analyzer_space),
                     Modifier.width(64.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = if (i % 2 == 0) Accent else PaperFaint,

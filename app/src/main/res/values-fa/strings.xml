@@ -487,10 +487,10 @@
     <string name="refresh_size_mismatch">عدم تطابق اندازه</string>
     <string name="refresh_sha_mismatch">عدم تطابق sha256</string>
     <string name="refresh_apply_failed">اعمال ناموفق</string>
-    <string name="refresh_dl_requires">دانلود نیاز به Checked دارد</string>
-    <string name="refresh_verify_requires">راستی‌آزمایی نیاز به Downloading دارد</string>
-    <string name="refresh_apply_requires">اعمال نیاز به Verified دارد</string>
-    <string name="refresh_finish_requires">پایان نیاز به Applying دارد</string>
+    <string name="refresh_dl_requires">دانلود پیش از بررسی ممکن نیست</string>
+    <string name="refresh_verify_requires">راستی‌آزمایی پیش از دانلود ممکن نیست</string>
+    <string name="refresh_apply_requires">اعمال پیش از راستی‌آزمایی ممکن نیست</string>
+    <string name="refresh_finish_requires">پایان پیش از اعمال ممکن نیست</string>
     <string name="scene_err_no_steps">صحنه گامی ندارد.</string>
     <string name="scene_err_selfref">صحنه به خودش ارجاع می‌دهد.</string>
     <string name="macro_step_gone">گام %1$d: دستگاه دیگر در دسترس نیست.</string>
@@ -498,7 +498,7 @@
     <string name="dbh_unusable_codes">کدهای غیرقابل استفاده</string>
     <string name="dbh_unusable_note">الگوهای دکمه‌ای که فرستنده نمی‌تواند باز کند</string>
     <string name="db_idle">بی‌کار</string>
-    <string name="refresh_no_source">منبع به‌روزرسانی تنظیم نشده — نسخهٔ refresh ساخته نشده</string>
+    <string name="refresh_no_source">منبع به‌روزرسانی تنظیم نشده — نسخهٔ به‌روزرسانی هنوز ساخته نشده</string>
     <string name="sendlog_no_ir">مادون قرمز ندارد</string>
     <string name="sendlog_not_sent">ارسال نشد</string>
     <string name="up">بالا</string>
