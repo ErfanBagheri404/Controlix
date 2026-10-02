@@ -30,11 +30,13 @@ android {
         }
     }
 
-    // Release ships one APK per ABI so each download carries only the native
-    // libs it needs. Debug stays universal so CI and local installs just work.
+    // Per-ABI release APKs, opt-in via -PabiSplits. The splits DSL is global, so
+    // enabling it unconditionally would split debug too and break CI's single
+    // app-debug.apk. The release workflow passes the flag; everything else stays
+    // universal.
     splits {
         abi {
-            isEnable = true
+            isEnable = providers.gradleProperty("abiSplits").isPresent
             reset()
             include("arm64-v8a", "armeabi-v7a", "x86_64")
             isUniversalApk = false

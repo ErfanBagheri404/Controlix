@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Launcher foreground: flat filled remote-handset silhouette, details cut out as
-     negative space. Art = 27x61 of the 108 grid, centered — leaves visible margin
-     against the launcher's circle mask at all densities. Monochrome-safe. -->
+     negative space. Art is authored at 27x61 of the 108 grid but drawn at 78% about
+     the centre, landing at ~21x48dp. Adaptive icons only show the middle 72dp of the
+     108 grid, so that is ~66% of the visible mask: clear space on every side.
+     Monochrome-safe. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
+
+  <group android:scaleX="0.78" android:scaleY="0.78"
+      android:translateX="11.88" android:translateY="11.88">
 
     <!-- Handset body: 27x61 stadium, fully rounded ends -->
     <path android:fillColor="#FF1ED760"
@@ -33,4 +38,6 @@
     <path android:fillColor="#FF0A0A0A"
         android:pathData="M47.75,72 h2.5 a1.75,1.75 0 0 1 0,3.5 h-2.5 a1.75,1.75 0 0 1 0,-3.5 z
                           M57.75,72 h2.5 a1.75,1.75 0 0 1 0,3.5 h-2.5 a1.75,1.75 0 0 1 0,-3.5 z" />
+
+  </group>
 </vector>

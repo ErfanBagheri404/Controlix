@@ -69,7 +69,7 @@ jobs:
           else
             unset KEYSTORE_FILE   # gradle falls back to an unsigned release build
           fi
-          ./gradlew testDebugUnitTest assembleRelease \
+          ./gradlew testDebugUnitTest assembleRelease -PabiSplits \
             -PversionName=${{ steps.v.outputs.versionName }} \
             -PversionCode=${{ steps.v.outputs.versionCode }} \
             --stacktrace
