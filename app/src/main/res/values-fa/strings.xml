@@ -66,7 +66,7 @@
 
     <!-- Transmitter choices -->
     <string name="transmitter_internal">فرستندهٔ داخلی</string>
-    <string name="transmitter_usb_dongle">dongle USB</string>
+    <string name="transmitter_usb_dongle">دانگل USB</string>
     <string name="transmitter_ble_blaster">فرستندهٔ BLE</string>
 
     <!-- Backup / restore -->
@@ -93,7 +93,7 @@
     <string name="db_applying">در حال اعمال…</string>
     <string name="db_updated_restart">پایگاه داده به‌روز شد — برای بارگذاری، برنامه را دوباره باز کنید</string>
     <string name="db_rolled_back">بازگردانده شد: %1$s — پایگاه دادهٔ قبلی نگه داشته شد</string>
-    <string name="db_no_source">منبع به‌روزرسانی پیکربندی نشده است — flavor به‌روزرسانی هنوز ساخته نشده</string>
+    <string name="db_no_source">منبع به‌روزرسانی پیکربندی نشده است — نسخهٔ به‌روزرسانی هنوز ساخته نشده</string>
     <string name="db_manifest_unavailable">مانیفست به‌روزرسانی در دسترس نیست — پایگاه دادهٔ قبلی نگه داشته شد</string>
     <string name="db_download_failed">دریافت ناموفق بود — پایگاه دادهٔ قبلی نگه داشته شد</string>
     <string name="db_not_loaded">پایگاه دادهٔ کدها بارگذاری نشد. برنامه را دوباره نصب کنید — پایگاه داده درون APK عرضه می‌شود.</string>
@@ -243,11 +243,11 @@
     <string name="analyzer_index">#%1$d</string>
     <string name="analyzer_mark">نشانه</string>
     <string name="analyzer_space">فاصله</string>
-    <string name="analyzer_us">%1$d us</string>
+    <string name="analyzer_us">%1$d میکروثانیه</string>
     <string name="analyzer_pick_button">یک دکمه انتخاب کنید تا زمان پالس، فرکانس حامل و پروتکلش را ببینید.</string>
     <string name="analyzer_no_timing">این دکمه دادهٔ زمانی ندارد.</string>
     <string name="analyzer_summary">%1$s · %2$s · %3$d نشانه</string>
-    <string name="analyzer_mark_range">نشانهٔ %1$d–%2$d us · </string>
+    <string name="analyzer_mark_range">نشانهٔ %1$d–%2$d میکروثانیه · </string>
 
     <!-- Tile target -->
     <string name="tile_title">هدف کاشی</string>
@@ -473,7 +473,7 @@
     <string name="contrib_prov_unknown">خاستگاه ناشناخته: نگهدارنده برای پذیرش این کد به یک منبع واقعی نیاز دارد (مثلاً ریموت خودتان، دامپ عمومی irdb).</string>
     <string name="contrib_carrier_required">فرکانس حامل الزامی است.</string>
     <string name="contrib_carrier_range">حامل باید %1$d تا %2$d هرتز باشد (معمول: 38000).</string>
-    <string name="contrib_pattern_count">الگو به تعداد زوج و دست‌کم %1$d مدت نیاز دارد (جفت‌های mark/space، جداشده با فاصله یا ویرگول).</string>
+    <string name="contrib_pattern_count">الگو به تعداد زوج و دست‌کم %1$d مدت نیاز دارد (جفت‌های نشانه/فاصله، جداشده با فاصله یا ویرگول).</string>
     <string name="contrib_pattern_numeric">الگو فقط باید عدد باشد — &quot;%1$s&quot; یک مدت نیست.</string>
     <string name="contrib_pattern_range">مدت‌ها باید مثبت و حداکثر %1$d میکروثانیه باشد.</string>
     <string name="dbh_remotes_note">هر سطر ریموت در پایگاه دادهٔ همراه</string>
@@ -520,7 +520,7 @@
     <string name="ac_no_key_has">«%1$s» هنوز کلید «%2$s» ندارد.</string>
     <string name="ac_nothing_usable">در «%1$s» چیز قابل استفاده‌ای برای «%2$s» نیست</string>
     <string name="analyzer_copy_json">کپی JSON</string>
-    <string name="analyzer_timings_values">مارک، شکاف (ms): %1$s</string>
+    <string name="analyzer_timings_values">نشانه، فاصله (میلی‌ثانیه): %1$s</string>
     <string name="field_remote_model">نام / مدل ریموت</string>
     <string name="home_copied_keys">کلیدهای کپی‌شده</string>
     <string name="home_edit">ویرایش</string>
@@ -540,7 +540,7 @@
     <string name="missing_share_subject">کد مادون قرمز: %1$s %2$s</string>
     <string name="missing_share_contribution">اشتراک‌گذاری گزارش</string>
     <string name="missing_prov_example">دیتابیس عمومی irdb، بازآزمایی‌شده روی ریموت خودم</string>
-    <string name="hold_preflight">%1$d دستگاه عند تأثیر قرار می‌گیرند</string>
+    <string name="hold_preflight">%1$d دستگاه تحت تأثیر قرار می‌گیرند</string>
     <string name="whats_new_default">رفع اشکالات و بهبود عملکرد.</string>
     <string name="db_changelog">%1$s ریموت، %2$s کلید</string>
     <string name="ac_mode_fan_only">فقط فن</string>
@@ -552,13 +552,13 @@
     <string name="dbh_unusable_row">این الگو قابل گسترش نیست</string>
     <string name="backup_ctx_object">%1$s باید یک شیء باشد</string>
     <string name="backup_ctx_array">%1$s باید یک آرایه باشد</string>
-    <string name="backup_ctx_number">%1$s باید یک عدد باشد</string>
-    <string name="backup_ctx_integer">%1$s باید یک عدد صحیح باشد</string>
-    <string name="backup_ctx_string">%1$s باید یک متن صورتی باشد</string>
-    <string name="backup_ctx_bool">%1$s باید true یت false باشد</string>
-    <string name="backup_ctx_unknown">فیلدهای ناشناشه یا مقددر در %1$s</string>
-    <string name="backup_ctx_delayms">%1$s باید delayMs باید عدد باشد</string>
-    <string name="backup_ctx_devicestrings">فیلدهای دستگاه در %1$s باید متن صورتی باشد</string>
-    <string name="backup_ctx_remoteid">%1$s باید remoteId باید عدد صحیح باشد</string>
+    <string name="backup_ctx_number">%1$s باید عدد باشد</string>
+    <string name="backup_ctx_integer">%1$s باید عدد صحیح باشد</string>
+    <string name="backup_ctx_string">%1$s باید متن باشد</string>
+    <string name="backup_ctx_bool">%1$s باید true یا false باشد</string>
+    <string name="backup_ctx_unknown">%1$s فیلدهای ناشناخته یا کم‌شده دارد</string>
+    <string name="backup_ctx_delayms">مقدار delayMs در %1$s باید عدد باشد</string>
+    <string name="backup_ctx_devicestrings">فیلدهای دستگاه در %1$s باید متن باشند</string>
+    <string name="backup_ctx_remoteid">مقدار remoteId در %1$s باید عدد صحیح باشد</string>
     <string name="backup_ctx_steps">%1$s باید یک آرایه باشد</string>
 </resources>

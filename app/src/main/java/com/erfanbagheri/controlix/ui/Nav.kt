@@ -649,6 +649,38 @@ private fun MenuDrawer(
             DrawerRow(ActionIcon.Sweep, "TV-B-Gone", onSweep)
 
             Spacer(Modifier.height(32.dp))
+            SectionHead(tr(R.string.menu_appearance))
+            DrawerToggle(tr(R.string.menu_dark_mode), ThemeState.isDark, ThemeState::toggleDark)
+            DrawerToggle(tr(R.string.menu_animations), Feedback.animationsOn, Feedback::setAnimations)
+            LanguageRow()
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead(tr(R.string.menu_settings))
+            DrawerToggle(
+                tr(R.string.menu_resume_last_remote),
+                effectiveResumeEnabled(ResumeState.explicit, hasDevices),
+                ResumeState::setEnabled,
+            )
+            DrawerRow(ActionIcon.QrScan, tr(R.string.menu_tile_target), onTileTarget)
+            DrawerRow(ActionIcon.Down, tr(R.string.menu_check_for_app_update), onCheckUpdate)
+            if (updateStateLabel != null) {
+                Text(
+                    updateStateLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead(tr(R.string.menu_transmitter))
+            TransmitterPickerRow()
+
+            Spacer(Modifier.height(32.dp))
+            SectionHead(tr(R.string.menu_backup))
+            DrawerRow(ActionIcon.Share, tr(R.string.menu_export_backup), onExport)
+            DrawerRow(ActionIcon.Down, tr(R.string.menu_import_backup), onImport)
+
+            Spacer(Modifier.height(32.dp))
             SectionHead(tr(R.string.menu_database))
             DrawerRow(ActionIcon.Gauge, tr(R.string.menu_database_health), onDbHealth)
             DrawerRow(ActionIcon.Info, tr(R.string.menu_missing_code), onMissingCode)
@@ -700,38 +732,6 @@ private fun MenuDrawer(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            }
-
-            Spacer(Modifier.height(32.dp))
-            SectionHead(tr(R.string.menu_transmitter))
-            TransmitterPickerRow()
-
-            Spacer(Modifier.height(32.dp))
-            SectionHead(tr(R.string.menu_backup))
-            DrawerRow(ActionIcon.Share, tr(R.string.menu_export_backup), onExport)
-            DrawerRow(ActionIcon.Down, tr(R.string.menu_import_backup), onImport)
-
-            Spacer(Modifier.height(32.dp))
-            SectionHead(tr(R.string.menu_appearance))
-            DrawerToggle(tr(R.string.menu_dark_mode), ThemeState.isDark, ThemeState::toggleDark)
-            DrawerToggle(tr(R.string.menu_animations), Feedback.animationsOn, Feedback::setAnimations)
-            LanguageRow()
-
-            Spacer(Modifier.height(32.dp))
-            SectionHead(tr(R.string.menu_settings))
-            DrawerToggle(
-                tr(R.string.menu_resume_last_remote),
-                effectiveResumeEnabled(ResumeState.explicit, hasDevices),
-                ResumeState::setEnabled,
-            )
-            DrawerRow(ActionIcon.QrScan, tr(R.string.menu_tile_target), onTileTarget)
-            DrawerRow(ActionIcon.Down, tr(R.string.menu_check_for_app_update), onCheckUpdate)
-            if (updateStateLabel != null) {
-                Text(
-                    updateStateLabel,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
 
             Spacer(Modifier.height(24.dp))
