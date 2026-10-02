@@ -30,6 +30,17 @@ android {
         }
     }
 
+    // Release ships one APK per ABI so each download carries only the native
+    // libs it needs. Debug stays universal so CI and local installs just work.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64")
+            isUniversalApk = false
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true

@@ -79,12 +79,28 @@ jobs:
         run: |
           set -e
           NAME=${{ steps.v.outputs.versionName }}
-          SRC=$(ls app/build/outputs/apk/release/*.apk | grep -v unsigned | head -1 || true)
-          [ -n "$SRC" ] || SRC=$(ls app/build/outputs/apk/release/*.apk | head -1)
-          OUT="Controlix-$NAME.apk"
-          cp "$SRC" "$OUT"
-          echo "file=$OUT" >> "$GITHUB_OUTPUT"
-          ls -lh "$OUT"
+          # ABI splits: one artifact per architecture, named for the release.
+          rm -f Controlix-*.apk
+          for APK in app/build/outputs/apk/release/*.apk; do
+            [ -e "$APK" ] || continue
+            case "$APK" in
+              *unsigned*) continue ;;
+            esac
+            ABI=$(basename "$APK" .apk | sed -e 's/-release$//' -e 's/^app-//')
+            if [ -z "$ABI" ] || [ "$ABI" = "app" ]; then OUT="Controlix-$NAME.apk"; else OUT="Controlix-$NAME-$ABI.apk"; fi
+            cp "$APK" "$OUT"
+            echo "collected $OUT"
+            ls -lh "$OUT"
+          done
+          # Fallback: no splits configured -> single universal APK.
+          if ! ls Controlix-*.apk >/dev/null 2>&1; then
+            SRC=$(ls app/build/outputs/apk/release/*.apk | grep -v unsigned | head -1 || true)
+            [ -n "$SRC" ] || SRC=$(ls app/build/outputs/apk/release/*.apk | head -1)
+            OUT="Controlix-$NAME.apk"
+            cp "$SRC" "$OUT"
+            echo "collected $OUT"
+            ls -lh "$OUT"
+          fi
 
       - name: Build release notes from commits
         id: notes
@@ -116,6 +132,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "v$NAME" -m "Controlix v$NAME"
           git push origin "v$NAME"
-          gh release create "v$NAME" "${{ steps.apk.outputs.file }}" \
+          gh release create "v$NAME" Controlix-*.apk \
             --title "Controlix v$NAME" \
             --notes-file NOTES.md
