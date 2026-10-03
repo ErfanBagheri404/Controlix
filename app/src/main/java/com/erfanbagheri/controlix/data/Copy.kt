@@ -138,6 +138,67 @@ internal object Copy {
     fun roomTitle(slug: String): String =
         if (slug == Rooms.UNASSIGNED_SLUG) tr(R.string.room_unassigned) else room(Room.fromSlug(slug))
 
+    /**
+     * DB category label for display. The slug is the persisted key and stays
+     * Latin; only the label the user reads is localized. A slug with no entry
+     * (a future DB refresh) falls back to the raw DB name, so an unknown
+     * category shows something instead of an empty tile.
+     */
+    fun category(slug: String, fallback: String): String {
+        val key = CAT_KEYS[slug] ?: return fallback
+        return tr(key)
+    }
+
+    private val CAT_KEYS = mapOf(
+        "acs" to R.string.cat_acs,
+        "air_purifiers" to R.string.cat_air_purifiers,
+        "audio_and_video_receivers" to R.string.cat_audio_and_video_receivers,
+        "bidet" to R.string.cat_bidet,
+        "blu-ray" to R.string.cat_blu_ray,
+        "cable_boxes" to R.string.cat_cable_boxes,
+        "cameras" to R.string.cat_cameras,
+        "car_multimedia" to R.string.cat_car_multimedia,
+        "cctv" to R.string.cat_cctv,
+        "cd_players" to R.string.cat_cd_players,
+        "clocks" to R.string.cat_clocks,
+        "computers" to R.string.cat_computers,
+        "consoles" to R.string.cat_consoles,
+        "converters" to R.string.cat_converters,
+        "digital_signs" to R.string.cat_digital_signs,
+        "dust_collectors" to R.string.cat_dust_collectors,
+        "dvb-t" to R.string.cat_dvb_t,
+        "dvd_players" to R.string.cat_dvd_players,
+        "fans" to R.string.cat_fans,
+        "fireplaces" to R.string.cat_fireplaces,
+        "handicap_ceiling_lifts" to R.string.cat_handicap_ceiling_lifts,
+        "head_units" to R.string.cat_head_units,
+        "heaters" to R.string.cat_heaters,
+        "humidifiers" to R.string.cat_humidifiers,
+        "kvm" to R.string.cat_kvm,
+        "laserdisc" to R.string.cat_laserdisc,
+        "led_lighting" to R.string.cat_led_lighting,
+        "minidisc" to R.string.cat_minidisc,
+        "miscellaneous" to R.string.cat_miscellaneous,
+        "monitors" to R.string.cat_monitors,
+        "multimedia" to R.string.cat_multimedia,
+        "picture_frames" to R.string.cat_picture_frames,
+        "projectors" to R.string.cat_projectors,
+        "soundbars" to R.string.cat_soundbars,
+        "speakers" to R.string.cat_speakers,
+        "streaming_devices" to R.string.cat_streaming_devices,
+        "touchscreen_displays" to R.string.cat_touchscreen_displays,
+        "toys" to R.string.cat_toys,
+        "tv_tuner" to R.string.cat_tv_tuner,
+        "tvs" to R.string.cat_tvs,
+        "universal_tv_remotes" to R.string.cat_universal_tv_remotes,
+        "vacuum_cleaners" to R.string.cat_vacuum_cleaners,
+        "vcr" to R.string.cat_vcr,
+        "videoconferencing" to R.string.cat_videoconferencing,
+        "whiteboards" to R.string.cat_whiteboards,
+        "window_cleaners" to R.string.cat_window_cleaners,
+        "iodn_irblaster" to R.string.cat_iodn_irblaster,
+    )
+
     fun transmitter(choice: com.erfanbagheri.controlix.ir.TransmitterChoice): String = when (choice) {
         com.erfanbagheri.controlix.ir.TransmitterChoice.Internal -> tr(R.string.transmitter_internal)
         com.erfanbagheri.controlix.ir.TransmitterChoice.UsbDongle -> tr(R.string.transmitter_usb)

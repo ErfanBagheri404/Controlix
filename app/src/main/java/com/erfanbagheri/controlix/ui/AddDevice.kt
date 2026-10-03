@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.erfanbagheri.controlix.data.Copy
 import com.erfanbagheri.controlix.data.IrCodeRepository
 import com.erfanbagheri.controlix.ui.theme.PaperFaint
 import kotlinx.coroutines.Dispatchers
@@ -80,7 +81,8 @@ fun AddDeviceScreen(
                         onPick = { chosen = it },
                     )
                 } else {
-                    Text(tr(R.string.add_who_made, cat.name), style = MaterialTheme.typography.headlineMedium)
+                    val catLabel = Copy.category(cat.slug, cat.name)
+                    Text(tr(R.string.add_who_made, catLabel), style = MaterialTheme.typography.headlineMedium)
                     Spacer(Modifier.height(8.dp))
                     BrandGrid(
                         brands = remember(repo, cat.slug) { repo.brands(cat.slug) },
@@ -129,7 +131,7 @@ private fun CategoryGrid(
                 )
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    cat.name,
+                    Copy.category(cat.slug, cat.name),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
