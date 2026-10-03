@@ -29,6 +29,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -482,6 +485,17 @@ private fun PadHeader(
     }
 }
 
+/**
+ * A remote's key grid is a physical object, not text: in Farsi the d-pad
+ * arrows, the VOL/CH order and the 1-2-3 number rows must stay exactly where
+ * they are in English. Icons here are Canvas-drawn (no autoMirrored), so the
+ * only thing that can flip them is the ambient layout direction — pin it.
+ */
+@Composable
+private fun FixedKeyGrid(content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) { content() }
+}
+
 /** Region 1: chevron pad — swapped out for the full key set. */
 @Composable
 private fun PadBodyStacked(
@@ -504,12 +518,12 @@ private fun PadBodyStacked(
             if (manual && summary != null) {
                 ManualKeyList(summary, fire, copy, Modifier.fillMaxSize(), manualOpen, onToggleManualOpen)
             } else if (freeLayout == FreeLayout.default()) {
-                ExpandedKeys(fire, borrowedKeys, onProvenance, copy, Modifier.fillMaxSize())
+                FixedKeyGrid { ExpandedKeys(fire, borrowedKeys, onProvenance, copy, Modifier.fillMaxSize()) }
             } else {
-                FreeGrid(freeLayout, fire, copy, Modifier.fillMaxSize())
+                FixedKeyGrid { FreeGrid(freeLayout, fire, copy, Modifier.fillMaxSize()) }
             }
         } else {
-            ChevronPad(fire, borrowedKeys, onProvenance, copy, hasOk, Modifier.fillMaxSize())
+            FixedKeyGrid { ChevronPad(fire, borrowedKeys, onProvenance, copy, hasOk, Modifier.fillMaxSize()) }
         }
     }
 }
@@ -581,6 +595,18 @@ private fun PadControlsRow(
     modifier: Modifier = Modifier,
     borrowedKeys: Map<String, EffectiveButtons.Resolved> = emptyMap(),
     onProvenance: ((String) -> Unit)? = null,
+) = FixedKeyGrid {
+    PadControlsRowLtr(fire, copy, onToggleExpand, modifier, borrowedKeys, onProvenance)
+}
+
+@Composable
+private fun PadControlsRowLtr(
+    fire: (String) -> Unit,
+    copy: (String) -> Unit,
+    onToggleExpand: () -> Unit,
+    modifier: Modifier,
+    borrowedKeys: Map<String, EffectiveButtons.Resolved>,
+    onProvenance: ((String) -> Unit)?,
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         RockerColumn(ActionIcon.Add, ActionIcon.Minus, tr(R.string.pad_vol), "volume_up", "volume_down",
