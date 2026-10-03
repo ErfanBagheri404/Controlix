@@ -169,7 +169,7 @@ fun HomeScreen(
                     modifier = Modifier.pressable(onToggleDrawer).padding(8.dp))
             }
             Spacer(Modifier.weight(1f))
-            Text("Controlix", style = MaterialTheme.typography.headlineMedium)
+            Text(tr(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.weight(1f))
             Box(Modifier.size(44.dp).bgTile(14.dp), contentAlignment = Alignment.Center) {
                 ActionIconView(ActionIcon.Add, 22.dp, MaterialTheme.colorScheme.primary,
@@ -347,13 +347,9 @@ private fun DeviceTile(
             Modifier.fillMaxWidth().heightIn(min = 150.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)).bgTile(20.dp)
                 .combinedPressable(onClick = onClick, onLongClick = onLongClick)
                 .padding(14.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-                Box(Modifier.size(42.dp).bgTile(12.dp, Accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                    LucideIcon(glyph, 24.dp, Accent)
-                }
-            }
+            // Name leads: it is the only thing that differs between two remotes
+            // of the same brand, so it gets the top line and the largest type.
             Column(Modifier.graphicsLayer { alpha = enabledAlpha }) {
                 val scale = LocalDensity.current.fontScale
                 Text(device.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
@@ -370,11 +366,18 @@ private fun DeviceTile(
                     style = MaterialTheme.typography.labelSmall, color = PaperFaint,
                 )
             }
+            Spacer(Modifier.weight(1f))
+            // Category glyph sits at the foot, small and quiet, so it labels the
+            // tile without competing with the name above it.
+            Box(Modifier.size(42.dp).bgTile(12.dp, Accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                LucideIcon(glyph, 24.dp, Accent)
+            }
         }
         if (device.pinned) {
-            // Gold star badge — pinned marker, top-right corner.
+            // Gold star badge — pinned marker. Sits at the foot, away from
+            // the name line, so a long device name never runs under it.
             Box(
-                Modifier.align(Alignment.TopEnd).padding(14.dp).size(24.dp)
+                Modifier.align(Alignment.BottomEnd).padding(14.dp).size(24.dp)
                     .bgTile(12.dp, Gold.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center,
             ) {
