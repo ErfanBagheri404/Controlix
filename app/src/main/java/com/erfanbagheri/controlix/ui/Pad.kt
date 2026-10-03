@@ -162,6 +162,8 @@ fun PadScreen(
         else EffectiveButtons.resolve(remoteId, buttons, siblings, borrowMemory)
     }
     val borrowedKeys = remember(effective) { effective.filter { it.borrowed }.associateBy { it.key } }
+    // The collapsed d-pad only gets a centre OK when this remote really has one.
+    val hasOk = remember(effective) { effective.any { it.key == "ok" } }
 
     fun showProvenance(key: String) {
         val borrowed = borrowedKeys[key] ?: return
@@ -327,12 +329,12 @@ fun PadScreen(
                 if (Orientation.useLandscapeLayout(maxWidth.value, maxHeight.value)) {
                     LandscapePad(::fire, ::copyKey, expanded, { expanded = !expanded }, Modifier.fillMaxSize(),
                         manual, summary, manualOpen, { manualOpen = !manualOpen }, freeLayout,
-                        borrowedKeys, ::showProvenance)
+                        borrowedKeys, ::showProvenance, hasOk)
                 } else {
                     Column(Modifier.fillMaxSize()) {
                         PadBodyStacked(::fire, ::copyKey, expanded, { expanded = !expanded }, Modifier.fillMaxWidth().weight(1f),
                             manual, summary, manualOpen, { manualOpen = !manualOpen }, freeLayout,
-                            borrowedKeys, ::showProvenance)
+                            borrowedKeys, ::showProvenance, hasOk)
                         Spacer(Modifier.height(16.dp))
                         PadControlsRow(::fire, ::copyKey, { expanded = !expanded }, Modifier.fillMaxWidth().height(CONTROL_BLOCK),
                             borrowedKeys, ::showProvenance)
@@ -495,6 +497,7 @@ private fun PadBodyStacked(
     freeLayout: FreeLayout = FreeLayout.default(),
     borrowedKeys: Map<String, EffectiveButtons.Resolved> = emptyMap(),
     onProvenance: ((String) -> Unit)? = null,
+    hasOk: Boolean = false,
 ) {
     ContentSwap(expanded, modifier) { open ->
         if (open) {
@@ -506,7 +509,7 @@ private fun PadBodyStacked(
                 FreeGrid(freeLayout, fire, copy, Modifier.fillMaxSize())
             }
         } else {
-            ChevronPad(fire, borrowedKeys, onProvenance, copy, Modifier.fillMaxSize())
+            ChevronPad(fire, borrowedKeys, onProvenance, copy, hasOk, Modifier.fillMaxSize())
         }
     }
 }
@@ -639,48 +642,70 @@ private fun LandscapePad(
     freeLayout: FreeLayout = FreeLayout.default(),
     borrowedKeys: Map<String, EffectiveButtons.Resolved> = emptyMap(),
     onProvenance: ((String) -> Unit)? = null,
+    hasOk: Boolean = false,
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         PadBodyStacked(fire, copy, expanded, onToggleExpand, Modifier.weight(1f).fillMaxHeight(),
-            manual, summary, manualOpen, onToggleManualOpen, freeLayout, borrowedKeys, onProvenance)
+            manual, summary, manualOpen, onToggleManualOpen, freeLayout, borrowedKeys, onProvenance, hasOk)
         Spacer(Modifier.width(16.dp))
         PadControlsRow(fire, copy, onToggleExpand, Modifier.weight(1f).height(CONTROL_BLOCK),
             borrowedKeys, onProvenance)
     }
 }
 
-/** Chevrons only — no keys, no OK. Small side padding so the pad breathes. */
+/**
+ * The collapsed pad: a real d-pad cross. Keys are the same size, the gaps are
+ * the same in both axes, and a centre OK sits in the middle whenever the
+ * remote actually has one — four buttons floating apart read as four
+ * unrelated targets, and the middle is where thumbs already are.
+ *
+ * Sized from the pane, so phone portrait and a desktop-width landscape both
+ * get the same cross at the largest whole-tile size that fits.
+ */
 @Composable
 private fun ChevronPad(
     fire: (String) -> Unit,
     borrowedKeys: Map<String, EffectiveButtons.Resolved>,
     onProvenance: ((String) -> Unit)? = null,
     copy: (String) -> Unit,
+    hasOk: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier.padding(horizontal = 12.dp),
-        verticalArrangement = Arrangement.SpaceEvenly,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        PadBtn(ActionIcon.ChevronUp, Modifier.size(64.dp), borrowed = borrowedKeys["up"] != null,
-            onLongClick = { copy("up") },
-            onProvenance = onProvenance?.let { p -> { p("up") } }) { fire("up") }
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+    BoxWithConstraints(modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+        val gap = 12.dp
+        // 3 tiles + 2 gaps across, 3 + 2 down: one size for the whole cross.
+        val side = ((minOf(maxWidth, maxHeight) - gap * 2) / 3).coerceIn(56.dp, 104.dp)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(gap),
         ) {
-            PadBtn(ActionIcon.ChevronLeft, Modifier.size(64.dp), borrowed = borrowedKeys["left"] != null,
-                onLongClick = { copy("left") },
-                onProvenance = onProvenance?.let { p -> { p("left") } }) { fire("left") }
-            PadBtn(ActionIcon.ChevronRight, Modifier.size(64.dp), borrowed = borrowedKeys["right"] != null,
-                onLongClick = { copy("right") },
-                onProvenance = onProvenance?.let { p -> { p("right") } }) { fire("right") }
+            PadBtn(ActionIcon.ChevronUp, Modifier.size(side), borrowed = borrowedKeys["up"] != null,
+                onLongClick = { copy("up") },
+                onProvenance = onProvenance?.let { p -> { p("up") } }) { fire("up") }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(gap),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PadBtn(ActionIcon.ChevronLeft, Modifier.size(side), borrowed = borrowedKeys["left"] != null,
+                    onLongClick = { copy("left") },
+                    onProvenance = onProvenance?.let { p -> { p("left") } }) { fire("left") }
+                if (hasOk) {
+                    PadBtn(ActionIcon.Ok, Modifier.size(side), accent = true,
+                        borrowed = borrowedKeys["ok"] != null,
+                        onLongClick = { copy("ok") },
+                        onProvenance = onProvenance?.let { p -> { p("ok") } }) { fire("ok") }
+                } else {
+                    // Same cell as the OK so the arms never pinch inward.
+                    Spacer(Modifier.size(side))
+                }
+                PadBtn(ActionIcon.ChevronRight, Modifier.size(side), borrowed = borrowedKeys["right"] != null,
+                    onLongClick = { copy("right") },
+                    onProvenance = onProvenance?.let { p -> { p("right") } }) { fire("right") }
+            }
+            PadBtn(ActionIcon.ChevronDown, Modifier.size(side), borrowed = borrowedKeys["down"] != null,
+                onLongClick = { copy("down") },
+                onProvenance = onProvenance?.let { p -> { p("down") } }) { fire("down") }
         }
-        PadBtn(ActionIcon.ChevronDown, Modifier.size(64.dp), borrowed = borrowedKeys["down"] != null,
-            onLongClick = { copy("down") },
-            onProvenance = onProvenance?.let { p -> { p("down") } }) { fire("down") }
     }
 }
 
@@ -953,7 +978,7 @@ private fun KeyTile(
     val scale = LocalDensity.current.fontScale
     Box(modifier.heightIn(min = 48.dp * FontScale.heightMultiplier(scale))) {
         Box(
-            Modifier.fillMaxSize().bgTile(20.dp).combinedPressable(
+            Modifier.fillMaxSize().bgTile(20.dp, MaterialTheme.colorScheme.surfaceVariant).combinedPressable(
                 onClick = onClick,
                 onLongClick = onLongClick ?: onProvenance,
             ).padding(vertical = 6.dp),
