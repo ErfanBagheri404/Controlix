@@ -94,8 +94,8 @@ fun AcPadScreen(
         // Issue #68: same log as the pad — an AC tap is a real send.
         val result = transmitter.transmitButtonResult(button.carrierHz, button.pattern)
         sendLog.record(
-            if (result is SendResult.Sent) SentEntry(deviceName ?: "Remote", button.name, button.carrierHz, button.pattern, System.currentTimeMillis())
-            else SendLog.nothingSent(deviceName ?: "Remote", button.name, sendFailureReason(result), System.currentTimeMillis()),
+            if (result is SendResult.Sent) SentEntry(deviceName ?: tr(R.string.pad_fallback), button.name, button.carrierHz, button.pattern, System.currentTimeMillis())
+            else SendLog.nothingSent(deviceName ?: tr(R.string.pad_fallback), button.name, sendFailureReason(result), System.currentTimeMillis()),
         )
         if (result is SendResult.Sent) {
             Feedback.send(view)

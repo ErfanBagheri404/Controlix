@@ -176,7 +176,7 @@ fun PadScreen(
     fun sendResolved(resolved: EffectiveButtons.Resolved) {
         // Issue #68: log the one real transmit here, not beside it — success
         // and silently-dropped sends both land in Recent sends.
-        val name = deviceName ?: "Remote"
+        val name = deviceName ?: tr(R.string.pad_fallback)
         val result = transmitter.transmitButtonResult(resolved.carrierHz, resolved.pattern)
         sendLog.record(
             if (result is SendResult.Sent) SentEntry(name, resolved.name, resolved.carrierHz, resolved.pattern, System.currentTimeMillis())
@@ -196,7 +196,7 @@ fun PadScreen(
     val media = remember(remoteId, buttons) { MediaLayout.compose(buttons.map { it.name }) }
     // Always resolvable so the header menu opens even if the list is stale.
     val saved = devices.firstOrNull { it.remoteId == remoteId }
-        ?: SavedDevice(remoteId, deviceName ?: "Remote", "", "", 0)
+        ?: SavedDevice(remoteId, deviceName ?: tr(R.string.pad_fallback), "", "", 0)
     // Own buttons only: distinct non-standard labels + "N on pad" counts.
     val summary = remember(remoteId, buttons) { ManualKeys.summarize(buttons) }
     // ponytail: saved.matched exists but no writer sets it false yet (raw
@@ -242,7 +242,7 @@ fun PadScreen(
             // Issue #68: a key with no code is the case most worth seeing.
             sendLog.record(
                 SendLog.nothingSent(
-                    deviceName ?: "Remote", name,
+                    deviceName ?: tr(R.string.pad_fallback), name,
                     "this remote has no ${name.replace('_', ' ')} code",
                     System.currentTimeMillis(),
                 ),
@@ -263,8 +263,8 @@ fun PadScreen(
         }
         val result = transmitter.transmitButtonResult(code.carrierHz, code.pattern)
         sendLog.record(
-            if (result is SendResult.Sent) SentEntry(deviceName ?: "Remote", code.name, code.carrierHz, code.pattern, System.currentTimeMillis())
-            else SendLog.nothingSent(deviceName ?: "Remote", code.name, sendFailureReason(result), System.currentTimeMillis()),
+            if (result is SendResult.Sent) SentEntry(deviceName ?: tr(R.string.pad_fallback), code.name, code.carrierHz, code.pattern, System.currentTimeMillis())
+            else SendLog.nothingSent(deviceName ?: tr(R.string.pad_fallback), code.name, sendFailureReason(result), System.currentTimeMillis()),
         )
         if (result is SendResult.Sent) {
             lastSent = tr(R.string.pad_sent, code.name)
@@ -316,7 +316,7 @@ fun PadScreen(
             // Media pad replaces both default regions; keyboard mode lives inside it.
             MediaPad(media, ::fire, Modifier.fillMaxWidth().weight(1f))
         } else {
-            PadHeader(deviceName ?: "Remote", emitKey,
+            PadHeader(deviceName ?: tr(R.string.pad_fallback), emitKey,
                 onSwitch = { switcherOpen = true },
                 onSheet = { sheetOpen = true },
                 onBack = onBack)
@@ -426,8 +426,8 @@ fun PadScreen(
                 // Issue #68: same log, same path — a pasted code is a real send.
                 val res = transmitter.transmitButtonResult(btn.carrierHz, btn.pattern)
                 sendLog.record(
-                    if (res is SendResult.Sent) SentEntry(deviceName ?: "Remote", btn.name, btn.carrierHz, btn.pattern, System.currentTimeMillis())
-                    else SendLog.nothingSent(deviceName ?: "Remote", btn.name, sendFailureReason(res), System.currentTimeMillis()),
+                    if (res is SendResult.Sent) SentEntry(deviceName ?: tr(R.string.pad_fallback), btn.name, btn.carrierHz, btn.pattern, System.currentTimeMillis())
+                    else SendLog.nothingSent(deviceName ?: tr(R.string.pad_fallback), btn.name, sendFailureReason(res), System.currentTimeMillis()),
                 )
                 if (res is SendResult.Sent) {
                     lastSent = tr(R.string.pad_sent, btn.name)
