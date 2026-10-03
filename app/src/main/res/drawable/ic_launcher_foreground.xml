@@ -1,32 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Launcher foreground: flat filled remote-handset silhouette, details cut out as
-     negative space. Art is authored at 27x61 of the 108 grid but drawn at 78% about
-     the centre, landing at ~21x48dp. Adaptive icons only show the middle 72dp of the
-     108 grid, so that is ~66% of the visible mask: clear space on every side.
-     Monochrome-safe. -->
+<!-- Launcher foreground: remote-handset silhouette with white keys over a
+     top-lit green gradient. Art is authored at 27x61 of the 108 grid but drawn
+     at 78% about the centre, landing at ~21x48dp. Adaptive icons only show the
+     middle 72dp of the 108 grid, so that is ~66% of the visible mask: clear
+     space on every side. The monochrome layer carries the themed-icon case. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
 
   <group android:scaleX="0.78" android:scaleY="0.78"
       android:translateX="11.88" android:translateY="11.88">
 
-    <!-- Handset body: 27x61 stadium, fully rounded ends -->
-    <path android:fillColor="#FF1ED760"
-        android:pathData="M40.5,37 a13.5,13.5 0 0 1 27,0 v34 a13.5,13.5 0 0 1 -27,0 z" />
+    <!-- Handset body: 27x61 stadium, fully rounded ends, lit from the top -->
+    <path android:pathData="M40.5,37 a13.5,13.5 0 0 1 27,0 v34 a13.5,13.5 0 0 1 -27,0 z">
+      <aapt:attr name="android:fillColor">
+        <gradient android:type="linear"
+            android:startX="54" android:startY="23.5"
+            android:endX="54" android:endY="84.5"
+            android:startColor="#3BF08A" android:endColor="#0E9E52" />
+      </aapt:attr>
+    </path>
 
     <!-- Indicator dot, top-left -->
-    <path android:fillColor="#FF0A0A0A"
+    <path android:fillColor="#FFFFFFFF"
         android:pathData="M45.1,29 a1.9,1.9 0 1 0 3.8,0 a1.9,1.9 0 1 0 -3.8,0 z" />
 
-    <!-- Directional ring: dark band, emerald center -->
-    <path android:fillColor="#FF0A0A0A"
+    <!-- Directional ring: white band, green core -->
+    <path android:fillColor="#FFFFFFFF"
         android:pathData="M47.8,41 a6.2,6.2 0 1 0 12.4,0 a6.2,6.2 0 1 0 -12.4,0 z" />
-    <path android:fillColor="#FF1ED760"
+    <path android:fillColor="#FF17C56B"
         android:pathData="M50.5,41 a3.5,3.5 0 1 0 7,0 a3.5,3.5 0 1 0 -7,0 z" />
 
     <!-- Key pad: 2 rows x 3 columns -->
-    <path android:fillColor="#FF0A0A0A"
+    <path android:fillColor="#FFFFFFFF"
         android:pathData="M45.7,54 a1.8,1.8 0 1 0 3.6,0 a1.8,1.8 0 1 0 -3.6,0 z
                           M52.2,54 a1.8,1.8 0 1 0 3.6,0 a1.8,1.8 0 1 0 -3.6,0 z
                           M58.7,54 a1.8,1.8 0 1 0 3.6,0 a1.8,1.8 0 1 0 -3.6,0 z
@@ -35,7 +42,7 @@
                           M58.7,60.5 a1.8,1.8 0 1 0 3.6,0 a1.8,1.8 0 1 0 -3.6,0 z" />
 
     <!-- Two pill keys at the base -->
-    <path android:fillColor="#FF0A0A0A"
+    <path android:fillColor="#FFFFFFFF"
         android:pathData="M47.75,72 h2.5 a1.75,1.75 0 0 1 0,3.5 h-2.5 a1.75,1.75 0 0 1 0,-3.5 z
                           M57.75,72 h2.5 a1.75,1.75 0 0 1 0,3.5 h-2.5 a1.75,1.75 0 0 1 0,-3.5 z" />
 
