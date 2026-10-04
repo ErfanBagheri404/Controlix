@@ -205,7 +205,11 @@ private fun BrandGrid(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        tr(R.string.add_remote_count, if (b.remoteCount == 1) tr(R.string.add_remote_one) else tr(R.string.add_remote_many)),
+                        tr(
+                            R.string.add_remote_count,
+                            b.remoteCount,
+                            if (b.remoteCount == 1) tr(R.string.add_remote_one) else tr(R.string.add_remote_many),
+                        ),
                         style = MaterialTheme.typography.labelSmall,
                         color = PaperFaint,
                     )

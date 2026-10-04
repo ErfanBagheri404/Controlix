@@ -3,6 +3,7 @@ package com.erfanbagheri.controlix.ui
 import android.app.Activity
 import android.content.Context
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
@@ -18,6 +19,26 @@ import com.erfanbagheri.controlix.ui.theme.ThemeState
 class MainActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(l10nApply(newBase))
+    }
+
+    /**
+     * Hardware VOLUME_UP / VOLUME_DOWN drive the on-screen remote while a pad
+     * is composed (PadScreen binds VolumeKeys); everywhere else the keys keep
+     * their system behaviour. Consuming both ACTION_DOWN and its release is
+     * what keeps the system volume slider from sliding in.
+     */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val isUp = event.keyCode == KeyEvent.KEYCODE_VOLUME_UP
+        val isDown = event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+        if (isUp || isDown) {
+            when (event.action) {
+                KeyEvent.ACTION_DOWN ->
+                    if (VolumeKeys.press(isUp, event.repeatCount == 0)) return true
+                KeyEvent.ACTION_UP ->
+                    if (VolumeKeys.release(isUp)) return true
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -30,11 +30,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -46,6 +51,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.CopiedButton
 import com.erfanbagheri.controlix.data.CopiedButtons
+import com.erfanbagheri.controlix.data.Copy
 import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.FontScale
 import com.erfanbagheri.controlix.data.FreeLayout
@@ -77,6 +83,48 @@ import com.erfanbagheri.controlix.R
 
 /** Height of the 2x2 grid + the dots row: 56 + 10 + 56 + 10 + 48. */
 private val CONTROL_BLOCK = 180.dp
+
+/**
+ * Hardware VOLUME keys, routed to the on-screen remote while a pad is
+ * composed. MainActivity owns the dispatch hook (a key must be consumed before
+ * any child view sees it, and a Modifier focus dance is unreliable); the pad
+ * registers here and clears on dispose, so the keys fall back to normal system
+ * volume on every other screen.
+ */
+object VolumeKeys {
+    private var down: ((Boolean, Boolean) -> Unit)? = null
+    private var up: ((Boolean) -> Unit)? = null
+
+    /**
+     * @param onDown (isUp, isFirstPress) — Android re-sends ACTION_DOWN with
+     *   repeatCount > 0 while a key is held; the pad owns its own cadence, so
+     *   repeats are consumed but ignored.
+     */
+    fun bind(onDown: (Boolean, Boolean) -> Unit, onUp: (Boolean) -> Unit) {
+        down = onDown
+        up = onUp
+    }
+
+    fun clear() {
+        down = null
+        up = null
+    }
+
+    /** @return true when a handler consumed the press, keeping system volume put. */
+    fun press(isUp: Boolean, first: Boolean): Boolean {
+        val handler = down ?: return false
+        handler(isUp, first)
+        return true
+    }
+
+    /** @return true when a handler consumed the release. */
+    fun release(isUp: Boolean): Boolean {
+        val handler = up ?: return false
+        android.util.Log.d("VolumeKeys", "release isUp=$isUp")
+        handler(isUp)
+        return true
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -245,10 +293,12 @@ fun PadScreen(
         val code = codeFor(name)
         if (code == null) {
             // Issue #68: a key with no code is the case most worth seeing.
+            // Label comes from Copy.widgetKey so Farsi doesn't read "volume up".
+            val label = Copy.widgetKey(name)
             sendLog.record(
                 SendLog.nothingSent(
                     deviceName ?: tr(R.string.pad_fallback), name,
-                    "this remote has no ${name.replace('_', ' ')} code",
+                    tr(R.string.pad_no_code, label),
                     System.currentTimeMillis(),
                 ),
             )
@@ -260,9 +310,9 @@ fun PadScreen(
                 MissingCodeReportStore(context).queue(
                     MissingCodeReport(identity.first, identity.second, identity.third, name)
                 )
-                toast.show(tr(R.string.pad_no_code_report, name.replace('_', ' ')))
+                toast.show(tr(R.string.pad_no_code_report, label))
             } else {
-                toast.show(tr(R.string.pad_no_code, name.replace('_', ' ')))
+                toast.show(tr(R.string.pad_no_code, label))
             }
             return
         }
@@ -316,6 +366,43 @@ fun PadScreen(
         Modifier.fillMaxSize().applyTopInset().applyBottomInset().padding(horizontal = 24.dp),
     ) {
         Spacer(Modifier.height(12.dp))
+
+        // Hardware VOL on this screen drives the remote, not the phone's own
+        // volume: same send + hold-repeat cadence as the on-screen rocker.
+        val hkView = LocalView.current
+        val hkScope = rememberCoroutineScope()
+        val hkJob = remember { mutableStateOf<Job?>(null) }
+        DisposableEffect(remoteId) {
+            VolumeKeys.bind(
+                onDown = { isUp, first ->
+                    val key = if (isUp) "volume_up" else "volume_down"
+                    if (!first) return@bind
+                    Feedback.press(hkView, key)
+                    fire(key)
+                    hkJob.value?.cancel()
+                    if (Feedback.rockerRepeatOn && KeyRepeat.isRampable(key)) {
+                        val hold = Feedback.rockerRepeatHoldMs.toLong()
+                        val gap = Feedback.rockerRepeatIntervalMs.toLong()
+                        hkJob.value = hkScope.launch {
+                            delay(hold)
+                            while (true) {
+                                fire(key)
+                                Feedback.tap(hkView)
+                                delay(gap)
+                            }
+                        }
+                    }
+                },
+                onUp = { _ ->
+                    hkJob.value?.cancel()
+                    hkJob.value = null
+                },
+            )
+            onDispose {
+                hkJob.value?.cancel()
+                VolumeKeys.clear()
+            }
+        }
 
         if (mediaMode) {
             // Media pad replaces both default regions; keyboard mode lives inside it.
