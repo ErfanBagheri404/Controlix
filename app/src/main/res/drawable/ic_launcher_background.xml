@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive-icon background: a violet spotlight behind the handset. Violet is
+     near-complementary to the mint body (#3BF08A → #0E9E52), so the remote
+     reads as the lit object instead of melting into a same-hue field. Core is
+     lifted well above black — at 48–108dp launcher size a barely-off-black
+     gradient reads as flat.
+
+     Centre sits high (54,42) to meet the handset; radius 58 puts the corners
+     past the gradient, so circle (~72%) and squircle masks both land in the
+     dark end with no visible seam. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+
+  <path android:pathData="M0,0 h108 v108 h-108 z">
+    <aapt:attr name="android:fillColor">
+      <gradient android:type="radial"
+          android:centerX="54" android:centerY="42"
+          android:gradientRadius="58"
+          android:startColor="#4C3A8C"
+          android:centerColor="#251C4E"
+          android:endColor="#0B0818" />
+    </aapt:attr>
+  </path>
+
+</vector>
