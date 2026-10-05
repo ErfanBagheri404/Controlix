@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Adaptive-icon background: a violet spotlight behind the handset. Violet is
-     near-complementary to the mint body (#3BF08A → #0E9E52), so the remote
-     reads as the lit object instead of melting into a same-hue field. Core is
-     lifted well above black — at 48–108dp launcher size a barely-off-black
-     gradient reads as flat.
+<!-- Adaptive-icon background: a deep-emerald spotlight behind the handset,
+     the same hue family as the body (#3BF08A → #0E9E52) but far darker, so
+     the bright mint remote reads as the lit object in a dark forest.
+     A near-complementary hue fights the glyph; the monochromatic ramp keeps
+     the whole icon one material.
 
      Centre sits high (54,42) to meet the handset; radius 58 puts the corners
      past the gradient, so circle (~72%) and squircle masks both land in the
@@ -18,9 +18,9 @@
       <gradient android:type="radial"
           android:centerX="54" android:centerY="42"
           android:gradientRadius="58"
-          android:startColor="#4C3A8C"
-          android:centerColor="#251C4E"
-          android:endColor="#0B0818" />
+          android:startColor="#1B5E3A"
+          android:centerColor="#0E3A24"
+          android:endColor="#04120A" />
     </aapt:attr>
   </path>
 
