@@ -119,7 +119,7 @@
     <!-- Add device -->
     <string name="add_what_adding">چه چیزی اضافه می‌کنید؟</string>
     <string name="add_who_made">%1$s. سازنده کیست؟</string>
-    <string name="add_search_brands">جست‌وجوی برند یا مدل — مثل \'ue55\' یا \'samsung vol ch\'</string>
+    <string name="add_search_brands">جست‌وجوی برند یا مدل</string>
     <string name="add_remote_count">%1$d %2$s</string>
     <string name="add_remote_one">ریموت</string>
     <string name="add_remote_many">ریموت</string>
@@ -214,12 +214,8 @@
     <string name="recent_entry">%1$s · %2$s</string>
 
     <!-- Ritual (power-code sweep) -->
-    <string name="ritual_progress">%1$d / %2$d</string>
     <string name="ritual_power_code">کد روشن %1$d</string>
-    <string name="ritual_follow_up">آزمون‌های بعدی</string>
-    <string name="ritual_codes_from">کدهای برگرفته از ریموتِ پذیرفته‌شدهٔ روشن/خاموش.</string>
     <string name="ritual_missing_button">این دکمه را کم دارید؟ گزارش دهید</string>
-    <string name="ritual_skip_volume">پرش به آزمون صدا</string>
     <string name="ritual_nothing">چیزی برای آزمودن نیست</string>
     <string name="ritual_no_power">برای %1$s در %2$s کد روشنی نیست. جاروی خاموشی هنوز همهٔ برندها را یکی‌یکی می‌زند — به‌جایش آن را امتحان کنید.</string>
     <string name="ritual_missing_code">کد کم دارید؟ گزارش دهید</string>

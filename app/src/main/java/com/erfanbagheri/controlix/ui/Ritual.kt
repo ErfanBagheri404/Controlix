@@ -13,13 +13,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -107,14 +106,14 @@ fun RitualScreen(
     if (candidates.isEmpty()) {
         EmptyRitual(
             brandName, categoryName, onBack,
-            onMissingCode = { onMissingCode("Power") },
+            onMissingCode = { onMissingCode(TestKind.Power.title) },
         )
         return
     }
 
     // Status list survives rotation / process death via the saveable.
     var session by rememberSaveable(stateSaver = setupSessionSaver) {
-        mutableStateOf(SetupTestSession(candidates.size).fire("power#0"))
+        mutableStateOf(SetupTestSession(candidates.size))
     }
     var lockedRemoteId by rememberSaveable { mutableStateOf(-1) }
     var emitTrigger by remember { mutableStateOf<Any?>(null) }
@@ -126,8 +125,9 @@ fun RitualScreen(
     val followUpTests = remember(lockedRemoteId, brandId) {
         if (lockedRemoteId < 0) emptyList() else resolveFollowUps(repo, lockedRemoteId, brandId)
     }
-    val powerKeys = remember(candidates) { candidates.indices.map { "power#$it" } }
     val followUpKeys = followUpTests.map { it.first.name }
+    val powerKeys = remember(candidates) { candidates.indices.map { "power#$it" } }
+    // The row under test. Power candidates walk the list; follow-ups walk the locked set.
     val selectedKey = session.selected
 
     fun send(key: String) {
@@ -145,16 +145,16 @@ fun RitualScreen(
         emitTrigger = if (result is SendResult.Sent) Any() else null
     }
 
-    /** Tap: select the row and fire it immediately. */
+    /** Fire a row immediately — the whole screen is one press-test loop. */
     fun fire(key: String) {
         session = session.fire(key)
         send(key)
     }
 
-    /** Selection change without a send — disarm Yes until the user fires. */
-    fun select(key: String) {
-        session = session.fire(key)
-        transmission = SetupTransmission(false, pressMessage)
+    /** Auto-advance: fire the next untried power code, or bail to the brand picker. */
+    fun advancePower() {
+        val next = session.nextUntested(powerKeys)
+        if (next != null) fire(next) else onBack()
     }
 
     fun answer(accepted: Boolean) {
@@ -172,52 +172,54 @@ fun RitualScreen(
                     return
                 }
                 val names = follow.map { it.first.name }
-                select(session.nextUntested(names) ?: names.first())
+                fire(session.nextUntested(names) ?: names.first())
                 return
             }
             val id = lockedRemoteId
             if (id >= 0 && followUpKeys.all { session.statusFor(it) == SetupTestStatus.Accepted }) {
                 onDone(id, candidates.size)
             } else {
-                session.nextUntested(followUpKeys)?.let { select(it) }
+                session.nextUntested(followUpKeys)?.let { fire(it) }
             }
             return
         }
-        // No — mark tried, then advance exactly like the old linear ladder.
+        // No — mark tried and try the next one without asking again.
         session = session.reject()
         if (key.startsWith("power#")) {
-            val next = session.nextUntested(powerKeys)
-            when {
-                next != null -> select(next)
-                session.acceptedPower != null && followUpKeys.isNotEmpty() -> {
-                    val f = session.nextUntested(followUpKeys)
-                    if (f != null) select(f)
-                }
-                session.acceptedPower == null -> onBack()
-            }
+            advancePower()
         } else {
-            // A failed follow-up falls back to the power list (same as today).
+            // A failed follow-up falls back to the power list.
             lockedRemoteId = -1
             session = session.unlock()
-            val next = session.nextUntested(powerKeys)
-            if (next != null) select(next) else onBack()
+            advancePower()
         }
     }
 
-    fun skipToVolume() {
-        if (session.acceptedPower == null || followUpKeys.isEmpty()) return
-        select(session.nextUntested(followUpKeys) ?: followUpKeys.first())
+    // Fire the first power code once: the user watches the TV instead of
+    // picking a code from a list they can't judge. The flag survives process
+    // death so a config change doesn't replay the ritual from code 1.
+    var started by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (!started) {
+            started = true
+            fire("power#0")
+        }
     }
 
     val currentTest = when {
         selectedKey == null || selectedKey.startsWith("power#") -> TestKind.Power
         else -> followUpTests.firstOrNull { it.first.name == selectedKey }?.first ?: TestKind.Power
     }
-    val canSkip = session.acceptedPower != null && followUpKeys.isNotEmpty() &&
-        (selectedKey == null || selectedKey.startsWith("power#"))
-    val testedCount = powerKeys.count { session.statusFor(it) != SetupTestStatus.Untested } +
-        followUpKeys.count { session.statusFor(it) != SetupTestStatus.Untested }
-    val totalCount = powerKeys.size + followUpKeys.size
+    val (testTitle, _, testAction) = currentTest.display(currentTest)
+    // "Power code 3" — which attempt is on screen, not a pickable list.
+    val currentPowerIndex = selectedKey?.takeIf { it.startsWith("power#") }
+        ?.substringAfter('#')?.toIntOrNull()
+    val currentDetail = when {
+        currentPowerIndex != null -> tr(R.string.ritual_power_code, currentPowerIndex + 1)
+        else -> followUpTests.firstOrNull { it.first.name == selectedKey }?.second?.name.orEmpty()
+    }
+    val exhaustNote = selectedKey == null && session.acceptedPower == null &&
+        session.statusFor("power#0") != SetupTestStatus.Untested
 
     Column(Modifier.fillMaxSize().applyTopInset().navigationBarsPadding()) {
         Column(Modifier.weight(1f).padding(horizontal = 24.dp)) {
@@ -232,12 +234,6 @@ fun RitualScreen(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    tr(R.string.ritual_progress, testedCount, totalCount),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
             Spacer(Modifier.height(6.dp))
             Text(
@@ -245,78 +241,42 @@ fun RitualScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(12.dp))
-            LazyColumn(Modifier.weight(1f)) {
-                items(powerKeys, key = { it }) { key ->
-                    val index = key.substringAfter('#').toInt()
-                    CandidateRow(
-                        title = tr(R.string.ritual_power_code, index + 1),
-                        detail = candidates[index].buttonName,
-                        status = session.statusFor(key),
-                        selected = key == selectedKey,
-                        onClick = { fire(key) },
-                    )
-                    RowHairline()
-                }
-                if (followUpKeys.isNotEmpty()) {
-                    item(key = "followups-head") {
-                        Spacer(Modifier.height(16.dp))
-                        Text(tr(R.string.ritual_follow_up), style = MaterialTheme.typography.titleMedium)
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            tr(R.string.ritual_codes_from),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.height(6.dp))
-                    }
-                    items(followUpKeys, key = { it }) { key ->
-                        val pair = followUpTests.first { it.first.name == key }
-                        CandidateRow(
-                            title = pair.first.title,
-                            detail = pair.second.name,
-                            status = session.statusFor(key),
-                            selected = key == selectedKey,
-                            onClick = { fire(key) },
-                        )
-                        RowHairline()
-                    }
-                }
-                item(key = "report") {
-                    Spacer(Modifier.height(12.dp))
-                    // Flat link, not a chip: the ritual stays the funnel, this is the escape hatch.
+            Spacer(Modifier.height(24.dp))
+            // One row: the code currently being tested. Tried codes are gone,
+            // not listed — the user only ever judges the code in front of them.
+            if (!exhaustNote && currentDetail.isNotEmpty()) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
-                        tr(R.string.ritual_missing_button),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.pressable { onMissingCode(currentTest.title) }.padding(vertical = 8.dp),
+                        testTitle,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        currentDetail,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                item(key = "tail") { Spacer(Modifier.height(16.dp)) }
+                Spacer(Modifier.height(12.dp))
+                RowHairline()
             }
+            Spacer(Modifier.weight(1f))
+            Text(
+                tr(R.string.ritual_missing_button),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.pressable { onMissingCode(currentTest.title) }.padding(vertical = 8.dp),
+            )
         }
 
-        // Bottom block: skip shortcut, the real press, the two answers.
+        // Bottom block: the real press, the two answers.
         Column(Modifier.padding(horizontal = 24.dp)) {
-            if (canSkip) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    Row(
-                        Modifier.pressable(::skipToVolume).padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Text(
-                            tr(R.string.ritual_skip_volume),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        ActionIconView(ActionIcon.ChevronRight, 16.dp, MaterialTheme.colorScheme.primary)
-                    }
-                }
-                RowHairline()
-                Spacer(Modifier.height(12.dp))
-            }
-            BigPressButton(currentTest.actionLabel, currentTest.icon) {
+            BigPressButton(testAction, currentTest.icon) {
                 selectedKey?.let { send(it) }
             }
             Spacer(Modifier.height(20.dp))
@@ -369,53 +329,6 @@ private fun EmptyRitual(
         )
         Spacer(Modifier.height(8.dp))
         BackRow(onBack)
-    }
-}
-
-@Composable
-private fun CandidateRow(
-    title: String,
-    detail: String,
-    status: SetupTestStatus,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(
-                if (selected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                else Color.Transparent
-            )
-            .pressable(onClick)
-            .padding(vertical = 14.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            title,
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Spacer(Modifier.width(12.dp))
-        Text(
-            detail,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Spacer(Modifier.width(12.dp))
-        when (status) {
-            SetupTestStatus.Untested ->
-                Text("—", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            SetupTestStatus.Tried ->
-                ActionIconView(ActionIcon.Cross, 16.dp, MaterialTheme.colorScheme.onSurfaceVariant)
-            SetupTestStatus.Accepted ->
-                ActionIconView(ActionIcon.Check, 16.dp, MaterialTheme.colorScheme.primary)
-        }
     }
 }
 

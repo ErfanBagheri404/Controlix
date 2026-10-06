@@ -119,7 +119,7 @@
     <!-- Add device -->
     <string name="add_what_adding">What are you adding?</string>
     <string name="add_who_made">%1$s. Who made it?</string>
-    <string name="add_search_brands">Search brands or models — \'ue55\', \'samsung vol ch\'</string>
+    <string name="add_search_brands">Search brands or models</string>
     <string name="add_remote_count">%1$d %2$s</string>
     <string name="add_remote_one">remote</string>
     <string name="add_remote_many">remotes</string>
@@ -214,12 +214,8 @@
     <string name="recent_entry">%1$s · %2$s</string>
 
     <!-- Ritual (power-code sweep) -->
-    <string name="ritual_progress">%1$d / %2$d</string>
     <string name="ritual_power_code">Power code %1$d</string>
-    <string name="ritual_follow_up">Follow-up tests</string>
-    <string name="ritual_codes_from">Codes from the accepted power remote.</string>
     <string name="ritual_missing_button">Missing this button? Report it</string>
-    <string name="ritual_skip_volume">Skip to volume test</string>
     <string name="ritual_nothing">Nothing to try</string>
     <string name="ritual_no_power">No power codes for %1$s in %2$s. The power-off sweep still brute-forces every brand — try that instead.</string>
     <string name="ritual_missing_code">Missing a code? Report it</string>
