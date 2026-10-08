@@ -206,7 +206,7 @@ fun BuilderScreen(
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
-                    ActionIconView(ActionIcon.ChevRight, 18.dp, MaterialTheme.colorScheme.onSurfaceVariant)
+                    ActionIconView(ActionIcon.ChevRight, 18.dp, MaterialTheme.colorScheme.onSurfaceVariant, autoMirror = true)
                 }
                 Hairline()
             }
@@ -215,7 +215,7 @@ fun BuilderScreen(
                 Modifier.fillMaxWidth().pressable { sourceRemote = null }.padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ActionIconView(ActionIcon.Back, 18.dp, MaterialTheme.colorScheme.primary)
+                ActionIconView(ActionIcon.Back, 18.dp, MaterialTheme.colorScheme.primary, autoMirror = true)
                 Spacer(Modifier.width(8.dp))
                 Text(
                     tr(R.string.builder_all_remotes),

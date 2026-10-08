@@ -67,7 +67,7 @@ fun ScrollScreenShell(
 @Composable
 fun BackTitleRow(title: String, onBack: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        ActionIconView(ActionIcon.Back, 26.dp, MaterialTheme.colorScheme.onSurface,
+        ActionIconView(ActionIcon.Back, 26.dp, MaterialTheme.colorScheme.onSurface, autoMirror = true,
             modifier = Modifier.pressable(onBack).padding(6.dp))
         Spacer(Modifier.weight(1f))
         Text(title, style = MaterialTheme.typography.headlineSmall)

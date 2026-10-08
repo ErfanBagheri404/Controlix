@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.EffectiveButtons
@@ -211,13 +212,16 @@ fun RitualScreen(
         else -> followUpTests.firstOrNull { it.first.name == selectedKey }?.first ?: TestKind.Power
     }
     val (testTitle, _, testAction) = currentTest.display(currentTest)
-    // "Power code 3" — which attempt is on screen, not a pickable list.
+    // Which attempt is on screen: 1-based power index, or position in the
+    // follow-up walk — shown as "3/10" between the two answers.
     val currentPowerIndex = selectedKey?.takeIf { it.startsWith("power#") }
         ?.substringAfter('#')?.toIntOrNull()
-    val currentDetail = when {
-        currentPowerIndex != null -> tr(R.string.ritual_power_code, currentPowerIndex + 1)
-        else -> followUpTests.firstOrNull { it.first.name == selectedKey }?.second?.name.orEmpty()
-    }
+    val currentTotal = if (selectedKey?.startsWith("power#") == true || selectedKey == null) {
+        candidates.size
+    } else followUpKeys.size.coerceAtLeast(1)
+    val currentPosition = currentPowerIndex?.plus(1)
+        ?: followUpKeys.indexOf(selectedKey).plus(1).coerceAtLeast(1)
+    val attemptProgress = tr(R.string.ritual_progress, currentPosition, currentTotal)
     val exhaustNote = selectedKey == null && session.acceptedPower == null &&
         session.statusFor("power#0") != SetupTestStatus.Untested
 
@@ -242,26 +246,15 @@ fun RitualScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(24.dp))
-            // One row: the code currently being tested. Tried codes are gone,
-            // not listed — the user only ever judges the code in front of them.
-            if (!exhaustNote && currentDetail.isNotEmpty()) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        testTitle,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        currentDetail,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            // The code under test. Tried codes are gone, not listed — the
+            // user only ever judges the code in front of them.
+            if (!exhaustNote) {
+                Text(
+                    testTitle,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Spacer(Modifier.height(12.dp))
                 RowHairline()
             }
@@ -276,16 +269,28 @@ fun RitualScreen(
 
         // Bottom block: the real press, the two answers.
         Column(Modifier.padding(horizontal = 24.dp)) {
-            BigPressButton(testAction, currentTest.icon) {
-                selectedKey?.let { send(it) }
+            Box(
+                Modifier.fillMaxWidth().weight(1f),
+                contentAlignment = Alignment.Center,
+            ) {
+                BigPressButton(testAction, currentTest.icon) {
+                    selectedKey?.let { send(it) }
+                }
             }
             Spacer(Modifier.height(20.dp))
             Row(
                 Modifier.fillMaxWidth().padding(bottom = 28.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 AnswerChip(ActionIcon.Cross, tr(R.string.ritual_no), feedback = Feedback::deny) { answer(false) }
+                Text(
+                    attemptProgress,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                )
                 AnswerChip(
                     ActionIcon.Check,
                     tr(R.string.ritual_yes),
@@ -377,7 +382,7 @@ fun BigPressButton(label: String, icon: ActionIcon, onPress: () -> Unit) {
 @Composable
 fun BackRow(onBack: () -> Unit) {
     Row(Modifier.pressable(onBack).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        ActionIconView(ActionIcon.Back, 20.dp, MaterialTheme.colorScheme.primary)
+        ActionIconView(ActionIcon.Back, 20.dp, MaterialTheme.colorScheme.primary, autoMirror = true)
         Spacer(Modifier.width(8.dp))
         Text(tr(R.string.ritual_back), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
     }

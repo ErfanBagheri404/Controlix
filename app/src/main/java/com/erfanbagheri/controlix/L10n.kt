@@ -59,7 +59,9 @@ fun l10nInit(context: Context) {
  */
 fun setLanguage(lang: String) {
     val raw = rawContext ?: return
-    raw.getSharedPreferences(LANG_PREFS, Context.MODE_PRIVATE).edit().putString(LANG_KEY, lang).apply()
+    // commit(): recreate() below re-reads this pref synchronously —
+    // apply() races and the old locale wins until a cold restart.
+    raw.getSharedPreferences(LANG_PREFS, Context.MODE_PRIVATE).edit().putString(LANG_KEY, lang).commit()
     forcedLang = lang
     appContext = wrapLocale(raw, lang)
 }

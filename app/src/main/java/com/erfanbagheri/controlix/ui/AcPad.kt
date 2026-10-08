@@ -122,7 +122,7 @@ fun AcPadScreen(
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             ActionIconView(
-                ActionIcon.Back, 26.dp, MaterialTheme.colorScheme.onSurface,
+                ActionIcon.Back, 26.dp, MaterialTheme.colorScheme.onSurface, autoMirror = true,
                 modifier = Modifier.pressable(onBack).padding(9.dp),
             )
             Spacer(Modifier.weight(1f))

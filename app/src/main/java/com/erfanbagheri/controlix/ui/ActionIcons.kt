@@ -5,7 +5,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.ui.icons.Lucide
 
@@ -13,6 +16,11 @@ import com.erfanbagheri.controlix.ui.icons.Lucide
  * Action + category glyphs, drawn from the Lucide set (ISC licensed).
  * Kept as the same call surface the app already used, so every call site
  * renders Lucide without changes.
+ *
+ * [autoMirror] flips the glyph in RTL. Set it on *reading-direction* chrome
+ * (back arrows, row chevrons) so it follows the layout. Leave it off for
+ * hardware glyphs — D-pad left/right, volume, power — those name a physical
+ * button on the device and must not flip.
  */
 @Composable
 fun ActionIconView(
@@ -21,12 +29,16 @@ fun ActionIconView(
     tint: Color,
     strokeWidth: Dp = 2.5.dp,
     modifier: Modifier = Modifier,
+    autoMirror: Boolean = false,
 ) {
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Icon(
         imageVector = actionVector(icon),
         contentDescription = null,
         tint = tint,
-        modifier = modifier.size(size),
+        modifier = modifier
+            .size(size)
+            .then(if (autoMirror && rtl) Modifier.graphicsLayer { scaleX = -1f } else Modifier),
     )
 }
 

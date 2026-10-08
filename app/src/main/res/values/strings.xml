@@ -214,7 +214,7 @@
     <string name="recent_entry">%1$s · %2$s</string>
 
     <!-- Ritual (power-code sweep) -->
-    <string name="ritual_power_code">Power code %1$d</string>
+    <string name="ritual_progress">%1$d/%2$d</string>
     <string name="ritual_missing_button">Missing this button? Report it</string>
     <string name="ritual_nothing">Nothing to try</string>
     <string name="ritual_no_power">No power codes for %1$s in %2$s. The power-off sweep still brute-forces every brand — try that instead.</string>
