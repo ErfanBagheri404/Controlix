@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -211,7 +210,7 @@ fun RitualScreen(
         selectedKey == null || selectedKey.startsWith("power#") -> TestKind.Power
         else -> followUpTests.firstOrNull { it.first.name == selectedKey }?.first ?: TestKind.Power
     }
-    val (testTitle, _, testAction) = currentTest.display(currentTest)
+    val (_, _, testAction) = currentTest.display(currentTest)
     // Which attempt is on screen: 1-based power index, or position in the
     // follow-up walk — shown as "3/10" between the two answers.
     val currentPowerIndex = selectedKey?.takeIf { it.startsWith("power#") }
@@ -222,9 +221,6 @@ fun RitualScreen(
     val currentPosition = currentPowerIndex?.plus(1)
         ?: followUpKeys.indexOf(selectedKey).plus(1).coerceAtLeast(1)
     val attemptProgress = tr(R.string.ritual_progress, currentPosition, currentTotal)
-    val exhaustNote = selectedKey == null && session.acceptedPower == null &&
-        session.statusFor("power#0") != SetupTestStatus.Untested
-
     Column(Modifier.fillMaxSize().applyTopInset().navigationBarsPadding().padding(horizontal = 24.dp)) {
         Spacer(Modifier.height(14.dp))
         BackRow(onBack)
@@ -245,24 +241,6 @@ fun RitualScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(24.dp))
-        // The code under test. Tried codes are gone, not listed — the
-        // user only ever judges the code in front of them.
-        if (!exhaustNote) {
-            Text(
-                testTitle,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(12.dp))
-            RowHairline()
-        }
-        Text(
-            tr(R.string.ritual_missing_button),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.pressable { onMissingCode(currentTest.title) }.padding(vertical = 8.dp),
-        )
 
         // Press button centered in the space between the header and the answers.
         Box(
@@ -273,6 +251,18 @@ fun RitualScreen(
                 selectedKey?.let { send(it) }
             }
         }
+        // "missing this button?" sits above the attempt counter, which the
+        // answer row centers horizontally.
+        Text(
+            tr(R.string.ritual_missing_button),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .pressable { onMissingCode(currentTest.title) }
+                .padding(bottom = 12.dp),
+        )
         Row(
             Modifier.fillMaxWidth().padding(bottom = 28.dp),
             horizontalArrangement = Arrangement.Center,
@@ -294,11 +284,6 @@ fun RitualScreen(
                 ) { answer(true) }
         }
     }
-}
-
-@Composable
-private fun RowHairline() {
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 }
 
 @Composable
