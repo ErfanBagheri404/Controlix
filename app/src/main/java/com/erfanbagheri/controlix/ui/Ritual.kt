@@ -225,64 +225,59 @@ fun RitualScreen(
     val exhaustNote = selectedKey == null && session.acceptedPower == null &&
         session.statusFor("power#0") != SetupTestStatus.Untested
 
-    Column(Modifier.fillMaxSize().applyTopInset().navigationBarsPadding()) {
-        Column(Modifier.weight(1f).padding(horizontal = 24.dp)) {
-            Spacer(Modifier.height(14.dp))
-            BackRow(onBack)
-            Spacer(Modifier.height(16.dp))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    brandName,
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Spacer(Modifier.height(6.dp))
+    Column(Modifier.fillMaxSize().applyTopInset().navigationBarsPadding().padding(horizontal = 24.dp)) {
+        Spacer(Modifier.height(14.dp))
+        BackRow(onBack)
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                SetupTransmission.display(transmission),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(24.dp))
-            // The code under test. Tried codes are gone, not listed — the
-            // user only ever judges the code in front of them.
-            if (!exhaustNote) {
-                Text(
-                    testTitle,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(12.dp))
-                RowHairline()
-            }
-            Spacer(Modifier.weight(1f))
-            Text(
-                tr(R.string.ritual_missing_button),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.pressable { onMissingCode(currentTest.title) }.padding(vertical = 8.dp),
+                brandName,
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            SetupTransmission.display(transmission),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(24.dp))
+        // The code under test. Tried codes are gone, not listed — the
+        // user only ever judges the code in front of them.
+        if (!exhaustNote) {
+            Text(
+                testTitle,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+            RowHairline()
+        }
+        Text(
+            tr(R.string.ritual_missing_button),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.pressable { onMissingCode(currentTest.title) }.padding(vertical = 8.dp),
+        )
 
-        // Bottom block: the real press, the two answers.
-        Column(Modifier.padding(horizontal = 24.dp)) {
-            Box(
-                Modifier.fillMaxWidth().weight(1f),
-                contentAlignment = Alignment.Center,
-            ) {
-                BigPressButton(testAction, currentTest.icon) {
-                    selectedKey?.let { send(it) }
-                }
+        // Press button centered in the space between the header and the answers.
+        Box(
+            Modifier.fillMaxWidth().weight(1f),
+            contentAlignment = Alignment.Center,
+        ) {
+            BigPressButton(testAction, currentTest.icon) {
+                selectedKey?.let { send(it) }
             }
-            Spacer(Modifier.height(20.dp))
-            Row(
-                Modifier.fillMaxWidth().padding(bottom = 28.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(bottom = 28.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
                 AnswerChip(ActionIcon.Cross, tr(R.string.ritual_no), feedback = Feedback::deny) { answer(false) }
                 Text(
                     attemptProgress,
@@ -297,7 +292,6 @@ fun RitualScreen(
                     enabled = transmission.canConfirm,
                     feedback = Feedback::confirm,
                 ) { answer(true) }
-            }
         }
     }
 }
