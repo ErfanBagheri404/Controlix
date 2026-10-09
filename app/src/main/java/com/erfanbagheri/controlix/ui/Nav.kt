@@ -225,6 +225,12 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
     var updateState by remember { mutableStateOf<UpdateCheckState>(UpdateCheckState.Idle) }
     var whatsNewRelease by remember { mutableStateOf<ReleaseInfo?>(null) }
     var whatsNewVersion by remember { mutableStateOf<String?>(null) }
+    // "Update available" modal. Holds the release the user has not dismissed
+    // yet; the check itself is silent, so this is the only place the app ever
+    // interrupts. Guarded so a manual re-check never re-opens a dismissed
+    // dialog in the same session.
+    var pendingUpdate by remember { mutableStateOf<UpdateCheckState.UpdateAvailable?>(null) }
+    var updatePromptDismissed by remember { mutableStateOf(false) }
 
     fun installedVersion(): String = runCatching {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -234,7 +240,11 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
         updateState = UpdateCheckState.Checking
         val installed = installedVersion()
         val release = withContext(Dispatchers.IO) { AppUpdateCheck.fetchLatest() }
-        updateState = AppUpdateCheck.evaluate(installed, release)
+        val evaluated = AppUpdateCheck.evaluate(installed, release)
+        updateState = evaluated
+        if (evaluated is UpdateCheckState.UpdateAvailable && !updatePromptDismissed) {
+            pendingUpdate = evaluated
+        }
         // "What's new" (issue #52) rides the same single fetch, no second request.
         // Only fire when the version we are RUNNING is the release itself, so the
         // notes always describe the build the user actually installed.
@@ -557,6 +567,19 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                     WhatsNewStore.markSeen(whatsNewAt)
                     whatsNewRelease = null
                     whatsNewVersion = null
+                },
+            )
+        }
+        // Update-available modal (issue #51). Floats over whatever screen the
+        // user is on, same host as the what's-new dialog.
+        val update = pendingUpdate
+        if (update != null) {
+            AppUpdateDialog(
+                release = update.release,
+                currentVersion = update.currentVersion,
+                onDismiss = {
+                    pendingUpdate = null
+                    updatePromptDismissed = true
                 },
             )
         }

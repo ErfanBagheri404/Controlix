@@ -101,6 +101,10 @@
     <string name="update_up_to_date">Up to date (%1$s)</string>
     <string name="update_available_version">%1$s available</string>
     <string name="update_check_failed">Check failed - couldn\'t reach GitHub</string>
+    <string name="update_modal_title">Update available</string>
+    <string name="update_modal_body">Version %1$s is out. You\'re on %2$s.</string>
+    <string name="update_open_github">Open on GitHub</string>
+    <string name="update_not_now">Not now</string>
 
     <!-- Database health -->
     <string name="dbhealth_title">Database health</string>

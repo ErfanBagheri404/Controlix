@@ -101,6 +101,10 @@
     <string name="update_up_to_date">به‌روز است (%1$s)</string>
     <string name="update_available_version">نسخهٔ %1$s موجود است</string>
     <string name="update_check_failed">بررسی ناموفق بود - دسترسی به GitHub ممکن نشد</string>
+    <string name="update_modal_title">نسخهٔ جدید موجود است</string>
+    <string name="update_modal_body">نسخهٔ %1$s منتشر شده است. نسخهٔ فعلی شما %2$s است.</string>
+    <string name="update_open_github">باز کردن در GitHub</string>
+    <string name="update_not_now">بعداً</string>
 
     <!-- Database health -->
     <string name="dbhealth_title">سلامت پایگاه داده</string>
