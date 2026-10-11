@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.Macro
+import com.erfanbagheri.controlix.data.displayName
 import com.erfanbagheri.controlix.ui.theme.ControlixTheme
 import com.erfanbagheri.controlix.widget.WidgetStore
 import com.erfanbagheri.controlix.tr
@@ -107,7 +108,7 @@ private fun WidgetMacroConfigureScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text(macro.name, style = MaterialTheme.typography.titleMedium)
+                            Text(macro.displayName(tr(R.string.macros_default_name, macro.steps.size)), style = MaterialTheme.typography.titleMedium)
                             Text(
                                 tr(R.string.widget_macro_steps, macro.steps.size, if (macro.steps.size == 1) "" else "s"),
                                 style = MaterialTheme.typography.labelSmall,

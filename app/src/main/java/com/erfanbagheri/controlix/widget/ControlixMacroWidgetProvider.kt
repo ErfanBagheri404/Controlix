@@ -9,6 +9,7 @@ import android.content.Intent
 import android.widget.RemoteViews
 import com.erfanbagheri.controlix.R
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.MACRO_DEFAULT_NAME
 import com.erfanbagheri.controlix.feature.MacroPlayer
 import com.erfanbagheri.controlix.ir.IrTransmitter
 import com.erfanbagheri.controlix.ui.MacroStore
@@ -103,7 +104,9 @@ class ControlixMacroWidgetProvider : AppWidgetProvider() {
                 status = ctx.getString(R.string.widget_macro_deleted)
             }
             else -> {
-                title = macro.name
+                title = if (macro.name == MACRO_DEFAULT_NAME)
+                    ctx.getString(R.string.macros_default_name, macro.steps.size)
+                else macro.name
                 status = statusOverride ?: WidgetStore.lastRun(ctx, widgetId)
                     ?: ctx.getString(R.string.widget_tap_to_run)
             }

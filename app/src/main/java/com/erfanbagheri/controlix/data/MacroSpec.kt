@@ -62,6 +62,26 @@ data class MacroStep(
 data class Macro(val id: Int, val name: String, val steps: List<MacroStep>)
 
 /**
+ * Marker stored in [Macro.name] when the user never typed a name, so the UI
+ * can localize the default instead of persisting whichever language happened to
+ * be active at creation. A literal sentinel, never a rendered string: a macro
+ * named "Macro 2 steps" by hand stays exactly that in both languages.
+ * ponytail: assumes only this one default exists; add a per-default key when
+ * a second auto-name appears.
+ */
+const val MACRO_DEFAULT_NAME = "\u0000default"
+
+/** True when [Macro.name] is the auto-name sentinel rather than a typed name. */
+fun isDefaultMacroName(name: String): Boolean = name == MACRO_DEFAULT_NAME
+
+/**
+ * Display name for a macro: the typed name, or a localized default. Callers
+ * pass the already-localized fallback so this stays Android-free.
+ */
+fun Macro.displayName(fallback: String): String =
+    if (isDefaultMacroName(name)) fallback else name
+
+/**
  * On-read migration: a pre-#70 step stored a volatile remote id. The id is
  * trusted only while it still names a saved device, and the step is then
  * rewritten to that device's stable key. A step whose id matches nothing
@@ -69,14 +89,28 @@ data class Macro(val id: Int, val name: String, val steps: List<MacroStep>)
  * it if it is not, which is strictly better than dropping the macro.
  */
 fun migrateMacro(macro: Macro, devices: List<RemoteRow>): Macro {
-    if (macro.steps.none { it.key == null }) return macro
     val byId = devices.associateBy { it.remoteId }
     return macro.copy(
+        name = migratedMacroName(macro.name, macro.steps.size),
         steps = macro.steps.map { step ->
             if (step.key != null) step
             else byId[step.legacyRemoteId]?.let { step.migrated(it.key) } ?: step
         },
     )
+}
+
+/**
+ * The pre-sentinel build baked the active language's default into the store,
+ * so a macro built in English read "Macro 2 steps" forever. Those two exact
+ * shapes become the sentinel and re-localize on display; any other name is the
+ * user's own text and is left alone.
+ * ponytail: a macro the user hand-typed as exactly "Macro 2 steps" is
+ * indistinguishable from an auto-named one and also gets localized.
+ */
+private fun migratedMacroName(name: String, steps: Int): String = when (name) {
+    "Macro $steps steps" -> MACRO_DEFAULT_NAME
+    "\u0645\u0627\u06a9\u0631\u0648\u06cc $steps \u06af\u0627\u0645" -> MACRO_DEFAULT_NAME
+    else -> name
 }
 
 object MacroCodec {

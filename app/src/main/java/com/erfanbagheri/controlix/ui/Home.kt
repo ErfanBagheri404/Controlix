@@ -1,5 +1,6 @@
 package com.erfanbagheri.controlix.ui
 
+import com.erfanbagheri.controlix.data.MACRO_DEFAULT_NAME
 import com.erfanbagheri.controlix.data.FontScale
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.animation.core.animateFloatAsState
@@ -67,6 +68,10 @@ import com.erfanbagheri.controlix.tr
 import com.erfanbagheri.controlix.R
 import com.erfanbagheri.controlix.data.Copy
 
+/** Scene name for display: the auto-name sentinel renders localized. */
+private fun Scene.displayName(): String =
+    if (name == MACRO_DEFAULT_NAME) tr(R.string.macros_default_name, steps.size) else name
+
 /** Sheet callbacks live in Nav and are passed through here. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,10 +130,10 @@ fun HomeScreen(
         if (report.hasBlockers) {
             val blocked = report.blockingSteps.mapNotNull { (it.step as? SceneStep.DeviceKey)?.key }
             val message = when {
-                report.cycle -> tr(R.string.home_scene_self, scene.name)
-                blocked.isEmpty() -> tr(R.string.home_scene_no_steps, scene.name)
+                report.cycle -> tr(R.string.home_scene_self, scene.displayName())
+                blocked.isEmpty() -> tr(R.string.home_scene_no_steps, scene.displayName())
                 else -> tr(
-                    R.string.home_scene_blocked, scene.name,
+                    R.string.home_scene_blocked, scene.displayName(),
                     blocked.joinToString(", ") { it.replace('_', ' ') },
                 )
             }
@@ -139,22 +144,22 @@ fun HomeScreen(
         runningScene = scene
         cancelling = false
         // Pre-flight result is on screen before the first transmit.
-        sceneStatus = tr(R.string.home_scene_running, scene.name, scene.steps.size)
+        sceneStatus = tr(R.string.home_scene_running, scene.displayName(), scene.steps.size)
         scope.launch {
             val result = SceneModel.run(
                 scene,
                 r,
                 transmit = { code -> !cancelling && transmitter.transmitButton(code.carrierHz, code.pattern) },
                 onProgress = { sent, total ->
-                    if (sent > 0) sceneStatus = tr(R.string.home_scene_progress, sent, total, scene.name)
+                    if (sent > 0) sceneStatus = tr(R.string.home_scene_progress, sent, total, scene.displayName())
                 },
                 delay = { kotlinx.coroutines.delay(it) },
             )
             sceneStatus = when (result) {
-                is SceneRunResult.Complete -> tr(R.string.home_scene_sent, scene.name, result.sent)
+                is SceneRunResult.Complete -> tr(R.string.home_scene_sent, scene.displayName(), result.sent)
                 is SceneRunResult.Failed ->
                     if (cancelling) tr(R.string.home_scene_stopped, result.stoppedAt + 1)
-                    else tr(R.string.home_scene_failed, scene.name, Copy.sceneStepFailure(result.reason))
+                    else tr(R.string.home_scene_failed, scene.displayName(), Copy.sceneStepFailure(result.reason))
             }
             runningScene = null
             cancelling = false
@@ -504,7 +509,7 @@ private fun ScenesStrip(
             scenes.forEachIndexed { index, scene ->
                 val isRunning = running != null && running.id == scene.id
                 Text(
-                    if (isRunning) tr(R.string.home_cancel_scene, scene.name) else scene.name,
+                    if (isRunning) tr(R.string.home_cancel_scene, scene.displayName()) else scene.displayName(),
                     style = MaterialTheme.typography.titleSmall,
                     color = if (isRunning) Danger else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,

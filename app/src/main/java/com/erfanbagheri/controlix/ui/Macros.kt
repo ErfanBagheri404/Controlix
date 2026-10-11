@@ -27,8 +27,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.DeviceKey
 import com.erfanbagheri.controlix.data.IrCodeRepository
+import com.erfanbagheri.controlix.data.MACRO_DEFAULT_NAME
 import com.erfanbagheri.controlix.data.Macro
 import com.erfanbagheri.controlix.data.MacroRunResult
+import com.erfanbagheri.controlix.data.displayName
 import com.erfanbagheri.controlix.data.MacroStep
 import com.erfanbagheri.controlix.data.NO_DEVICE_ID
 import com.erfanbagheri.controlix.data.RemoteIdentity
@@ -146,7 +148,7 @@ private fun MacroRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(macro.name, style = MaterialTheme.typography.titleMedium)
+            Text(macro.displayName(tr(R.string.macros_default_name, macro.steps.size)), style = MaterialTheme.typography.titleMedium)
             Text(
                 // Step 1 = TV power · 2 = Soundbar power — the cross-device
                 // story is what distinguishes this from a button list.
@@ -297,7 +299,10 @@ private fun MacroBuilder(
                 ActionIcon.Sweep,
             ) {
                 if (steps.isEmpty()) return@BigPressButton
-                onDone(name.ifBlank { tr(R.string.macros_default_name, steps.size) }, steps)
+                // Blank user input stores the auto-name sentinel; the UI
+                // renders the localized default at display time, so switching
+                // language re-names it without a migration.
+                onDone(name.ifBlank { MACRO_DEFAULT_NAME }, steps)
             }
         }
         Spacer(Modifier.height(8.dp))
