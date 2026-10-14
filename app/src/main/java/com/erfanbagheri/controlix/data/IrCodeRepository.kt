@@ -188,7 +188,7 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
     fun searchModels(query: String, limit: Int = 50): List<Pair<Remote, String>> {
         val like = "%${query.trim()}%"
         return db.rawQuery(
-            """SELECT r.id, r.file_name, r.model_name, b.name, cat.name
+            """SELECT r.id, r.file_name, r.model_name, b.name, cat.name, cat.slug
                FROM remote_model rm
                JOIN remote r ON r.id = rm.remote_id
                JOIN brand b ON b.id = r.brand_id
@@ -202,7 +202,8 @@ class IrCodeRepository(context: Context, assetName: String = "controlix.db") {
                 while (c.moveToNext()) {
                     add(
                         Remote(c.getInt(0), c.getString(1), c.getString(2)) to
-                            "${c.getString(3)} ${c.getString(2) ?: c.getString(1)} (${c.getString(4)})"
+                            "${c.getString(3)} ${c.getString(2) ?: c.getString(1)} " +
+                            "(${Copy.category(c.getString(5), c.getString(4))})"
                     )
                 }
             }

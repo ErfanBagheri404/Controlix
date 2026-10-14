@@ -34,6 +34,10 @@ private var appContext: Context? = null
 fun l10nApply(base: Context): Context {
     val lang = base.getSharedPreferences(LANG_PREFS, Context.MODE_PRIVATE).getString(LANG_KEY, "").orEmpty()
     forcedLang = lang
+    // Refresh the tr() context too — otherwise a system per-app language switch
+    // (localeConfig) flips layout direction but leaves every tr() string stale
+    // until the process is killed. SetLanguage is not called on that path.
+    appContext = wrapLocale(base.applicationContext ?: base, lang)
     return wrapLocale(base, lang)
 }
 
