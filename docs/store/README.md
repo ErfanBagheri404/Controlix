@@ -24,6 +24,7 @@ Everything here has been verified against Myket's published rules
 | Permissions vs functionality | only `android.permission.TRANSMIT_IR` and `android.permission.CAMERA` (plus the platform-generated `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`) | PASS |
 | INTERNET permission | **not declared** — the app cannot transmit anything | PASS |
 | Ads / analytics / tracking SDKs | none in the dependency tree | PASS |
+| Hardware features declared optional | `android.hardware.consumerir` and `android.hardware.camera` are both `required="false"`, so the app installs on every device, not just IR-equipped phones (IR blasters are rare on 2024+ flagships) | PASS |
 | Package name | `com.erfanbagheri.controlix` | PASS |
 | Age rating / price / category | 3+ / free / ابزارهای کاربردی (Utilities) | PASS |
 | Farsi + RTL | whole UI localised, RTL-first | PASS |

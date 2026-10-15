@@ -32,7 +32,7 @@ No action needed. (This is 8 days away, so we are safe.)
 | App title (fa + en) | required | `Controlix` | PASS |
 | App icon | square, high quality, no copyright marks, no excessive text | adaptive icon, 1024×1024 foreground, themed, monochrome layer for Android 13 themed icons | PASS |
 | Descriptions (fa + en) | required | below | PASS |
-| Screenshots | **at least 3, from inside the app** | must be captured | ACTION |
+| Screenshots | **at least 3, from inside the app** | **7 captured** from the running app — `docs/store/screenshots/` | PASS |
 | Package name | reserved, unique | `com.erfanbagheri.controlix` | PASS |
 | Age rating | required | 3+ (no violence, no social content) | PASS |
 | Price | required | Free | PASS |
