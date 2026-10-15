@@ -34,11 +34,33 @@ private var appContext: Context? = null
 fun l10nApply(base: Context): Context {
     val lang = base.getSharedPreferences(LANG_PREFS, Context.MODE_PRIVATE).getString(LANG_KEY, "").orEmpty()
     forcedLang = lang
-    // Refresh the tr() context too — otherwise a system per-app language switch
-    // (localeConfig) flips layout direction but leaves every tr() string stale
-    // until the process is killed. SetLanguage is not called on that path.
-    appContext = wrapLocale(base.applicationContext ?: base, lang)
+    // Rebuild the tr() context from scratch. The system per-app language switch
+    // (localeConfig) never calls setLanguage, so this is the only place that can
+    // notice it — and `base` is the one object carrying the *new* locale.
+    //
+    // Handing back the Application object is NOT enough: when lang is "" (follow
+    // system) wrapLocale returns its argument untouched, so re-assigning the same
+    // Application instance refreshes nothing and every tr() string stays stale
+    // until the process dies. createConfigurationContext gives tr() a context
+    // whose locale is the one the system just handed us.
+    appContext = trContext(base, lang)
     return wrapLocale(base, lang)
+}
+
+/**
+ * A fresh context for [tr] that resolves in the effective locale. Derived from
+ * the application context (never the activity's) so the process-lifetime `tr()`
+ * singleton cannot outlive and leak an Activity.
+ */
+private fun trContext(base: Context, lang: String): Context {
+    val app = base.applicationContext ?: base
+    val locales = if (lang.isNotEmpty()) android.os.LocaleList(Locale(lang))
+                  else base.resources.configuration.locales
+    val first = locales.get(0) ?: Locale.getDefault()
+    val conf = Configuration(app.resources.configuration)
+    conf.setLocales(locales)
+    conf.setLayoutDirection(first)
+    return app.createConfigurationContext(conf)
 }
 
 private fun wrapLocale(base: Context, lang: String): Context {
