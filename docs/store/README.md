@@ -21,6 +21,7 @@ Everything here has been verified against Myket's published rules
 | minSdk | 26 | PASS |
 | Signing | `signingConfigs.release` wired to `KEYSTORE_FILE` / `KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD`, all four present as GitHub Actions secrets; release build runs R8 minification | PASS |
 | Release APK is signed | enforced by a new gate in `release.yml` that fails the job on any `*unsigned*` APK | PASS |
+| Published APK signature, verified against the real downloaded v0.0.32 asset | `apksigner verify` → **Verifies**; APK Signature Scheme v2, 1 signer, `CN=Controlix, O=ErfanBagheri, C=IR`, RSA 2048, cert SHA-256 `86247d84e91289a23cb0fb49f287c1481994b7f3100a1a33a38256f1df1b07f1` | PASS |
 | Permissions vs functionality | only `android.permission.TRANSMIT_IR` and `android.permission.CAMERA` (plus the platform-generated `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`) | PASS |
 | INTERNET permission | **not declared** — the app cannot transmit anything | PASS |
 | Ads / analytics / tracking SDKs | none in the dependency tree | PASS |
