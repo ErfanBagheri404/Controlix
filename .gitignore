@@ -12,6 +12,9 @@ captures/
 *.keystore
 !debug.keystore
 
+# Android signing leftovers from manual builds
+*.idsig
+
 # Kotlin compiler error logs
 .kotlin/
 __pycache__/
