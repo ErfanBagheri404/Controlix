@@ -73,6 +73,19 @@ jobs:
             -PversionName=${{ steps.v.outputs.versionName }} \
             -PversionCode=${{ steps.v.outputs.versionCode }} \
             --stacktrace
+          # Publishing gate: stores (Myket, Cafe Bazar, Play) reject signed-less
+          # APKs, so fail the job instead of shipping one.
+          set -- app/build/outputs/apk/release/*.apk
+          for APK in "$@"; do
+            case "$APK" in
+              *unsigned*)
+                echo "::error::unsigned release APK ($APK) — signing secrets are missing or wrong"
+                exit 1
+                ;;
+            esac
+          done
+          [ -e "$1" ] || { echo "::error::no release APK produced"; exit 1; }
+          echo "signed release APK(s): $#"
 
       - name: Collect APK
         id: apk

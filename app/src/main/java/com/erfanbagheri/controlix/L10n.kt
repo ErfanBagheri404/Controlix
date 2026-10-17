@@ -19,8 +19,24 @@ import java.util.Locale
 private const val LANG_PREFS = "controlix_lang"
 private const val LANG_KEY = "lang"
 
-/** "" = follow the system/per-app locale; "en"/"fa" = in-app override. */
+/** "": follow the system/per-app locale; "en"/"fa": in-app override. */
 private var forcedLang: String = ""
+
+/**
+ * Compose-observable mirror of [forcedLang]. `tr()` resolves through a plain
+ * module field, so nothing recomposes when the language changes; the theme
+ * reads this to re-derive typography and layout direction in place instead of
+ * waiting for the next cold start.
+ */
+private val langState = androidx.compose.runtime.mutableStateOf("")
+
+/** The language the composition should render with — read inside @Composable. */
+fun languageState(): String = langState.value
+
+private fun setForcedLang(lang: String) {
+    forcedLang = lang
+    langState.value = lang
+}
 
 private var rawContext: Context? = null
 private var appContext: Context? = null
@@ -33,7 +49,7 @@ private var appContext: Context? = null
  */
 fun l10nApply(base: Context): Context {
     val lang = base.getSharedPreferences(LANG_PREFS, Context.MODE_PRIVATE).getString(LANG_KEY, "").orEmpty()
-    forcedLang = lang
+    setForcedLang(lang)
     // Rebuild the tr() context from scratch. The system per-app language switch
     // (localeConfig) never calls setLanguage, so this is the only place that can
     // notice it — and `base` is the one object carrying the *new* locale.
@@ -75,8 +91,9 @@ private fun wrapLocale(base: Context, lang: String): Context {
 fun l10nInit(context: Context) {
     val raw = context.applicationContext
     rawContext = raw
-    forcedLang = raw.getSharedPreferences(LANG_PREFS, Context.MODE_PRIVATE).getString(LANG_KEY, "").orEmpty()
-    appContext = wrapLocale(raw, forcedLang)
+    val saved = raw.getSharedPreferences(LANG_PREFS, Context.MODE_PRIVATE).getString(LANG_KEY, "").orEmpty()
+    setForcedLang(saved)
+    appContext = wrapLocale(raw, saved)
 }
 
 /**
@@ -88,7 +105,7 @@ fun setLanguage(lang: String) {
     // commit(): recreate() below re-reads this pref synchronously —
     // apply() races and the old locale wins until a cold restart.
     raw.getSharedPreferences(LANG_PREFS, Context.MODE_PRIVATE).edit().putString(LANG_KEY, lang).commit()
-    forcedLang = lang
+    setForcedLang(lang)
     appContext = wrapLocale(raw, lang)
 }
 
