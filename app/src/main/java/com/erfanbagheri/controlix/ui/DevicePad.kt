@@ -106,7 +106,7 @@ enum class PadFamily {
                 categorySlug.startsWith("digital_signs") ||
                 categorySlug.startsWith("whiteboards") -> DISPLAY
             categorySlug.startsWith("led_lighting") ||
-                categorySlug.startsWith("clocks") -> LIGHTING
+                categorySlug.startsWith("clocks") || categorySlug.startsWith("blinds") -> LIGHTING
             categorySlug.startsWith("vacuum_cleaners") ||
                 categorySlug.startsWith("dust_collectors") ||
                 categorySlug.startsWith("window_cleaners") -> CLEANING
