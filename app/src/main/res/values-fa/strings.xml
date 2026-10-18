@@ -349,6 +349,26 @@
     <string name="ac_remote_title">ریموت کولر</string>
     <string name="ac_on_disabled">روشن غیرفعال است: این ریموت کلید روشنِ جدا ندارد.</string>
     <string name="ac_off_uses_own">خاموش از کلید خاموشی خودِ این ریموت استفاده می‌کند.</string>
+    <!-- Appliance (non-TV, non-AC) pad section labels -->
+    <string name="appliance_remote_title">ریموت</string>
+    <string name="appliance_temp">دما</string>
+    <string name="appliance_speed">سرعت</string>
+    <string name="appliance_mode">حالت</string>
+    <string name="appliance_oscillate">پرتاب باد</string>
+    <string name="appliance_timer">زمان‌سنج</string>
+    <string name="appliance_light">نور</string>
+    <string name="appliance_volume">صدا</string>
+    <string name="appliance_input">ورودی</string>
+    <string name="appliance_colors">رنگ‌ها</string>
+    <string name="appliance_effects">افکت‌ها</string>
+    <string name="appliance_brightness">روشنایی</string>
+    <string name="appliance_sound_modes">حالت‌های صدا</string>
+    <string name="appliance_cleaning">تمیزکاری</string>
+    <string name="appliance_navigation">جهت‌ها</string>
+    <string name="appliance_playback">پخش</string>
+    <string name="appliance_humidity">رطوبت</string>
+    <string name="appliance_more">دیگر کلیدها</string>
+    <string name="appliance_no_usable">این ریموت کد قابل استفاده‌ای در پایگاه داده ندارد.</string>
     <string name="ac_carries">شامل: %1$s</string>
     <string name="ac_no_key_on">این ریموت کلید روشن ندارد. شامل: %1$s</string>
     <string name="ac_no_key_off">این ریموت کلید خاموش ندارد. شامل: %1$s</string>

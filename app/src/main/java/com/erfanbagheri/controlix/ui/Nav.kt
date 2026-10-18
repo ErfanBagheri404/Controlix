@@ -438,10 +438,25 @@ fun ControlixNav(ir: IrTransmitter, repo: IrCodeRepository?, coldStart: Boolean 
                         // whichever pad was opened last. Opening a pad no longer
                         // writes the tile's slot; the picker is its only writer.
                         // AC remotes are stateful: their pad is a separate climate
-                        // layout. Every other category keeps the normal TV pad.
+                        // layout. Appliance families (fans, purifiers, audio,
+                        // projectors, lighting, vacuums) have neither a channel
+                        // nor a d-pad, so they get the data-driven appliance pad.
+                        // TV-shaped categories keep the normal TV pad.
+                        val family = saved?.let { PadFamily.familyFor(it.categorySlug) }
                         if (saved?.isAc() == true) {
                             AcPadScreen(
                                 deviceName = saved.name,
+                                remoteId = r.remoteId,
+                                repo = repo,
+                                transmitter = ir,
+                                toast = toast,
+                                sendLog = sendLogModel,
+                                onBack = { route = Route.Home },
+                            )
+                        } else if (family != null && family != PadFamily.TV) {
+                            DevicePadScreen(
+                                deviceName = saved.name,
+                                family = family,
                                 remoteId = r.remoteId,
                                 repo = repo,
                                 transmitter = ir,

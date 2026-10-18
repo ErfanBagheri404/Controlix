@@ -349,6 +349,26 @@
     <string name="ac_remote_title">AC remote</string>
     <string name="ac_on_disabled">On is disabled: this remote has no separate power-on key.</string>
     <string name="ac_off_uses_own">Off uses this remote\'s own off key.</string>
+    <!-- Appliance (non-TV, non-AC) pad section labels -->
+    <string name="appliance_remote_title">Remote</string>
+    <string name="appliance_temp">Temperature</string>
+    <string name="appliance_speed">Speed</string>
+    <string name="appliance_mode">Mode</string>
+    <string name="appliance_oscillate">Oscillation</string>
+    <string name="appliance_timer">Timer</string>
+    <string name="appliance_light">Light</string>
+    <string name="appliance_volume">Volume</string>
+    <string name="appliance_input">Input</string>
+    <string name="appliance_colors">Colors</string>
+    <string name="appliance_effects">Effects</string>
+    <string name="appliance_brightness">Brightness</string>
+    <string name="appliance_sound_modes">Sound modes</string>
+    <string name="appliance_cleaning">Cleaning</string>
+    <string name="appliance_navigation">Navigation</string>
+    <string name="appliance_playback">Playback</string>
+    <string name="appliance_humidity">Humidity</string>
+    <string name="appliance_more">More keys</string>
+    <string name="appliance_no_usable">This remote has no usable codes in the database.</string>
     <string name="ac_carries">It carries: %1$s</string>
     <string name="ac_no_key_on">This remote has no power-on key. It carries: %1$s</string>
     <string name="ac_no_key_off">This remote has no power-off key. It carries: %1$s</string>
