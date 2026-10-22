@@ -4,6 +4,11 @@ import com.erfanbagheri.controlix.data.FontScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -290,6 +295,13 @@ private fun TempRow(temps: List<Int>, target: Int, onPick: (Int) -> Unit) {
     }
 }
 
+/**
+ * Mode row: only the modes this remote actually carries.
+ *
+ * A mode the remote lacks isn't a disabled button, it's a control that
+ * doesn't exist on this unit, so it's omitted; the footnote below the row
+ * still names what's missing so nothing is silently hidden.
+ */
 @Composable
 private fun ModeRow(
     presets: List<AcMode>,
@@ -297,22 +309,45 @@ private fun ModeRow(
     selected: AcMode,
     onPick: (AcMode) -> Unit,
 ) {
+    val shown = presets.filter { it in supported }
+        .ifEmpty { presets } // never an empty row: fall back to all, still labelled below
     Row(
         Modifier.fillMaxWidth().padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        presets.forEach { m ->
+        shown.forEach { m ->
             val on = m in supported
-            Text(
-                m.label,
-                style = MaterialTheme.typography.titleSmall,
-                color = when {
-                    !on -> PaperFaint
-                    m == selected -> Accent
-                    else -> MaterialTheme.colorScheme.onSurface
-                },
-                modifier = Modifier.pressable(on) { onPick(m) },
-            )
+            val picked = m == selected
+            Box(
+                Modifier
+                    .weight(1f)
+                    .height(52.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale))
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        if (picked) MaterialTheme.colorScheme.surfaceVariant
+                        else MaterialTheme.colorScheme.surface,
+                    )
+                    .border(
+                        1.dp,
+                        if (picked) Accent else MaterialTheme.colorScheme.outline,
+                        RoundedCornerShape(14.dp),
+                    )
+                    .pressable(on) { onPick(m) }
+                    .padding(horizontal = 6.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    m.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = when {
+                        !on -> PaperFaint
+                        picked -> Accent
+                        else -> MaterialTheme.colorScheme.onSurface
+                    },
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
