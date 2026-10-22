@@ -367,6 +367,7 @@
     <string name="appliance_navigation">جهت‌ها</string>
     <string name="appliance_playback">پخش</string>
     <string name="appliance_humidity">رطوبت</string>
+    <string name="appliance_keypad">صفحه کلید</string>
     <string name="appliance_more">دیگر کلیدها</string>
     <string name="appliance_no_usable">این ریموت کد قابل استفاده‌ای در پایگاه داده ندارد.</string>
     <string name="ac_carries">شامل: %1$s</string>

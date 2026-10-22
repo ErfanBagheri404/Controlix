@@ -367,6 +367,7 @@
     <string name="appliance_navigation">Navigation</string>
     <string name="appliance_playback">Playback</string>
     <string name="appliance_humidity">Humidity</string>
+    <string name="appliance_keypad">Keypad</string>
     <string name="appliance_more">More keys</string>
     <string name="appliance_no_usable">This remote has no usable codes in the database.</string>
     <string name="ac_carries">It carries: %1$s</string>

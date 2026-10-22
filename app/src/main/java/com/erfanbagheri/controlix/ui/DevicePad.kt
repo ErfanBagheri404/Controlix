@@ -1,6 +1,9 @@
 package com.erfanbagheri.controlix.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextAlign
@@ -118,6 +123,24 @@ enum class PadFamily {
 /** How a row draws. Stepper is the only one that pairs two keys. */
 enum class PadRowStyle { STEPPER, CHIPS, D_PAD, KEYPAD }
 
+/**
+ * How big a chip row's keys draw.
+ *
+ * Mi Remote and every other universal remote give the primary action a
+ * bigger target than the secondary ones — a fan's Speed row reads as a
+ * control, not as a list of links. Text-only chips gave all 47 keys of a
+ * projector the same visual weight, which is why the pad looked like a
+ * table of contents rather than a remote.
+ */
+enum class PadKeySize {
+    /** Half-width tiles — the pad's main actions (speed, mode, colours). */
+    LARGE,
+    /** Narrow pills — supporting keys (timers, effects, navigation). */
+    SMALL,
+    /** Square, one per grid cell — numeric pads and colour swatches. */
+    SQUARE,
+}
+
 /** One labelled row: the remote's own keys, in the order the pad shows them. */
 data class PadRow(
     val labelRes: Int,
@@ -130,6 +153,26 @@ data class PadRow(
     val readout: String? = null,
     /** Row contents for CHIPS / D_PAD / KEYPAD. */
     val keys: List<EffectiveButtons.Resolved> = emptyList(),
+    /** How the keys draw. Only CHIPS reads it. */
+    val keySize: PadKeySize = PadKeySize.SMALL,
+    /**
+     * Overrides the section heading with the remote's own word.
+     *
+     * A compound mode row is labelled by the mode half it was grouped under
+     * ("Heat", "Vent") rather than the generic "Mode" string — the label the
+     * DB carries is more specific than anything we can localize, and one
+     * generic heading over four groups is how the fan pad ended up with 22
+     * identical-looking chips.
+     */
+    val labelOverride: String? = null,
+    /**
+     * Text drawn on each chip instead of the raw DB label.
+     *
+     * Parallel to [keys]. A grouped mode row shows only the duration ("5m")
+     * because the heading already says "Heat"; repeating it on every chip
+     * doubles the row's width for no information.
+     */
+    val chipLabels: List<String>? = null,
 )
 
 /**
@@ -188,28 +231,53 @@ fun sectionsFor(
         )
     }
 
+    // Mode keys: group compound labels by their mode head ("Heat", "Vent", "Dry",
+    // "HeatDry") so a fan with 22 mode+duration keys reads as four short rows
+    // instead of one 22-chip wall. A bare mode word (or a non-compound label)
+    // keeps the generic "Mode" heading and the raw label, as before.
     val modeKeys = claim { ButtonNames.modeKey(it) }
-    if (modeKeys.isNotEmpty()) rows += PadRow(R.string.appliance_mode, PadRowStyle.CHIPS, keys = modeKeys.take(24))
+    if (modeKeys.isNotEmpty()) {
+        val groups = linkedMapOf<String, MutableList<EffectiveButtons.Resolved>>()
+        for (k in modeKeys) {
+            val head = ButtonNames.modeHead(k.name)?.replaceFirstChar { it.uppercase() }
+            if (head == null) {
+                groups.getOrPut("Mode") { mutableListOf() } += k
+            } else {
+                groups.getOrPut(head) { mutableListOf() } += k
+            }
+        }
+        for ((head, ks) in groups) {
+            val isGrouped = head != "Mode" && ks.all { ButtonNames.compoundTail(it.name) != null }
+            rows += PadRow(
+                labelRes = R.string.appliance_mode,
+                style = PadRowStyle.CHIPS,
+                keys = ks.take(24),
+                keySize = PadKeySize.LARGE,
+                labelOverride = head,
+                chipLabels = if (isGrouped) ks.map { ButtonNames.modeTail(it.name) ?: it.name } else null,
+            )
+        }
+    }
 
     val speedKeys = claim {
         ButtonNames.speedLevel(it) || ButtonNames.speedUp(it) || ButtonNames.speedDown(it)
     }
-    if (speedKeys.isNotEmpty()) rows += PadRow(R.string.appliance_speed, PadRowStyle.CHIPS, keys = speedKeys.take(24))
+    if (speedKeys.isNotEmpty()) rows += PadRow(R.string.appliance_speed, PadRowStyle.CHIPS, keys = speedKeys.take(24), keySize = PadKeySize.LARGE)
 
     val oscKeys = claim { ButtonNames.oscillate(it) }
-    if (oscKeys.isNotEmpty()) rows += PadRow(R.string.appliance_oscillate, PadRowStyle.CHIPS, keys = oscKeys.take(24))
+    if (oscKeys.isNotEmpty()) rows += PadRow(R.string.appliance_oscillate, PadRowStyle.CHIPS, keys = oscKeys.take(24), keySize = PadKeySize.LARGE)
 
     val timerKeys = claim { ButtonNames.timerKey(it) }
-    if (timerKeys.isNotEmpty()) rows += PadRow(R.string.appliance_timer, PadRowStyle.CHIPS, keys = timerKeys.take(24))
+    if (timerKeys.isNotEmpty()) rows += PadRow(R.string.appliance_timer, PadRowStyle.CHIPS, keys = timerKeys.take(24), keySize = PadKeySize.LARGE)
 
     val lightKeys = claim { ButtonNames.lightKey(it) }
-    if (lightKeys.isNotEmpty()) rows += PadRow(R.string.appliance_light, PadRowStyle.CHIPS, keys = lightKeys.take(24))
+    if (lightKeys.isNotEmpty()) rows += PadRow(R.string.appliance_light, PadRowStyle.CHIPS, keys = lightKeys.take(24), keySize = PadKeySize.LARGE)
 
     // Family-specific middle sections.
     when (family) {
         PadFamily.AIR_TREATMENT -> {
             val mist = claim { ButtonNames.humidityKey(it) }
-            if (mist.isNotEmpty()) rows += PadRow(R.string.appliance_humidity, PadRowStyle.CHIPS, keys = mist.take(24))
+            if (mist.isNotEmpty()) rows += PadRow(R.string.appliance_humidity, PadRowStyle.CHIPS, keys = mist.take(24), keySize = PadKeySize.LARGE)
         }
 
         PadFamily.AUDIO -> {
@@ -221,13 +289,13 @@ fun sectionsFor(
             }
             if (mute.isNotEmpty()) rows += PadRow(R.string.appliance_more, PadRowStyle.CHIPS, keys = mute.take(24))
             val src = claim { ButtonNames.audioSourceKey(it) }
-            if (src.isNotEmpty()) rows += PadRow(R.string.appliance_input, PadRowStyle.CHIPS, keys = src.take(24))
+                        if (src.isNotEmpty()) rows += PadRow(R.string.appliance_input, PadRowStyle.CHIPS, keys = src.take(24), keySize = PadKeySize.LARGE)
             val sound = claim { ButtonNames.audioModeKey(it) }
-            if (sound.isNotEmpty()) rows += PadRow(R.string.appliance_sound_modes, PadRowStyle.CHIPS, keys = sound.take(24))
+            if (sound.isNotEmpty()) rows += PadRow(R.string.appliance_sound_modes, PadRowStyle.CHIPS, keys = sound.take(24), keySize = PadKeySize.LARGE)
             val tone = claim { ButtonNames.bassTrebleKey(it) }
             if (tone.isNotEmpty()) rows += PadRow(R.string.appliance_more, PadRowStyle.CHIPS, keys = tone.take(24))
             val play = claim { ButtonNames.transportKey(it) }
-            if (play.isNotEmpty()) rows += PadRow(R.string.appliance_playback, PadRowStyle.CHIPS, keys = play.take(24))
+            if (play.isNotEmpty()) rows += PadRow(R.string.appliance_playback, PadRowStyle.CHIPS, keys = play.take(24), keySize = PadKeySize.LARGE)
         }
 
         PadFamily.DISPLAY -> {
@@ -242,9 +310,9 @@ fun sectionsFor(
             val nav = claim {
                 ButtonNames.home(it) || ButtonNames.menu(it) || ButtonNames.back(it) || ButtonNames.guide(it)
             }
-            if (nav.isNotEmpty()) rows += PadRow(R.string.appliance_more, PadRowStyle.CHIPS, keys = nav.take(24))
+            if (nav.isNotEmpty()) rows += PadRow(R.string.appliance_navigation, PadRowStyle.CHIPS, keys = nav.take(24))
             val src = claim { ButtonNames.source(it) }
-            if (src.isNotEmpty()) rows += PadRow(R.string.appliance_input, PadRowStyle.CHIPS, keys = src.take(24))
+                        if (src.isNotEmpty()) rows += PadRow(R.string.appliance_input, PadRowStyle.CHIPS, keys = src.take(24), keySize = PadKeySize.LARGE)
             val vol = claim { ButtonNames.volUp(it) }
             val volDn = claim { ButtonNames.volDown(it) }
             val mute = claim { ButtonNames.mute(it) }
@@ -258,18 +326,18 @@ fun sectionsFor(
 
         PadFamily.LIGHTING -> {
             val colors = claim { ButtonNames.colorKey(it) }
-            if (colors.isNotEmpty()) rows += PadRow(R.string.appliance_colors, PadRowStyle.CHIPS, keys = colors.take(24))
+            if (colors.isNotEmpty()) rows += PadRow(R.string.appliance_colors, PadRowStyle.CHIPS, keys = colors.take(24), keySize = PadKeySize.LARGE)
             val bright = claim { ButtonNames.brightnessKey(it) }
-            if (bright.isNotEmpty()) rows += PadRow(R.string.appliance_brightness, PadRowStyle.CHIPS, keys = bright.take(24))
+            if (bright.isNotEmpty()) rows += PadRow(R.string.appliance_brightness, PadRowStyle.CHIPS, keys = bright.take(24), keySize = PadKeySize.LARGE)
             val fx = claim { ButtonNames.effectKey(it) }
-            if (fx.isNotEmpty()) rows += PadRow(R.string.appliance_effects, PadRowStyle.CHIPS, keys = fx.take(24))
+            if (fx.isNotEmpty()) rows += PadRow(R.string.appliance_effects, PadRowStyle.CHIPS, keys = fx.take(24), keySize = PadKeySize.LARGE)
         }
 
         PadFamily.CLEANING -> {
             val start = claim { ButtonNames.startStopKey(it) }
-            if (start.isNotEmpty()) rows += PadRow(R.string.ac_power, PadRowStyle.CHIPS, keys = start.take(24))
+            if (start.isNotEmpty()) rows += PadRow(R.string.ac_power, PadRowStyle.CHIPS, keys = start.take(24), keySize = PadKeySize.LARGE)
             val clean = claim { ButtonNames.cleaningKey(it) }
-            if (clean.isNotEmpty()) rows += PadRow(R.string.appliance_cleaning, PadRowStyle.CHIPS, keys = clean.take(24))
+            if (clean.isNotEmpty()) rows += PadRow(R.string.appliance_cleaning, PadRowStyle.CHIPS, keys = clean.take(24), keySize = PadKeySize.LARGE)
             val dock = claim { ButtonNames.dockKey(it) }
             if (dock.isNotEmpty()) rows += PadRow(R.string.appliance_more, PadRowStyle.CHIPS, keys = dock.take(24))
         }
@@ -278,7 +346,10 @@ fun sectionsFor(
         PadFamily.TV -> Unit
     }
 
-    // Keypad, then leftovers. A remote's odd keys must stay reachable.
+    // Keypad, then leftovers. A remote's odd keys must stay reachable — but
+    // they arrive as several separate `claim` results that all used to render
+    // as their own "More keys" row, so a projector showed the same heading
+    // three times. Collect them into one row so the heading appears once.
     // A keypad only when the remote really is a numeric pad. Colour keys on a
     // light strip are named B1..B4/G1..G4, which `digit()` also accepts — that
     // is not a keypad, so require most of 0-9 to be present. Otherwise the
@@ -286,7 +357,7 @@ fun sectionsFor(
     val numeric = available.mapNotNull { it.name.lastOrNull { c -> c.isDigit() } }.toSet()
     if (numeric.size >= 8) {
         val digits = claim { ButtonNames.digit(it) }
-        rows += PadRow(R.string.appliance_more, PadRowStyle.KEYPAD, keys = digits.take(12))
+        rows += PadRow(R.string.appliance_keypad, PadRowStyle.KEYPAD, keys = digits.take(12))
     }
     val rest = claim { true }
     if (rest.isNotEmpty()) rows += PadRow(R.string.appliance_more, PadRowStyle.CHIPS, keys = rest.take(24))
@@ -379,7 +450,7 @@ fun DevicePadScreen(
             Modifier.weight(1f).verticalScroll(rememberScrollState()),
         ) {
         rows.forEach { row ->
-            SectionHead(tr(row.labelRes))
+            SectionHead(row.labelOverride ?: tr(row.labelRes))
             PadRowDivider()
             when (row.style) {
                 PadRowStyle.STEPPER -> {
@@ -394,7 +465,15 @@ fun DevicePadScreen(
                             "−",
                             style = MaterialTheme.typography.titleMedium,
                             color = if (dn != null) MaterialTheme.colorScheme.onSurface else PaperFaint.copy(alpha = 0.4f),
-                            modifier = Modifier.pressable(dn != null) { dn?.let(::transmit) },
+                            modifier = Modifier
+                                .heightIn(min = 56.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale))
+                                .width(56.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
+                                .pressable(dn != null) { dn?.let(::transmit) }
+                                .padding(horizontal = 8.dp),
+                            textAlign = TextAlign.Center,
                         )
                         Text(
                             "  ${row.readout ?: tr(row.labelRes)}  ",
@@ -407,12 +486,20 @@ fun DevicePadScreen(
                             "+",
                             style = MaterialTheme.typography.titleMedium,
                             color = if (up != null) MaterialTheme.colorScheme.onSurface else PaperFaint.copy(alpha = 0.4f),
-                            modifier = Modifier.pressable(up != null) { up?.let(::transmit) },
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .heightIn(min = 56.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale))
+                                .width(56.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
+                                .pressable(up != null) { up?.let(::transmit) }
+                                .padding(horizontal = 8.dp),
                         )
                     }
                 }
 
-                PadRowStyle.CHIPS -> ChipWrap(row.keys) { transmit(it) }
+                PadRowStyle.CHIPS -> KeyGrid(row.keys, row.keySize, { transmit(it) }, row.chipLabels)
 
                 PadRowStyle.D_PAD -> DPad(row.keys) { transmit(it) }
 
@@ -432,30 +519,99 @@ fun DevicePadScreen(
     }
 }
 
-/** Chips wrap so a 12-key colour or source row never scrolls off-screen. */
+/**
+ * A row of real keys, laid out like a physical remote's face.
+ *
+ * Mi Remote's whole readability comes from this: every control is a filled
+ * rounded rectangle with a border, sized by importance, and the grid is
+ * regular. Our earlier text-only chips gave a 47-key projector and a 4-key
+ * fan the same visual grammar — a list of words, not a remote. Keys now
+ * carry a surface, a stroke and a minimum touch height, so the eye reads
+ * "control" before it reads the label.
+ *
+ * LARGE = half-width tiles for the pad's primary actions (mode, speed).
+ * SMALL = thirds for supporting keys (timers, effects, sources).
+ * SQUARE = one per cell, for keypads and colour swatches.
+ */
 @Composable
-private fun ChipWrap(keys: List<EffectiveButtons.Resolved>, onTap: (EffectiveButtons.Resolved) -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        keys.chunked(4).forEach { chunk ->
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
-            ) {
+private fun KeyGrid(
+    keys: List<EffectiveButtons.Resolved>,
+    keySize: PadKeySize,
+    onTap: (EffectiveButtons.Resolved) -> Unit,
+    labels: List<String>? = null,
+) {
+    val perRow = when (keySize) {
+        PadKeySize.LARGE -> 2
+        PadKeySize.SMALL -> 3
+        PadKeySize.SQUARE -> 3
+    }
+    val gap = 8.dp
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(gap),
+    ) {
+        keys.chunked(perRow).forEachIndexed { chunkIndex, chunk ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
                 chunk.forEach { key ->
-                    Text(
-                        key.name,
-                        style = MaterialTheme.typography.titleSmall, color = Accent,
-                        modifier = Modifier.pressable { onTap(key) },
+                    // Absolute index into `keys` — not indexOf(key), which
+                    // would mis-resolve when two remotes share identical codes.
+                    val idx = chunkIndex * perRow + chunk.indexOf(key)
+                    KeyTile(
+                        label = labels?.getOrNull(idx) ?: key.name,
+                        keySize = keySize,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onTap(key) },
                     )
                 }
+                // Keep a short last row aligned to the grid instead of letting
+                // two keys stretch across a three-column row.
+                repeat(perRow - chunk.size) { Spacer(Modifier.weight(1f)) }
             }
         }
+    }
+}
+
+/** One physical-looking key: filled surface, hairline stroke, centred label. */
+@Composable
+private fun KeyTile(
+    label: String,
+    keySize: PadKeySize,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val h = when (keySize) {
+        PadKeySize.LARGE -> 52.dp
+        PadKeySize.SMALL -> 44.dp
+        PadKeySize.SQUARE -> 56.dp
+    }
+    Box(
+        modifier
+            .height(h * FontScale.heightMultiplier(LocalDensity.current.fontScale))
+            .clip(RoundedCornerShape(if (keySize == PadKeySize.SQUARE) 16.dp else 14.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(if (keySize == PadKeySize.SQUARE) 16.dp else 14.dp))
+            .pressable(onClick = onClick)
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            style = if (keySize == PadKeySize.LARGE) MaterialTheme.typography.titleSmall
+                    else MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+        )
     }
 }
 
 /**
  * Cross layout. The five keys arrive as up/left/ok/right/down; each renders
  * in its own place and a missing one is simply absent, never faked.
+ *
+ * Mi Remote draws its d-pad as a round cluster of four arrow keys around a
+ * centre OK, not as text on a line — the shape is what makes the cluster
+ * read as one navigation unit rather than four separate links.
  */
 @Composable
 private fun DPad(keys: List<EffectiveButtons.Resolved>, onTap: (EffectiveButtons.Resolved) -> Unit) {
@@ -466,50 +622,35 @@ private fun DPad(keys: List<EffectiveButtons.Resolved>, onTap: (EffectiveButtons
     val down = keys.getOrNull(4)
     @Composable
     fun cell(key: EffectiveButtons.Resolved?, label: String, modifier: Modifier) {
-        Text(
-            if (key != null) key.name else label,
-            style = MaterialTheme.typography.titleSmall,
-            color = if (key != null) Accent else PaperFaint.copy(alpha = 0.35f),
-            textAlign = TextAlign.Center,
-            modifier = modifier.pressable(key != null) { key?.let(onTap) }.padding(vertical = 8.dp),
+        KeyTile(
+            label = if (key != null) label else "·",
+            keySize = PadKeySize.SQUARE,
+            modifier = modifier,
+            onClick = { key?.let(onTap) },
         )
     }
-    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            cell(up, "▲", Modifier.weight(1f))
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        // Column widths so the cross is symmetric: an arm is the same width as
+        // the centre row, so the shape reads as a plus, not a ragged grid.
+        Row(Modifier.fillMaxWidth(0.62f)) { cell(up, "▲", Modifier.weight(1f)) }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             cell(left, "◀", Modifier.weight(1f))
             cell(ok, "OK", Modifier.weight(1f))
             cell(right, "▶", Modifier.weight(1f))
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            cell(down, "▼", Modifier.weight(1f))
-        }
+        Row(Modifier.fillMaxWidth(0.62f)) { cell(down, "▼", Modifier.weight(1f)) }
     }
 }
 
-/** Keypad: sorted 0-9, three per row, digits drawn as plain text. */
+/** Keypad: sorted 0-9, three per row, digits on square keys. */
 @Composable
 private fun DigitGrid(keys: List<EffectiveButtons.Resolved>, onTap: (EffectiveButtons.Resolved) -> Unit) {
     val sorted = keys.sortedBy { it.name.lastOrNull { c -> c.isDigit() } ?: ' ' }
-    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        sorted.chunked(3).forEach { chunk ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                chunk.forEach { key ->
-                    val d = key.name.lastOrNull { c -> c.isDigit() }?.toString() ?: key.name
-                    Text(
-                        d,
-                        style = MaterialTheme.typography.titleMedium, color = Accent,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .pressable { onTap(key) }
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
-                    )
-                }
-            }
-        }
-    }
+    KeyGrid(sorted, PadKeySize.SQUARE, onTap)
 }
 
 @Composable

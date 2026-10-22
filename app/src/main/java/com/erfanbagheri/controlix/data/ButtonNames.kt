@@ -217,7 +217,7 @@ object ButtonNames {
      * A duration tail on a compound label, e.g. 5m / 30 / 1h / 3h in
      * "Heat_5m", or null when the label has none.
      */
-    private fun compoundTail(n: String): Pair<String, String>? {
+    internal fun compoundTail(n: String): Pair<String, String>? {
         val i = n.indexOfAny(charArrayOf('_', '-'))
         if (i <= 0) return null
         val tail = n.substring(i + 1).trim()
@@ -229,6 +229,29 @@ object ButtonNames {
         if (unit != "" && unit !in setOf("m", "min", "mins", "minute", "h", "hr", "hrs", "hour", "hours", "s", "sec", "on", "off")) return null
         return n.substring(0, i).lowercase() to tail
     }
+
+    /**
+     * The mode half of a compound label — "heat" for "Heat_5m", "vent" for
+     * "Vent_On" — or null when the label is not compound.
+     *
+     * The pad uses this to group a fan's 22 mode keys by what they actually
+     * do: Heat / Vent / Dry / HeatDry each get their own row instead of one
+     * 22-chip wall. Without it every duration variant is a separate-looking
+     * control and the row is unreadable.
+     *
+     * ponytail: grouping is a string split on the first separator, so a brand
+     * that writes "5mHeat" groups under a junk head. Upgrade path: per-brand
+     * button maps carrying the real (mode, duration) pair.
+     */
+    fun modeHead(n: String): String? = compoundTail(n)?.first
+
+    /**
+     * The duration half of a compound label — "5m" for "Heat_5m", "On" for
+     * "Vent_On" — or null when the label is not compound. The pad shows this
+     * as the chip text once the head has been promoted to the row label, so
+     * a grouped row reads "Heat: 5m 15m 30m 1h" instead of four "Heat_5m"s.
+     */
+    fun modeTail(n: String): String? = compoundTail(n)?.second
 
     /** An oscillation / swing / rotation / louver key. */
     fun oscillate(n: String): Boolean {
