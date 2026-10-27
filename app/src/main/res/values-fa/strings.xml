@@ -369,6 +369,7 @@
     <string name="appliance_humidity">رطوبت</string>
     <string name="appliance_keypad">صفحه کلید</string>
     <string name="appliance_more">دیگر کلیدها</string>
+    <string name="appliance_more_count">+%1$d کلید دیگر</string>
     <string name="appliance_no_usable">این ریموت کد قابل استفاده‌ای در پایگاه داده ندارد.</string>
     <string name="ac_carries">شامل: %1$s</string>
     <string name="ac_no_key_on">این ریموت کلید روشن ندارد. شامل: %1$s</string>
@@ -629,4 +630,6 @@
     <string name="cat_videoconferencing">کنفرانس تصویری</string>
     <string name="cat_whiteboards">تخته‌های سفید</string>
     <string name="cat_window_cleaners">شوینده‌های شیشه</string>
-    <string name="cat_iodn_irblaster">دستگاه مادون‌قرمز (جامعه)</string></resources>
+    <string name="cat_iodn_irblaster">دستگاه مادون‌قرمز (جامعه)</string>    <string name="appliance_mute">بی‌صدا</string>
+    <string name="appliance_menu">منو</string>
+</resources>

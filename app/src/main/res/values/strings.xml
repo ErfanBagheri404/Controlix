@@ -369,6 +369,7 @@
     <string name="appliance_humidity">Humidity</string>
     <string name="appliance_keypad">Keypad</string>
     <string name="appliance_more">More keys</string>
+    <string name="appliance_more_count">+%1$d more</string>
     <string name="appliance_no_usable">This remote has no usable codes in the database.</string>
     <string name="ac_carries">It carries: %1$s</string>
     <string name="ac_no_key_on">This remote has no power-on key. It carries: %1$s</string>
@@ -629,4 +630,6 @@
     <string name="cat_videoconferencing">Videoconferencing</string>
     <string name="cat_whiteboards">Whiteboards</string>
     <string name="cat_window_cleaners">Window cleaners</string>
-    <string name="cat_iodn_irblaster">IR Blaster (community)</string></resources>
+    <string name="cat_iodn_irblaster">IR Blaster (community)</string>    <string name="appliance_mute">Mute</string>
+    <string name="appliance_menu">Menu</string>
+</resources>

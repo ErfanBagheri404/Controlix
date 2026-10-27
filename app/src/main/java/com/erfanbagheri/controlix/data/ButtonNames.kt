@@ -14,7 +14,7 @@ package com.erfanbagheri.controlix.data
 object ButtonNames {
 
     /** lowercase, keep alphanumerics and +/-. */
-    private fun norm(s: String): String =
+    fun norm(s: String): String =
         s.lowercase().filter { it.isLetterOrDigit() || it == '+' || it == '-' }
 
     fun power(n: String): Boolean {
