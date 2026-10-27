@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.EffectiveButtons
 import com.erfanbagheri.controlix.data.FontScale
@@ -96,19 +97,28 @@ private val KEY_WORDS = mapOf(
     "temp" to "Temperature", "src" to "Source", "eq" to "EQ",
     // A bare "Mode" key does not name a mode, it steps to the next one.
     // Printed under a "Mode" heading the label would read "Mode / Mode".
-    "mode" to "Cycle",
+    "mode" to "Cycle", "humididier" to "Humidifier",
 )
 
 fun prettyKey(raw: String): String {
     val words = raw.replace('_', ' ').trim().split(' ').filter { it.isNotBlank() }
-    // "Source HDMI In" pairs with a key called "INPUT HDMI" — the same socket
-    // named twice. One is the remote's own menu entry, the other is a direct
-    // input; a user cannot tell which to press, and two thirds of the grid
-    // say the same thing. Keep the "INPUT" spelling only.
-    val dup = words.lastOrNull()?.equals("In", true) == true
-    val out = words.joinToString(" ") { w ->
-        if (dup && w.equals("Source", true)) "" else
-            KEY_WORDS[w.lowercase()] ?: w.replaceFirstChar { it.uppercase() }
+    // "Source HDMI In" and "INPUT HDMI" are the same socket named twice — one
+    // key is the remote's menu entry, the other a direct input. Two tiles read
+    // the same in the hand, so the redundant word goes and the socket name
+    // stays: the row is already headed "Input".
+    val socket = words.size > 1 && (words[0].equals("Source", true) || words[0].equals("Input", true))
+    // The same socket is spelled "SOURCE INPUT A" on one key and "INPUT A" on
+    // another, so every leading source/input word goes. What is left is often
+    // a bare letter ("A", "B", "D4") that means nothing on a tile — the row is
+    // headed "Input", so a short token gets that word back.
+    var drop = 0
+    while (drop < words.size - 1 &&
+        (words[drop].equals("Source", true) || words[drop].equals("Input", true))
+    ) drop++
+    val core = if (socket) words.drop(drop) else words
+    val kept = if (socket && core.size == 1 && core[0].length <= 3) listOf("Input") + core else core
+    val out = kept.joinToString(" ") { w ->
+        KEY_WORDS[w.lowercase()] ?: w.replaceFirstChar { it.uppercase() }
     }.replace(Regex("\\s+"), " ").trim().ifBlank { raw }
     // A duration like "5m" is a number followed by a Latin unit. In an RTL
     // paragraph the bidi algorithm flips that run and the tile reads "m5" —
@@ -140,7 +150,11 @@ private fun KeyTile(
         ) {
             Text(
                 prettyKey(label),
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    textDirection =
+                        if (prettyKey(label).firstOrNull()?.isDigit() == true) TextDirection.Ltr
+                        else TextDirection.Content,
+                ),
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 maxLines = 2,

@@ -41,7 +41,7 @@ fun StepperRow(
     ) {
         StepKey("−", dn != null, Modifier.weight(1f)) { dn?.let(transmit) }
         Text(
-            label.ifBlank { "·" },
+            prettyKey(label).ifBlank { "·" },
             style = MaterialTheme.typography.titleSmall,
             color = Accent,
             textAlign = TextAlign.Center,
