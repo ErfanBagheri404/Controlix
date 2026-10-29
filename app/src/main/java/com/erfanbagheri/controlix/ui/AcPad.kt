@@ -4,6 +4,11 @@ import com.erfanbagheri.controlix.data.FontScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -83,6 +88,11 @@ fun AcPadScreen(
             .distinctBy { it.name }.take(6)
     }
     val swingKey = remember(available) { available.firstOrNull { ButtonNames.acSwing(it.name) } }
+    val tempUpKey = remember(available) { available.firstOrNull { ButtonNames.tempUp(it.name) } }
+    val tempDownKey = remember(available) { available.firstOrNull { ButtonNames.tempDown(it.name) } }
+    val modeCycleKey = remember(available) {
+        available.firstOrNull { ButtonNames.norm(it.name) == "mode" }
+    }
     val powerOnKey = remember(available) {
         available.firstOrNull { ButtonNames.power(it.name) && !ButtonNames.powerOff(it.name) }
     }
@@ -141,65 +151,101 @@ fun AcPadScreen(
             return@Column
         }
 
-        // ── Temperature: only values this remote stores for this mode ────
-        SectionHead(tr(R.string.ac_target))
-        Hairline()
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 76.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), verticalAlignment = Alignment.CenterVertically,
-        ) {
-            FlatKey("−", enabled = target > (temps.firstOrNull() ?: target)) {
-                val idx = temps.indexOf(target)
-                val next = temps.getOrNull(idx - 1) ?: return@FlatKey
-                target = next
-                send(AcSelection(next, mode, true))
+        // ── Temperature ──────────────────────────────────────────────────
+        // Two sources of truth, never fake:
+        //  - stored (mode, temp) states: the stepper walks the remote's own
+        //    temperature ladder and the readout names the state we will send
+        //  - no stored states but real TEMP+/TEMP− keys: the remote decides
+        //    its own step size, we just transmit them
+        // Neither → no temperature section at all; saying "16°C" for a remote
+        // with no device temperature would be synthesize-the-world UI.
+        val stepKeys = tempUpKey != null || tempDownKey != null
+        if (temps.isNotEmpty() || stepKeys) {
+            SectionHead(tr(R.string.ac_target))
+            Hairline()
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 76.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (temps.isNotEmpty()) {
+                    FlatKey("−", enabled = target > (temps.firstOrNull() ?: target)) {
+                        val idx = temps.indexOf(target)
+                        val next = temps.getOrNull(idx - 1) ?: return@FlatKey
+                        target = next
+                        send(AcSelection(next, mode, true))
+                    }
+                } else {
+                    FlatKey("−", enabled = tempDownKey != null) {
+                        tempDownKey?.let { transmit(it, "temp-") }
+                            ?: toast.show(explainPower(available, on = false))
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    tr(R.string.ac_temp, target),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = if (temps.isEmpty()) PaperFaint else MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(Modifier.width(12.dp))
+                if (temps.isNotEmpty()) {
+                    FlatKey("+", enabled = target < (temps.lastOrNull() ?: target)) {
+                        val idx = temps.indexOf(target)
+                        val next = temps.getOrNull(idx + 1) ?: return@FlatKey
+                        target = next
+                        send(AcSelection(next, mode, true))
+                    }
+                } else {
+                    FlatKey("+", enabled = tempUpKey != null) {
+                        tempUpKey?.let { transmit(it, "temp+") }
+                            ?: toast.show(explainPower(available, on = false))
+                    }
+                }
             }
-            Spacer(Modifier.width(12.dp))
-            Text(
-                tr(R.string.ac_temp, target),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f),
-            )
-            Spacer(Modifier.width(12.dp))
-            FlatKey("+", enabled = target < (temps.lastOrNull() ?: target)) {
-                val idx = temps.indexOf(target)
-                val next = temps.getOrNull(idx + 1) ?: return@FlatKey
-                target = next
-                send(AcSelection(next, mode, true))
-            }
-        }
-        Hairline()
-        if (temps.isEmpty()) {
-            Text(
-                tr(R.string.ac_no_temps, Copy.mode(mode)),
-                style = MaterialTheme.typography.labelSmall, color = PaperFaint,
-                modifier = Modifier.padding(vertical = 10.dp),
-            )
-        } else {
-            TempRow(temps, target) { picked ->
-                target = picked
-                send(AcSelection(picked, mode, true))
+            Hairline()
+            if (temps.isEmpty()) {
+                Text(
+                    tr(R.string.ac_no_temps, Copy.mode(mode)),
+                    style = MaterialTheme.typography.labelSmall, color = PaperFaint,
+                    modifier = Modifier.padding(vertical = 10.dp),
+                )
+            } else {
+                TempRow(temps, target) { picked ->
+                    target = picked
+                    send(AcSelection(picked, mode, true))
+                }
             }
         }
 
         // ── Mode ─────────────────────────────────────────────────────────
-        SectionHead(tr(R.string.ac_mode))
-        Hairline()
-        ModeRow(AcSelection.presetModes(), modes, mode) { picked ->
-            val pickedTemps = AcSelection.supportedTemps(available, picked)
-            if (pickedTemps.isNotEmpty()) target = pickedTemps.first()
-            mode = picked
-            send(AcSelection(target, picked, true))
+        // The remote's own Mode cycle key: reachable even when it carries no
+        // individual preset modes (a bare `Mode` walks its own list).
+        if (modeCycleKey != null && modes.isEmpty()) {
+            SectionHead(tr(R.string.ac_mode))
+            Hairline()
+            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale)), verticalAlignment = Alignment.CenterVertically) {
+                FlatKey(modeCycleKey.name) { transmit(modeCycleKey, modeCycleKey.name) }
+            }
+            Hairline()
         }
-        Hairline()
-        val missingModes = AcSelection.presetModes().filterNot { it in modes }
-        if (missingModes.isNotEmpty()) {
-            Text(
-                tr(R.string.ac_disabled_modes, missingModes.joinToString { it.label }),
-                style = MaterialTheme.typography.labelSmall, color = PaperFaint,
-                modifier = Modifier.padding(vertical = 10.dp),
-            )
+        if (modes.isNotEmpty()) {
+            SectionHead(tr(R.string.ac_mode))
+            Hairline()
+            ModeRow(AcSelection.presetModes(), modes, mode) { picked ->
+                val pickedTemps = AcSelection.supportedTemps(available, picked)
+                if (pickedTemps.isNotEmpty()) target = pickedTemps.first()
+                mode = picked
+                send(AcSelection(target, picked, true))
+            }
+            Hairline()
+            val missingModes = AcSelection.presetModes().filterNot { it in modes }
+            if (missingModes.isNotEmpty()) {
+                Text(
+                    tr(R.string.ac_disabled_modes, missingModes.joinToString { it.label }),
+                    style = MaterialTheme.typography.labelSmall, color = PaperFaint,
+                    modifier = Modifier.padding(vertical = 10.dp),
+                )
+            }
         }
 
         // ── Power ────────────────────────────────────────────────────────
@@ -228,14 +274,24 @@ fun AcPadScreen(
             Hairline()
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 fanKeys.forEach { key ->
-                    Text(
-                        key.name,
-                        style = MaterialTheme.typography.titleSmall, color = Accent,
-                        modifier = Modifier.pressable { transmit(key, key.name) },
-                    )
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .height(52.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale))
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
+                            .pressable { transmit(key, key.name) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            key.name, style = MaterialTheme.typography.titleSmall,
+                            color = Accent, textAlign = TextAlign.Center, maxLines = 1,
+                        )
+                    }
                 }
             }
             Hairline()
@@ -249,6 +305,53 @@ fun AcPadScreen(
                 FlatKey(swingKey.name) { transmit(swingKey, "swing") }
             }
             Hairline()
+        }
+
+        // Every key this remote carries that the sections above did not
+        // surface (Timer, Ion, Turbo, ...) — a pad that drops codes silently
+        // makes the remote's own buttons unreachable.
+        val claimed = setOfNotNull(
+            powerOnKey, swingKey, tempUpKey, tempDownKey, modeCycleKey,
+        ) + fanKeys +
+            (if (temps.isNotEmpty()) emptySet() else emptySet()) +
+            available.filter { ButtonNames.power(it.name) }
+        val rest = remember(available, claimed) {
+            available.filter { it !in claimed }
+                .distinctBy { it.name }
+        }
+        if (rest.isNotEmpty()) {
+            SectionHead(tr(R.string.appliance_more))
+            Hairline()
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                rest.take(6).forEach { key ->
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .height(52.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale))
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
+                            .pressable { transmit(key, key.name) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            key.name, style = MaterialTheme.typography.titleSmall,
+                            color = Accent, textAlign = TextAlign.Center, maxLines = 1,
+                        )
+                    }
+                }
+            }
+            Hairline()
+            if (rest.size > 6) {
+                Text(
+                    tr(R.string.appliance_more_count, rest.size - 6),
+                    style = MaterialTheme.typography.labelSmall, color = PaperFaint,
+                    modifier = Modifier.padding(vertical = 10.dp),
+                )
+            }
         }
 
         if (lastSent != null) {
@@ -290,6 +393,13 @@ private fun TempRow(temps: List<Int>, target: Int, onPick: (Int) -> Unit) {
     }
 }
 
+/**
+ * Mode row: only the modes this remote actually carries.
+ *
+ * A mode the remote lacks isn't a disabled button, it's a control that
+ * doesn't exist on this unit, so it's omitted; the footnote below the row
+ * still names what's missing so nothing is silently hidden.
+ */
 @Composable
 private fun ModeRow(
     presets: List<AcMode>,
@@ -297,22 +407,49 @@ private fun ModeRow(
     selected: AcMode,
     onPick: (AcMode) -> Unit,
 ) {
+    // Only the presets this remote actually carries. A remote with a bare
+    // `Mode` cycle key supports none of them individually, so its row would
+    // be five dead buttons — hide the row and say why in the temperature
+    // footnote instead.
+    val shown = presets.filter { it in supported }
+    if (shown.isEmpty()) return
     Row(
         Modifier.fillMaxWidth().padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        presets.forEach { m ->
+        shown.forEach { m ->
             val on = m in supported
-            Text(
-                m.label,
-                style = MaterialTheme.typography.titleSmall,
-                color = when {
-                    !on -> PaperFaint
-                    m == selected -> Accent
-                    else -> MaterialTheme.colorScheme.onSurface
-                },
-                modifier = Modifier.pressable(on) { onPick(m) },
-            )
+            val picked = m == selected
+            Box(
+                Modifier
+                    .weight(1f)
+                    .height(52.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale))
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        if (picked) MaterialTheme.colorScheme.surfaceVariant
+                        else MaterialTheme.colorScheme.surface,
+                    )
+                    .border(
+                        1.dp,
+                        if (picked) Accent else MaterialTheme.colorScheme.outline,
+                        RoundedCornerShape(14.dp),
+                    )
+                    .pressable(on) { onPick(m) }
+                    .padding(horizontal = 6.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    m.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = when {
+                        !on -> PaperFaint
+                        picked -> Accent
+                        else -> MaterialTheme.colorScheme.onSurface
+                    },
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }

@@ -72,6 +72,14 @@ data class AcSelection(val tempC: Int, val mode: AcMode, val power: Boolean) {
 
         /** Modes offered by the pad; unsupported modes stay disabled. */
         fun presetModes(): List<AcMode> = AcMode.entries.toList()
+
+        /**
+         * How many preset modes a remote must carry before the mode row
+         * shows presets at all. A remote with a bare `Mode` cycle key
+         * supports none of the five presets individually — it just walks
+         * its own list — so the row would render five dead buttons.
+         */
+        const val MODE_ROW_MIN_SUPPORTED: Int = 1
     }
 }
 
