@@ -71,6 +71,7 @@ fun DevicePadScreen(
 ) {
     var lastSent by remember(remoteId) { mutableStateOf<String?>(null) }
     var emitKey by remember(remoteId) { mutableStateOf<Any?>(null) }
+    var overflowKeys by remember(remoteId) { mutableStateOf<List<EffectiveButtons.Resolved>?>(null) }
     val view = LocalView.current
 
     // Own codes only. No sibling borrow: an appliance's keys are per-remote.
@@ -156,17 +157,22 @@ fun DevicePadScreen(
                 // way a rocker is silk-screened on a remote. Giving it a
                 // heading too would print the same word twice and turn six
                 // soundbar rockers into twelve stacked blocks.
-                if (row.style == PadRowStyle.STEPPER) {
-                    // A run of rockers is what the remote actually has, but
-                    // without a gap each one fuses into its neighbour and the
-                    // whole column reads as one broken slider. A divider and
-                    // breathing room per row keeps them discrete.
-                    StepperRow(
-                        row, label,
-                        Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        ::transmit,
-                    )
-                    PadRowDivider()
+                if (row.style == PadRowStyle.STEPPER || row.style == PadRowStyle.OVERFLOW) {
+                    // A stepper carries its own label between the two keys, the
+                    // way a rocker is silk-screened on a remote. Giving it a
+                    // heading too would print the same word twice and turn six
+                    // soundbar rockers into twelve stacked blocks.
+                    if (row.style == PadRowStyle.STEPPER) {
+                        StepperRow(
+                            row, label,
+                            Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            ::transmit,
+                        )
+                        PadRowDivider()
+                    } else {
+                        OverflowTile(row.keys.size) { overflowKeys = row.keys }
+                        PadRowDivider()
+                    }
                 } else {
                     SectionHead(label)
                     PadRowDivider()
@@ -174,7 +180,9 @@ fun DevicePadScreen(
                         PadRowStyle.CHIPS -> KeyGrid(row.keys, row.keySize, ::transmit, row.chipLabels)
                         PadRowStyle.D_PAD -> DPad(row.keys, ::transmit)
                         PadRowStyle.KEYPAD -> DigitGrid(row.keys, ::transmit)
-                        PadRowStyle.STEPPER -> Unit
+                        // Both handled above, alongside STEPPER: an untitled
+                        // rows share the "no heading, just the control" branch.
+                        PadRowStyle.STEPPER, PadRowStyle.OVERFLOW -> Unit
                     }
                     PadRowDivider()
                 }
@@ -188,5 +196,16 @@ fun DevicePadScreen(
             }
             Spacer(Modifier.height(16.dp))
         }
+    }
+
+    // Sheet lives outside the scrolling column: a ModalBottomSheet inside a
+    // verticalScroll parent measures against the scrolled content, not the
+    // window, and lands wherever the user stopped scrolling.
+    overflowKeys?.let { keys ->
+        ExtraKeysSheet(
+            keys = keys,
+            onKey = ::transmit,
+            onDismiss = { overflowKeys = null },
+        )
     }
 }

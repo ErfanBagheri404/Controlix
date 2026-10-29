@@ -20,7 +20,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import com.erfanbagheri.controlix.data.EffectiveButtons
+import com.erfanbagheri.controlix.R
 import com.erfanbagheri.controlix.data.FontScale
+import com.erfanbagheri.controlix.tr
 
 /**
  * A grid of real keys.
@@ -168,6 +170,36 @@ private fun KeyTile(
 fun DigitGrid(keys: List<EffectiveButtons.Resolved>, onTap: (EffectiveButtons.Resolved) -> Unit) {
     val sorted = keys.sortedBy { it.name.lastOrNull { c -> c.isDigit() } ?: ' ' }
     KeyGrid(sorted, PadKeySize.SQUARE, onTap)
+}
+
+/**
+ * The tail of a remote, one tap away.
+ *
+ * A projector carries twenty input codes and a vacuum a dozen unmapped ones.
+ * Printed as chips they push the pad's real controls off the first screen, so
+ * the extra keys live behind this tile — the same "···" cell Mi Remote puts at
+ * the end of an appliance grid. The count is shown because a bare ellipsis
+ * hides how much is behind it.
+ */
+@Composable
+fun OverflowTile(count: Int, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
+        Box(
+            Modifier.weight(1f)
+                .heightIn(min = 58.dp * FontScale.heightMultiplier(LocalDensity.current.fontScale))
+                .bgTile(20.dp, MaterialTheme.colorScheme.surfaceVariant)
+                .pressable(onClick = onClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "···  " + tr(R.string.appliance_more_count, count),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+            )
+        }
+    }
 }
 
 @Composable

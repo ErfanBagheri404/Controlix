@@ -3,6 +3,7 @@ package com.erfanbagheri.controlix.ui
 import com.erfanbagheri.controlix.R
 import com.erfanbagheri.controlix.data.ButtonNames
 import com.erfanbagheri.controlix.data.EffectiveButtons
+import com.erfanbagheri.controlix.data.PadOverflow
 import com.erfanbagheri.controlix.data.FontScale
 
 /**
@@ -82,7 +83,7 @@ enum class PadFamily {
 }
 
 /** How a row draws. Stepper is the only one that pairs two keys. */
-enum class PadRowStyle { STEPPER, CHIPS, D_PAD, KEYPAD }
+enum class PadRowStyle { STEPPER, CHIPS, D_PAD, KEYPAD, OVERFLOW }
 
 /**
  * How big a chip row's keys draw.
@@ -409,8 +410,21 @@ fun sectionsFor(
         val digits = claim { ButtonNames.digit(it) }
         rows += PadRow(R.string.appliance_keypad, PadRowStyle.KEYPAD, keys = digits.take(12))
     }
+    // A remote's odd keys must stay reachable, but dumping 24 of them as one
+    // "More keys" wall buries the pad's real controls (the projector's seven
+    // input chips, the vacuum's nine unmapped rows). Cap the visible tail
+    // and put the rest behind a single "···" tile that opens a sheet — Mi
+    // Remote's own pattern for exactly this problem.
+    // ponytail: capped at 8 visible. Upgrade path: group overflow keys by
+    // their own heading inside the sheet once a remote has >20 of them.
     val rest = claim { true }
-    if (rest.isNotEmpty()) rows += PadRow(R.string.appliance_more, PadRowStyle.CHIPS, keys = rest.take(24))
+    if (rest.isNotEmpty()) {
+        val split = PadOverflow.split(rest)
+        rows += PadRow(R.string.appliance_more, PadRowStyle.CHIPS, keys = split.visible)
+        if (split.overflow.isNotEmpty()) {
+            rows += PadRow(R.string.appliance_more, PadRowStyle.OVERFLOW, keys = split.overflow)
+        }
+    }
 
     // Two rules can land on the same heading — a vacuum has a bare "Mode" key
     // and mode presets, a projector has a d-pad and menu keys that both call
